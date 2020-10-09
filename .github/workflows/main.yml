@@ -17,7 +17,7 @@ jobs:
     - name: Prepare
       id: prep
       run: |
-        DOCKER_IMAGE=cmusei/console-ui
+        DOCKER_IMAGE=cmusei/vm-console-ui
         VERSION=development
         if [[ $GITHUB_REF == refs/tags/* ]]; then
           VERSION=${GITHUB_REF#refs/tags/}
