@@ -46,4 +46,3 @@ src/assets/config/settings.env.json
 /.vs/slnx.sqlite
 /.vs/VSWorkspaceState.json
 /.vs/config/applicationhost.config
-/.vs/s3.vm.ngconsole/v15/.suo

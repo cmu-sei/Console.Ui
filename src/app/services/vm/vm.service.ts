@@ -359,7 +359,7 @@ export class VmService {
         }
       },
       (error) => {
-        console.log('error sending poweron to s3.vm.console');
+        console.log('error sending poweron console API');
       }
     );
   }
@@ -379,7 +379,7 @@ export class VmService {
         }
       },
       (error) => {
-        console.log('error sending poweroff to s3.vm.console');
+        console.log('error sending poweroff to console API');
       }
     );
   }
@@ -391,7 +391,7 @@ export class VmService {
         // console.log(response);
       },
       (error) => {
-        console.log('error sending reboot to s3.vm.console');
+        console.log('error sending reboot to console API');
         this.model.ticket = null;
       }
     );
@@ -403,7 +403,7 @@ export class VmService {
         console.log(response);
       },
       (error) => {
-        console.log('error sending reboot to s3.vm.console');
+        console.log('error sending reboot to console API');
         this.model.ticket = null;
       }
     );

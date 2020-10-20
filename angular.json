@@ -3,7 +3,7 @@
   "version": 1,
   "newProjectRoot": "projects",
   "projects": {
-    "s3.vm.ngconsole": {
+    "player.vm.console.ui": {
       "root": "",
       "sourceRoot": "src",
       "projectType": "application",
@@ -48,7 +48,7 @@
         "serve": {
           "builder": "@angular-devkit/build-angular:dev-server",
           "options": {
-            "browserTarget": "s3.vm.ngconsole:build",
+            "browserTarget": "player.vm.console.ui:build",
             "port": 4305,
             "sourceMap": {
               "scripts": true,
@@ -58,14 +58,14 @@
           },
           "configurations": {
             "production": {
-              "browserTarget": "s3.vm.ngconsole:build:production"
+              "browserTarget": "player.vm.console.ui:build:production"
             }
           }
         },
         "extract-i18n": {
           "builder": "@angular-devkit/build-angular:extract-i18n",
           "options": {
-            "browserTarget": "s3.vm.ngconsole:build"
+            "browserTarget": "player.vm.console.ui:build"
           }
         },
         "test": {
@@ -93,7 +93,7 @@
         }
       }
     },
-    "s3.vm.ngconsole-e2e": {
+    "player.vm.console.ui-e2e": {
       "root": "",
       "sourceRoot": "e2e",
       "projectType": "application",
@@ -102,7 +102,7 @@
           "builder": "@angular-devkit/build-angular:protractor",
           "options": {
             "protractorConfig": "./protractor.conf.js",
-            "devServerTarget": "s3.vm.ngconsole:serve"
+            "devServerTarget": "player.vm.console.ui:serve"
           }
         },
         "lint": {
@@ -115,7 +115,7 @@
       }
     }
   },
-  "defaultProject": "s3.vm.ngconsole",
+  "defaultProject": "player.vm.console.ui",
   "schematics": {
     "@schematics/angular:component": {
       "prefix": "app",

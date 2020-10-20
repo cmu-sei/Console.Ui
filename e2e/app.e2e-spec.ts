@@ -10,7 +10,7 @@ DM20-0181
 
 import { AppPage } from './app.po';
 
-describe('s3.vm.ngconsole App', () => {
+describe('player.vm.console.ui App', () => {
   let page: AppPage;
 
   beforeEach(() => {
@@ -22,4 +22,3 @@ describe('s3.vm.ngconsole App', () => {
     expect(page.getParagraphText()).toEqual('Welcome to app!');
   });
 });
-
