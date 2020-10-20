@@ -2,11 +2,11 @@
   "ConsoleApiUrl": "http://localhost:4302/api/",
   "OIDCSettings": {
     "authority": "http://localhost:5000/",
-    "client_id": "s3.console.web",
+    "client_id": "player.vm.console.ui",
     "redirect_uri": "http://localhost:4305/auth-callback",
     "post_logout_redirect_uri": "http://localhost:4305",
     "response_type": "id_token token",
-    "scope": "openid profile s3 s3-vm s3-console",
+    "scope": "openid profile player player-vm",
     "automaticSilentRenew": true,
     "silent_redirect_uri": "http://localhost:4305/auth-callback-silent"
   },
