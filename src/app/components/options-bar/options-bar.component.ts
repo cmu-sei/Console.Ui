@@ -17,7 +17,7 @@ import {
 } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ActivatedRoute } from '@angular/router';
-import { ComnAuthService, ComnSettingsService, Theme } from '@crucible/common';
+import { ComnAuthService, ComnSettingsService, Theme } from '@cmusei/crucible-common';
 import { Subject } from 'rxjs';
 import { take, takeUntil } from 'rxjs/operators';
 import { NotificationData } from '../../models/notification/notification-model';

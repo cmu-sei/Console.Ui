@@ -31,7 +31,7 @@ import {
   ComnSettingsConfig,
   ComnSettingsModule,
   ComnSettingsService,
-} from '@crucible/common';
+} from '@cmusei/crucible-common';
 import { AkitaNgDevtools } from '@datorama/akita-ngdevtools';
 import { AppRoutingModule } from './app-routing/app-routing.module';
 import { AppComponent } from './app.component';
