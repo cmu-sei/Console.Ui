@@ -11,7 +11,7 @@ DM20-0181
 import { Component, HostListener } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { VmService } from '../../services/vm/vm.service';
-import { ComnAuthService, Theme } from '@crucible/common';
+import { ComnAuthService, Theme } from '@cmusei/crucible-common';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 

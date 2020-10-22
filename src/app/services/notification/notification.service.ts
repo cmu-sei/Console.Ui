@@ -10,7 +10,7 @@ DM20-0181
 
 import { Injectable } from '@angular/core';
 import { HubConnection, HubConnectionBuilder } from '@aspnet/signalr';
-import { ComnSettingsService } from '@crucible/common';
+import { ComnSettingsService } from '@cmusei/crucible-common';
 import { BehaviorSubject } from 'rxjs';
 import { NotificationData } from '../../models/notification/notification-model';
 
