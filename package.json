@@ -36,7 +36,7 @@
     "jquery-ui-dist": "^1.12.1",
     "oidc-client": "^1.10.1",
     "rxjs": "^6.5.5",
-    "tslib": "^1.13.0",
+    "tslib": "^1.14.1",
     "typescript": "^3.7.5",
     "zone.js": "^0.10.3"
   },
