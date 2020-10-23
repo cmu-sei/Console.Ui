@@ -1,4 +1,4 @@
-FROM node as builder
+FROM node:14.13.1-stretch as builder
 
 COPY package.json package-lock.json ./
 
