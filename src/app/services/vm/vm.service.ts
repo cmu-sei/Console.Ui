@@ -14,6 +14,7 @@ import { Title } from '@angular/platform-browser';
 import { ComnSettingsService } from '@cmusei/crucible-common';
 import {
   BehaviorSubject,
+  forkJoin,
   interval,
   Observable,
   throwError as observableThrowError,
@@ -42,6 +43,7 @@ export class VmService {
     password: '',
     filepath: '',
   };
+  public readOnly = true;
 
   public vmClipBoard = new BehaviorSubject<string>('');
   public vmResolution = new BehaviorSubject<VmResolution>({
@@ -50,6 +52,7 @@ export class VmService {
   });
 
   private ConsoleApiUrl;
+  private apiUrl;
 
   constructor(
     private http: HttpClient,
@@ -57,11 +60,32 @@ export class VmService {
     private titleService: Title
   ) {
     this.ConsoleApiUrl = settings.settings.ConsoleApiUrl + 'vms/vsphere/';
+    this.apiUrl = settings.settings.ConsoleApiUrl + 'vms/';
     this.model = new VmModel();
   }
 
-  public getVm(id: string) {
-    return this.http.get(this.ConsoleApiUrl + id).pipe(
+  public getVm(id: string): Observable<VmModel> {
+    return this.http.get<VmModel>(this.ConsoleApiUrl + id).pipe(
+      catchError((error: any) => {
+        if (error.status === 500) {
+          return observableThrowError(new Error(error.status));
+        } else if (error.status === 400) {
+          return observableThrowError(new Error(error.status));
+        } else if (error.status === 401) {
+          return observableThrowError(new Error(error.status));
+        } else if (error.status === 403) {
+          return observableThrowError(new Error(error.status));
+        } else if (error.status === 0) {
+          return observableThrowError(new Error(error.status));
+        } else {
+          return observableThrowError(error);
+        }
+      })
+    );
+  }
+
+  public getVmPermissions(id: string): Observable<string[]> {
+    return this.http.get<string[]>(this.apiUrl + id + '/permissions').pipe(
       catchError((error: any) => {
         if (error.status === 500) {
           return observableThrowError(new Error(error.status));
@@ -208,10 +232,15 @@ export class VmService {
   public async connect(id: string) {
     console.log('Attempting to connect to vm');
 
-    this.getVm(id)
+    forkJoin({
+      model: this.getVm(id),
+      permissions: this.getVmPermissions(id),
+    })
       .pipe(take(1))
       .subscribe(
-        (model: VmModel) => {
+        ({ model, permissions }) => {
+          this.readOnly = permissions.includes('ReadOnly');
+          console.log(this.readOnly);
           this.model = model;
           if (model.name) {
             this.titleService.setTitle(model.name);
@@ -276,6 +305,30 @@ export class VmService {
       position: WMKS.CONST.Position.CENTER,
       retryConnectionInterval: 5000, // Changed to 5 seconds.  This affects initial connection to console.
     });
+
+    if (this.readOnly) {
+      const elem = document.getElementById('mainCanvas');
+      elem.style.pointerEvents = 'none';
+      elem.tabIndex = -1;
+
+      const observer = new MutationObserver((mutations) => {
+        mutations.forEach((m) => {
+          if (
+            m.attributeName === 'style' &&
+            elem.style.pointerEvents !== 'none'
+          ) {
+            elem.style.pointerEvents = 'none';
+          } else if (m.attributeName === 'tabindex' && elem.tabIndex !== -1) {
+            elem.tabIndex = -1;
+          }
+        });
+      });
+
+      observer.observe(elem, {
+        attributes: true,
+        attributeFilter: ['style', 'tabindex'],
+      });
+    }
 
     this.wmks.register(
       WMKS.CONST.Events.CONNECTION_STATE_CHANGE,
