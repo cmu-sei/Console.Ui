@@ -14,6 +14,7 @@ DM20-0181
   top: 0px;
   left: 0px;
   z-index: 99;
+  padding-bottom: 1px;
 }
 
 .options-content {
@@ -22,43 +23,42 @@ DM20-0181
 }
 
 a:visited {
-    color: black;
+  color: black;
 }
 
 .mat-expansion-panel-header {
-    display: flex;
-    flex-direction: column;
+  display: flex;
+  flex-direction: column;
 }
 
 .vm-name {
-    font-size: small;
-    margin-left: 10px;
+  font-size: small;
+  margin-left: 10px;
 }
 
 .left {
-    float: left;
-    padding-bottom: 8px;
+  float: left;
+  padding-bottom: 8px;
 }
 
 .mat-icon-button.mat-small {
-    line-height: 16px;
-    height: 16px;
-    width: 16px;
-    margin-top: 2px;
-    margin-left: 10px;
-    display: inline-block;
-    z-index: 1;
+  line-height: 16px;
+  height: 16px;
+  width: 16px;
+  margin-top: 2px;
+  margin-left: 10px;
+  display: inline-block;
+  z-index: 1;
 }
 
 .mat-icon {
-    height: 18px;
-    width: 18px;
+  height: 18px;
+  width: 18px;
 }
 
 .mat-top-button {
-    font-size: x-small;
-    height: 21px;
-    line-height: 0px;
-    margin-left: 20px;
+  font-size: x-small;
+  height: 21px;
+  line-height: 0px;
+  margin-left: 20px;
 }
-

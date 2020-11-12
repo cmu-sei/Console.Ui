@@ -9,33 +9,32 @@ DM20-0181
 */
 
 :host {
-    position: absolute;
-    top: 40px;
-    bottom: 0px;
-    left: 0px;
-    right: 0px;
-    width: 100%;
-    z-index: -1;
+  position: absolute;
+  top: 40px;
+  bottom: 0px;
+  left: 0px;
+  right: 0px;
+  width: 100%;
+  z-index: -1;
 }
 
 .wmksContainer {
-    position: absolute;
-    height: 100%;
-    width: 100%;
+  position: absolute;
+  height: 100%;
+  width: 100%;
 }
 
 .mat-progress-spinner {
-    display: block;
-    margin: auto;
-    top: 40%;
+  display: block;
+  margin: auto;
+  top: 40%;
 }
 
 .center {
-    position: relative;
-    display: block;
-    margin: auto;
-    top: 40%;
-    height: 100px;
-    width: 100px;
+  position: relative;
+  display: block;
+  margin: auto;
+  top: 40%;
+  height: 100px;
+  width: 100px;
 }
-
