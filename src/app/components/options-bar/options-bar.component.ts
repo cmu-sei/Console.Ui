@@ -3,6 +3,7 @@
 
 import {
   Component,
+  Input,
   OnDestroy,
   OnInit,
   Pipe,
@@ -10,9 +11,14 @@ import {
 } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ActivatedRoute } from '@angular/router';
-import { ComnAuthService, ComnSettingsService, Theme } from '@cmusei/crucible-common';
+import {
+  ComnAuthService,
+  ComnSettingsService,
+  Theme,
+} from '@cmusei/crucible-common';
 import { Subject } from 'rxjs';
 import { take, takeUntil } from 'rxjs/operators';
+import { VsphereVirtualMachine } from '../../generated/vm-api';
 import { NotificationData } from '../../models/notification/notification-model';
 import { IsoResult } from '../../models/vm/iso-result';
 import {
@@ -22,7 +28,7 @@ import {
 } from '../../models/vm/vm-model';
 import { DialogService } from '../../services/dialog/dialog.service';
 import { NotificationService } from '../../services/notification/notification.service';
-import { VmService } from '../../services/vm/vm.service';
+import { VmService } from '../../state/vm/vm.service';
 
 declare var WMKS: any; // needed to check values
 const MAX_COPY_RETRIES = 1;
@@ -43,6 +49,10 @@ export class KeysPipe implements PipeTransform {
   styleUrls: ['./options-bar.component.scss'],
 })
 export class OptionsBarComponent implements OnInit, OnDestroy {
+  @Input() vm: VsphereVirtualMachine;
+  @Input() vmId: string;
+  @Input() readOnly: boolean;
+
   opened = false;
 
   // we could check permissions in api and set this value
@@ -69,8 +79,8 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
     private dialogService: DialogService,
     private notificationService: NotificationService,
     private route: ActivatedRoute,
-    private authService: ComnAuthService,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
+    private authService: ComnAuthService
   ) {}
 
   ngOnInit() {
@@ -90,7 +100,7 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
       }
     });
     this.notificationService.connectToProgressHub(
-      this.vmService.model.id,
+      this.vmId,
       this.authService.getAuthorizationToken()
     );
 
@@ -141,7 +151,7 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
 
   changeNic(adapter, nic) {
     this.vmService
-      .changeNic(this.vmService.model.id, adapter, nic)
+      .changeNic(this.vmId, adapter, nic)
       .subscribe((model: VmModel) => {
         this.vmService.model = model;
       });
@@ -187,27 +197,27 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
 
   connect() {
     console.log('connect requested');
-    this.vmService.connect(this.vmService.model.id);
+    this.vmService.connect(this.vmId, this.readOnly);
   }
 
   poweron() {
     console.log('poweron requested');
-    this.vmService.powerOn(this.vmService.model.id);
+    this.vmService.powerOn(this.vmId);
   }
 
   poweroff() {
     console.log('poweroff requested');
-    this.vmService.powerOff(this.vmService.model.id);
+    this.vmService.powerOff(this.vmId);
   }
 
   reboot() {
     console.log('reboot requested');
-    this.vmService.reBoot(this.vmService.model.id);
+    this.vmService.reBoot(this.vmId);
   }
 
   shutdownOS() {
     console.log('shutdown OS requested');
-    this.vmService.shutdownOS(this.vmService.model.id);
+    this.vmService.shutdownOS(this.vmId);
   }
 
   enableFileUpload(title) {
@@ -247,7 +257,7 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
           return;
         }
       }
-      this.vmService.verifyCredentials(this.vmService.model.id).subscribe(
+      this.vmService.verifyCredentials(this.vmId).subscribe(
         (response) => {
           this.uploadEnabled = true;
         },
@@ -271,26 +281,24 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
       return;
     }
     this.uploading = true;
-    this.vmService
-      .sendFileToVm(this.vmService.model.id, fileSelector.files)
-      .subscribe(
-        (response) => {
-          fileSelector.value = '';
-          this.uploading = false;
-          console.log(response);
-        },
-        (error) => {
-          fileSelector.value = '';
-          this.uploading = false;
-          console.log(error);
-        }
-      );
+    this.vmService.sendFileToVm(this.vmId, fileSelector.files).subscribe(
+      (response) => {
+        fileSelector.value = '';
+        this.uploading = false;
+        console.log(response);
+      },
+      (error) => {
+        fileSelector.value = '';
+        this.uploading = false;
+        console.log(error);
+      }
+    );
   }
 
   startIsoMount() {
     // refresh the iso list
     this.retrievingIsos = true;
-    this.vmService.getIsos().subscribe(
+    this.vmService.getIsos(this.vmId).subscribe(
       (isoResult) => {
         this.retrievingIsos = false;
         this.mountIso(isoResult);
@@ -316,7 +324,7 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
       }
       // mount the iso
       this.vmService
-        .mountIso(this.vmService.model.id, result.path + result.filename)
+        .mountIso(this.vmId, result.path + result.filename)
         .subscribe(
           // refresh the vm model
           (model: VmModel) => {
@@ -402,7 +410,7 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
   setResolution(vmResolution: VmResolution) {
     console.log('Setting Resolution:  ', vmResolution);
     this.vmService
-      .setResolution(this.vmService.model.id, vmResolution)
+      .setResolution(this.vmId, vmResolution)
       .pipe(take(1))
       .subscribe();
   }

@@ -5,13 +5,13 @@ import {
   Component,
   ElementRef,
   HostListener,
-  OnInit,
+  Input,
   ViewChild,
 } from '@angular/core';
-import { interval } from 'rxjs';
+import { interval, Subscription } from 'rxjs';
 import { startWith, takeWhile } from 'rxjs/operators';
 import { VmResolution } from '../../models/vm/vm-model';
-import { VmService } from '../../services/vm/vm.service';
+import { VmService } from '../../state/vm/vm.service';
 
 declare var WMKS: any; // needed to check values
 
@@ -20,22 +20,60 @@ declare var WMKS: any; // needed to check values
   templateUrl: './wmks.component.html',
   styleUrls: ['./wmks.component.scss'],
 })
-export class WmksComponent implements OnInit {
+export class WmksComponent {
+  @Input() readOnly: boolean;
+
+  @Input() set vmId(value: string) {
+    this.setVmId(value);
+  }
+
+  get vmId(): string {
+    return this._vmId;
+  }
+
+  _vmId: string;
+
+  connectTimerSubscription: Subscription;
+
   @ViewChild('wmksContainer') wmksContainer: ElementRef;
 
   public progressMessage = 'Loading ...';
   public isDone = false;
+  public showWmks = true;
 
   constructor(public vmService: VmService) {}
 
-  ngOnInit() {
+  private setVmId(value: string) {
+    if (this.connectTimerSubscription != null) {
+      this.connectTimerSubscription.unsubscribe();
+    }
+
+    if (this.vmService.wmks != null) {
+      this.vmService.wmks.unregister();
+      this.vmService.wmks.disconnect();
+      this.vmService.wmks = null;
+    }
+
+    // destroy and re-create the wmksContainer
+    this.showWmks = false;
+    this.showWmks = true;
+
+    this._vmId = value;
+    this.isDone = false;
+
+    this.connect();
+  }
+
+  private connect() {
     // This interval will fire every 5 seconds
-    interval(5000)
-      .pipe(
-        startWith(0),
-        takeWhile(() => !this.isDone)
-      )
-      .subscribe(() => this.checkConnected());
+    const connectTimer$ = interval(5000).pipe(
+      startWith(0),
+      takeWhile(() => !this.isDone)
+    );
+
+    this.connectTimerSubscription = connectTimer$.subscribe(() =>
+      this.checkConnected()
+    );
   }
 
   private checkConnected() {
@@ -47,16 +85,18 @@ export class WmksComponent implements OnInit {
       } else if (this.progressMessage.startsWith('The VM API')) {
         this.progressMessage = 'Loading ...';
       }
-      this.vmService.connect(this.vmService.model.id);
+      this.vmService.connect(this.vmId, this.readOnly);
       console.log('The vm state is ' + this.vmService.model.state);
     } else {
       console.log('Connected');
       this.progressMessage = 'Loading ...';
       const state = this.vmService.wmks.getConnectionState();
+      console.log('state=' + state);
 
       if (state === WMKS.CONST.ConnectionState.DISCONNECTED) {
-        this.vmService.connect(this.vmService.model.id);
+        this.vmService.connect(this.vmId, this.readOnly);
       }
+
       this.isDone = true;
       this.onResize();
     }
@@ -64,11 +104,17 @@ export class WmksComponent implements OnInit {
 
   @HostListener('window:resize')
   onResize() {
-    const vmContainerRes = {
-      width: this.wmksContainer.nativeElement.offsetWidth,
-      height: this.wmksContainer.nativeElement.offsetHeight,
-    } as VmResolution;
+    if (this.wmksContainer != null) {
+      const vmContainerRes = {
+        width: this.wmksContainer.nativeElement.offsetWidth,
+        height: this.wmksContainer.nativeElement.offsetHeight,
+      } as VmResolution;
 
-    this.vmService.vmResolution.next(vmContainerRes);
+      this.vmService.vmResolution.next(vmContainerRes);
+
+      if (this.vmService.wmks) {
+        this.vmService.wmks.updateScreen();
+      }
+    }
   }
 }

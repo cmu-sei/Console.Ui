@@ -1,12 +1,10 @@
 // Copyright 2021 Carnegie Mellon University. All Rights Reserved.
 // Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
 
-import { Component, HostListener } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
-import { VmService } from '../../services/vm/vm.service';
-import { ComnAuthService, Theme } from '@cmusei/crucible-common';
-import { Subject } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
+import { Component, Input } from '@angular/core';
+import { Observable } from 'rxjs';
+import { VsphereVirtualMachine } from '../../generated/vm-api';
+import { VmQuery } from '../../state/vm/vm.query';
 
 @Component({
   selector: 'app-console',
@@ -14,34 +12,20 @@ import { takeUntil } from 'rxjs/operators';
   styleUrls: ['./console.component.scss'],
 })
 export class ConsoleComponent {
-  noVmConsoleApi = true;
-  unsubscribe$: Subject<null> = new Subject<null>();
+  @Input() readOnly = false;
 
-  constructor(
-    private activatedRoute: ActivatedRoute,
-    public vmService: VmService,
-    private authService: ComnAuthService
-  ) {
-    this.activatedRoute.params.subscribe(
-      (res) => {
-        this.vmService.model.id = res.id;
-        },
-      (error) => {
-        console.log(error.message);
-      }
-    );
-    this.activatedRoute.queryParamMap.pipe(takeUntil(this.unsubscribe$)).subscribe(params => {
-      const selectedTheme = params.get('theme');
-      const theme = selectedTheme === Theme.DARK ? Theme.DARK : Theme.LIGHT;
-      this.authService.setUserTheme(theme);
-    });
+  @Input() set vmId(value: string) {
+    this._vmId = value;
+    this.vm$ = this.vmQuery.selectEntity(value);
   }
 
-  @HostListener('window:resize', ['$event'])
-  onResize(event) {
-    // this will re-center the console
-    if (this.vmService.wmks) {
-      this.vmService.wmks.updateScreen();
-    }
+  get vmId(): string {
+    return this._vmId;
   }
+
+  _vmId: string;
+
+  vm$: Observable<VsphereVirtualMachine>;
+
+  constructor(private vmQuery: VmQuery) {}
 }

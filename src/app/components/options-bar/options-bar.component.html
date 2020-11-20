@@ -19,7 +19,7 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
         <button mat-menu-item (click)="reconnect()">Reconnect</button>
       </div>
 
-      <div *ngIf="!vmService.readOnly">
+      <div *ngIf="!readOnly">
         <!-- Resolution -->
         <button
           *ngIf="!vmService.model.isOwner"
@@ -233,14 +233,14 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
       </div>
     </mat-menu>
 
-    <label class="vm-name text">{{ vmService.model.name }}</label>
+    <label class="vm-name text">{{ vm?.name }}</label>
     <span *ngFor="let task of tasksInProgress">
       <label class="vm-name text" *ngIf="task.state !== 'success'"
         >{{ task.taskName }} ... {{ task.progress }}%</label
       >
     </span>
 
-    <div *ngIf="!vmService.readOnly" fxFlex fxLayoutAlign="center start">
+    <div *ngIf="!readOnly" fxFlex fxLayoutAlign="center start">
       <button
         mat-stroked-button
         class="mat-top-button text"
