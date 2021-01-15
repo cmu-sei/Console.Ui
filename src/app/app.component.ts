@@ -38,7 +38,6 @@ export class AppComponent implements OnDestroy {
       .selectQueryParams('theme')
       .pipe(takeUntil(this.unsubscribe$))
       .subscribe((theme) => {
-        const t = theme === Theme.DARK ? Theme.DARK : Theme.LIGHT;
         this.authService.setUserTheme(theme);
       });
   }

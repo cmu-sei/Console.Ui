@@ -5,7 +5,6 @@
 
 import { HttpClient } from '@angular/common/http';
 import { Inject, Injectable } from '@angular/core';
-import { ComnSettingsService } from '@cmusei/crucible-common';
 import { BehaviorSubject, interval, Observable } from 'rxjs';
 import { startWith, take, takeWhile, tap } from 'rxjs/operators';
 import {
