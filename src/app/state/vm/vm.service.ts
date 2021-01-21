@@ -1,31 +1,35 @@
-// Copyright 2021 Carnegie Mellon University. All Rights Reserved.
-// Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
+/**
+ * Copyright 2021 Carnegie Mellon University. All Rights Reserved.
+ * Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
+ */
 
 import { HttpClient } from '@angular/common/http';
-import { Injectable } from '@angular/core';
-import { Title } from '@angular/platform-browser';
-import { ComnSettingsService } from '@cmusei/crucible-common';
+import { Inject, Injectable } from '@angular/core';
+import { BehaviorSubject, interval, Observable } from 'rxjs';
+import { startWith, take, takeWhile, tap } from 'rxjs/operators';
 import {
-  BehaviorSubject,
-  forkJoin,
-  interval,
-  Observable,
-  throwError as observableThrowError,
-} from 'rxjs';
-import { catchError, startWith, take, takeWhile } from 'rxjs/operators';
+  BASE_PATH,
+  ChangeVsphereVirtualMachineNetwork,
+  MountVsphereIso,
+  SetVsphereVirtualMachineResolution,
+  ValidateVsphereVirtualMachineCredentials,
+  VmsService,
+  VsphereService,
+  VsphereVirtualMachine,
+} from '../../generated/vm-api';
 import { IsoResult } from '../../models/vm/iso-result';
 import {
   VirtualMachineToolsStatus,
-  VmModel,
   VmResolution,
 } from '../../models/vm/vm-model';
+import { VmStore } from './vm.store';
 
 declare var WMKS: any; // needed to check values
 
-@Injectable()
+@Injectable({ providedIn: 'root' })
 export class VmService {
   public wmks;
-  public model: VmModel;
+  public model = {} as VsphereVirtualMachine;
   public showLoading = true;
   public showPower = false;
   public showPoweringOff = false;
@@ -36,7 +40,6 @@ export class VmService {
     password: '',
     filepath: '',
   };
-  public readOnly = true;
 
   public vmClipBoard = new BehaviorSubject<string>('');
   public vmResolution = new BehaviorSubject<VmResolution>({
@@ -44,147 +47,75 @@ export class VmService {
     height: 768,
   });
 
-  private ConsoleApiUrl;
-  private apiUrl;
+  private apiUrl: string;
 
   constructor(
     private http: HttpClient,
-    private settings: ComnSettingsService,
-    private titleService: Title
+    private vmsService: VmsService,
+    private vsphereService: VsphereService,
+    private vmStore: VmStore,
+    @Inject(BASE_PATH) basePath: string
   ) {
-    this.ConsoleApiUrl = settings.settings.ConsoleApiUrl + 'vms/vsphere/';
-    this.apiUrl = settings.settings.ConsoleApiUrl + 'vms/';
-    this.model = new VmModel();
+    this.apiUrl = basePath;
   }
 
-  public getVm(id: string): Observable<VmModel> {
-    return this.http.get<VmModel>(this.ConsoleApiUrl + id).pipe(
-      catchError((error: any) => {
-        if (error.status === 500) {
-          return observableThrowError(new Error(error.status));
-        } else if (error.status === 400) {
-          return observableThrowError(new Error(error.status));
-        } else if (error.status === 401) {
-          return observableThrowError(new Error(error.status));
-        } else if (error.status === 403) {
-          return observableThrowError(new Error(error.status));
-        } else if (error.status === 0) {
-          return observableThrowError(new Error(error.status));
-        } else {
-          return observableThrowError(error);
-        }
-      })
-    );
+  add(vm: VsphereVirtualMachine) {
+    this.vmStore.add(vm);
+  }
+
+  update(id, vm: Partial<VsphereVirtualMachine>) {
+    this.vmStore.update(id, vm);
+  }
+
+  remove(id: string) {
+    this.vmStore.remove(id);
+  }
+
+  setActive(id: string) {
+    this.vmStore.setActive(id);
+  }
+
+  public getVm(id: string): Observable<VsphereVirtualMachine> {
+    return this.vsphereService
+      .getVsphereVirtualMachine(id)
+      .pipe(tap((vm) => this.vmStore.upsert(id, vm)));
   }
 
   public getVmPermissions(id: string): Observable<string[]> {
-    return this.http.get<string[]>(this.apiUrl + id + '/permissions').pipe(
-      catchError((error: any) => {
-        if (error.status === 500) {
-          return observableThrowError(new Error(error.status));
-        } else if (error.status === 400) {
-          return observableThrowError(new Error(error.status));
-        } else if (error.status === 401) {
-          return observableThrowError(new Error(error.status));
-        } else if (error.status === 403) {
-          return observableThrowError(new Error(error.status));
-        } else if (error.status === 0) {
-          return observableThrowError(new Error(error.status));
-        } else {
-          return observableThrowError(error);
-        }
-      })
-    );
+    return this.vmsService.getVmPermissions(id);
   }
 
   public sendPowerOn(id: string) {
-    return this.http
-      .post(this.ConsoleApiUrl + id + '/actions/power-on', '')
-      .pipe(
-        // .timeout(2000)
-        catchError((error: any) => {
-          if (error.status === 500) {
-            return observableThrowError(new Error(error.status));
-          } else if (error.status === 400) {
-            return observableThrowError(new Error(error.status));
-          } else {
-            return observableThrowError(error);
-          }
-        })
-      );
+    return this.vsphereService.powerOnVsphereVirtualMachine(id);
   }
 
   public sendPowerOff(id: string) {
-    return this.http
-      .post(this.ConsoleApiUrl + id + '/actions/power-off', '')
-      .pipe(
-        // .timeout(2000)
-        catchError((error: any) => {
-          if (error.status === 500) {
-            return observableThrowError(new Error(error.status));
-          } else if (error.status === 400) {
-            return observableThrowError(new Error(error.status));
-          } else {
-            return observableThrowError(error);
-          }
-        })
-      );
+    return this.vsphereService.powerOffVsphereVirtualMachine(id);
   }
 
   public sendReboot(id: string) {
-    return this.http.post(this.ConsoleApiUrl + id + '/actions/reboot', '').pipe(
-      // .timeout(2000)
-      catchError((error: any) => {
-        if (error.status === 500) {
-          return observableThrowError(new Error(error.status));
-        } else if (error.status === 400) {
-          return observableThrowError(new Error(error.status));
-        } else {
-          return observableThrowError(error);
-        }
-      })
-    );
+    return this.vsphereService.rebootVsphereVirtualMachine(id);
   }
 
   public sendShutdownOS(id: string) {
-    return this.http
-      .post(this.ConsoleApiUrl + id + '/actions/shutdown', '')
-      .pipe(
-        catchError((error: any) => {
-          if (error.status === 500) {
-            return observableThrowError(new Error(error.status));
-          } else if (error.status === 400) {
-            return observableThrowError(new Error(error.status));
-          } else {
-            return observableThrowError(error);
-          }
-        })
-      );
+    return this.vsphereService.shutdownVsphereVirtualMachine(id);
   }
 
   public checkForVmTools(id: string) {
-    return this.http.get(this.ConsoleApiUrl + id + '/tools').pipe(
-      catchError((error: any) => {
-        if (error.status === 500) {
-          return observableThrowError(new Error(error.status));
-        } else if (error.status === 400) {
-          return observableThrowError(new Error(error.status));
-        } else {
-          return observableThrowError(error);
-        }
-      })
-    );
+    return this.vsphereService
+      .getVsphereVirtualMachineToolsStatus(id)
+      .pipe(tap((x) => this.vmStore.update(id, { vmToolsStatus: x })));
   }
 
   public verifyCredentials(id: string) {
-    const data = {
+    const data: ValidateVsphereVirtualMachineCredentials = {
       username: this.uploadConfig.username,
       password: this.uploadConfig.password,
-      filepath: this.uploadConfig.filepath,
+      filePath: this.uploadConfig.filepath,
     };
 
-    return this.http.post(
-      this.ConsoleApiUrl + id + '/actions/validate-credentials',
+    return this.vsphereService.validateVsphereVirtualMachineCredentials(
+      id,
       data
     );
   }
@@ -199,45 +130,27 @@ export class VmService {
     }
     console.log('sending ' + files.length.toString() + ' files to the api');
     return this.http.post(
-      this.ConsoleApiUrl + id + '/actions/upload-file',
+      `${this.apiUrl}/api/vms/vsphere/${id}/actions/upload-file`,
       formData
     );
   }
 
   public changeNic(id: string, adapter: string, nic: string) {
-    const data = { adapter: adapter, network: nic };
-    return this.http
-      .post(this.ConsoleApiUrl + id + '/actions/change-network', data)
-      .pipe(
-        // .timeout(2000)
-        catchError((error: any) => {
-          if (error.status === 500) {
-            return observableThrowError(new Error(error.status));
-          } else if (error.status === 400) {
-            return observableThrowError(new Error(error.status));
-          } else {
-            return observableThrowError(error);
-          }
-        })
-      );
+    const data: ChangeVsphereVirtualMachineNetwork = {
+      adapter: adapter,
+      network: nic,
+    };
+    return this.vsphereService.changeVsphereVirtualMachineNetwork(id, data);
   }
 
-  public async connect(id: string) {
+  public async connect(id: string, readOnly: boolean) {
     console.log('Attempting to connect to vm');
 
-    forkJoin({
-      model: this.getVm(id),
-      permissions: this.getVmPermissions(id),
-    })
+    this.getVm(id)
       .pipe(take(1))
       .subscribe(
-        ({ model, permissions }) => {
-          this.readOnly = permissions.includes('ReadOnly');
-          console.log(this.readOnly);
+        (model) => {
           this.model = model;
-          if (model.name) {
-            this.titleService.setTitle(model.name);
-          }
 
           // console.log('got vm model');
           if (model.state === 'error') {
@@ -270,9 +183,11 @@ export class VmService {
           }
 
           if (this.model.ticket) {
-            // console.log('got ticket: ' + this.model.ticket);
-
-            this.CreateWmks();
+            if (this.wmks != null) {
+              this.wmks.disconnect();
+              this.wmks = null;
+            }
+            this.CreateWmks(readOnly);
             const state = this.wmks.getConnectionState();
             if (state === WMKS.CONST.ConnectionState.DISCONNECTED) {
               // console.log('connecting to ' + this.model.ticket);
@@ -291,7 +206,7 @@ export class VmService {
       );
   }
 
-  public CreateWmks() {
+  public CreateWmks(readOnly: boolean) {
     this.wmks = WMKS.createWMKS('wmksContainer', {
       changeResolution: this.model.isOwner,
       rescale: true,
@@ -299,7 +214,7 @@ export class VmService {
       retryConnectionInterval: 5000, // Changed to 5 seconds.  This affects initial connection to console.
     });
 
-    if (this.readOnly) {
+    if (readOnly) {
       const elem = document.getElementById('mainCanvas');
       elem.style.pointerEvents = 'none';
       elem.tabIndex = -1;
@@ -404,7 +319,7 @@ export class VmService {
           console.log('poweron error received');
         }
       },
-      (error) => {
+      () => {
         console.log('error sending poweron console API');
       }
     );
@@ -424,7 +339,7 @@ export class VmService {
           console.log('poweroff error received');
         }
       },
-      (error) => {
+      () => {
         console.log('error sending poweroff to console API');
       }
     );
@@ -433,10 +348,10 @@ export class VmService {
   public reBoot(id: string) {
     // console.log('reboot requested');
     this.sendReboot(id).subscribe(
-      (response) => {
+      () => {
         // console.log(response);
       },
-      (error) => {
+      () => {
         console.log('error sending reboot to console API');
         this.model.ticket = null;
       }
@@ -448,7 +363,7 @@ export class VmService {
       (response) => {
         console.log(response);
       },
-      (error) => {
+      () => {
         console.log('error sending reboot to console API');
         this.model.ticket = null;
       }
@@ -459,44 +374,22 @@ export class VmService {
     return this.uploadConfig.asObservable();
   }
 
-  public getIsos(): Observable<IsoResult[]> {
-    return this.http.get<IsoResult[]>(
-      this.ConsoleApiUrl + this.model.id.toString() + '/isos'
-    );
+  public getIsos(id: string): Observable<IsoResult[]> {
+    return this.vsphereService.getVsphereVirtualMachineIsos(id) as Observable<
+      IsoResult[]
+    >;
   }
 
   public mountIso(id: string, iso: string) {
-    const data = { iso: iso };
-    return this.http
-      .post(this.ConsoleApiUrl + id + '/actions/mount-iso', data)
-      .pipe(
-        catchError((error: any) => {
-          if (error.status === 500) {
-            return observableThrowError(new Error(error.status));
-          } else if (error.status === 400) {
-            return observableThrowError(new Error(error.status));
-          } else {
-            return observableThrowError(error);
-          }
-        })
-      );
+    const data: MountVsphereIso = { iso: iso };
+    return this.vsphereService.mountVsphereVirtualMachineIso(id, data);
   }
 
   public setResolution(id: string, resolution: VmResolution) {
-    const data = { height: resolution.height, width: resolution.width };
-    return this.http
-      .post<string>(this.ConsoleApiUrl + id + '/actions/set-resolution', data)
-      .pipe(
-        catchError((error: any) => {
-          console.log(error);
-          if (error.status === 500) {
-            return observableThrowError(new Error(error.status));
-          } else if (error.status === 400) {
-            return observableThrowError(new Error(error.status));
-          } else {
-            return observableThrowError(error);
-          }
-        })
-      );
+    const data: SetVsphereVirtualMachineResolution = {
+      height: resolution.height,
+      width: resolution.width,
+    };
+    return this.vsphereService.setVsphereVirtualMachineResolution(id, data);
   }
 }

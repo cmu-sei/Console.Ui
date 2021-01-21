@@ -1,0 +1,27 @@
+<!--
+ Copyright 2021 Carnegie Mellon University. All Rights Reserved.
+ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
+-->
+
+<div
+  fxLayout="column"
+  fxLayoutAlign="start center"
+  *ngIf="user$ | async as user; else loading"
+>
+  <div *ngIf="vmId$ | async as vmId; else noVm">
+    <div class="banner">
+      <h2>Following {{ user.name }}</h2>
+    </div>
+    <app-console [readOnly]="true" [vmId]="vmId"></app-console>
+  </div>
+
+  <ng-template #noVm>
+    <h1 class="center">
+      {{ user.name }} is not currently viewing a virtual machine
+    </h1>
+  </ng-template>
+</div>
+
+<ng-template #loading>
+  <div>Loading...</div>
+</ng-template>

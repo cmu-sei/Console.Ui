@@ -1,5 +1,5 @@
 {
-  "ConsoleApiUrl": "http://localhost:4302/api/",
+  "ConsoleApiUrl": "http://localhost:4302",
   "OIDCSettings": {
     "authority": "http://localhost:5000/",
     "client_id": "player.vm.console.ui",

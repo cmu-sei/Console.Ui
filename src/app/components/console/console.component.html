@@ -4,6 +4,10 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
 -->
 
 <div class="background">
-  <app-options-bar></app-options-bar>
-  <app-wmks></app-wmks>
+  <app-options-bar
+    [readOnly]="readOnly"
+    [vm]="vm$ | async"
+    [vmId]="vmId"
+  ></app-options-bar>
+  <app-wmks [readOnly]="readOnly" [vmId]="vmId"></app-wmks>
 </div>

@@ -5,13 +5,19 @@ import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { ComnAuthGuardService } from '@cmusei/crucible-common';
-import { ConsoleComponent } from '../components/console/console.component';
+import { ConsolePageComponent } from '../components/console-page/console-page.component';
 import { PageNotFoundComponent } from '../components/page-not-found/page-not-found.component';
+import { UserFollowPageComponent } from '../components/user-follow-page/user-follow-page.component';
 
 const routes: Routes = [
   {
     path: 'vm/:id/console',
-    component: ConsoleComponent,
+    component: ConsolePageComponent,
+    canActivate: [ComnAuthGuardService],
+  },
+  {
+    path: 'user/:userId/view/:viewId/console',
+    component: UserFollowPageComponent,
     canActivate: [ComnAuthGuardService],
   },
   {

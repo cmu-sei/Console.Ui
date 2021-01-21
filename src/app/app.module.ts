@@ -5,7 +5,6 @@ import { HttpClientModule } from '@angular/common/http';
 import { ErrorHandler, NgModule } from '@angular/core';
 import { FlexLayoutModule } from '@angular/flex-layout';
 import { FormsModule } from '@angular/forms';
-import { HttpModule } from '@angular/http';
 import { MatBottomSheetModule } from '@angular/material/bottom-sheet';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialogModule } from '@angular/material/dialog';
@@ -44,28 +43,30 @@ import { DialogService } from './services/dialog/dialog.service';
 import { ErrorService } from './services/error/error.service';
 import { NotificationService } from './services/notification/notification.service';
 import { SystemMessageService } from './services/system-message/system-message.service';
-import { VmService } from './services/vm/vm.service';
+import { VmService } from './state/vm/vm.service';
+import { ConsolePageComponent } from './components/console-page/console-page.component';
+import { UserFollowPageComponent } from './components/user-follow-page/user-follow-page.component';
+import { AkitaNgRouterStoreModule } from '@datorama/akita-ng-router-store';
+import { environment } from '../environments/environment';
+import { BASE_PATH } from './generated/vm-api';
 
 export const settings: ComnSettingsConfig = {
   url: 'assets/config/settings.json',
   envUrl: 'assets/config/settings.env.json',
 };
 
-@NgModule({
-  exports: [
-    MatButtonModule,
-    MatListModule,
-    MatInputModule,
-    MatProgressSpinnerModule,
-    MatIconModule,
-    MatMenuModule,
-    MatBottomSheetModule,
-    MatDialogModule,
-    MatSnackBarModule,
-    MatTooltipModule,
-  ],
-})
-export class AngularMaterialModule {}
+const materialModules = [
+  MatButtonModule,
+  MatListModule,
+  MatInputModule,
+  MatProgressSpinnerModule,
+  MatIconModule,
+  MatMenuModule,
+  MatBottomSheetModule,
+  MatDialogModule,
+  MatSnackBarModule,
+  MatTooltipModule,
+];
 
 @NgModule({
   declarations: [
@@ -80,31 +81,37 @@ export class AngularMaterialModule {}
     MountIsoDialogComponent,
     KeysPipe,
     SystemMessageComponent,
+    ConsolePageComponent,
+    UserFollowPageComponent,
   ],
   imports: [
     BrowserModule,
-    HttpModule,
     HttpClientModule,
     RouterModule,
     FormsModule,
-    AngularMaterialModule,
+    materialModules,
     FlexLayoutModule,
     BrowserAnimationsModule,
     ComnSettingsModule.forRoot(),
     ComnAuthModule.forRoot(),
-    AkitaNgDevtools.forRoot(),
+    environment.production ? [] : AkitaNgDevtools.forRoot(),
+    AkitaNgRouterStoreModule,
     // App routing order matters; We must import the AppRoutingModule last in order to maintain the wildcard PageNotFoundComponent.
     AppRoutingModule,
   ],
   providers: [
     VmService,
-
     SystemMessageService,
     DialogService,
     NotificationService,
     {
       provide: ErrorHandler,
       useClass: ErrorService,
+    },
+    {
+      provide: BASE_PATH,
+      useFactory: getBasePath,
+      deps: [ComnSettingsService],
     },
   ],
   bootstrap: [AppComponent],
@@ -119,5 +126,11 @@ export class AngularMaterialModule {}
 export class AppModule {}
 
 export function getBasePath(settingsSvc: ComnSettingsService) {
-  return settingsSvc.settings.ApiUrl.replace('/api', '');
+  let url: string = settingsSvc.settings.ConsoleApiUrl;
+
+  if (url.endsWith('/')) {
+    url = url.slice(0, url.length - 1);
+  }
+
+  return url.replace('/api', '');
 }
