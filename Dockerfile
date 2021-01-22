@@ -24,5 +24,6 @@ RUN rm -rf /usr/share/nginx/html/*
 
 ## From ‘builder’ stage copy over the artifacts in dist folder to default nginx public folder
 COPY --from=builder /ng-app/dist /usr/share/nginx/html
+COPY --from=builder /ng-app/nginx-basehref.sh /docker-entrypoint.d/90-basehref.sh
 
 CMD ["nginx", "-g", "daemon off;"]
