@@ -3,7 +3,12 @@
  Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
 -->
 
-<app-console
-  [readOnly]="readOnly$ | async"
-  [vmId]="vmId$ | async"
-></app-console>
+<!-- wait for readOnly http call to evaluate before initializing app-console -->
+<ng-container *ngIf="{ value: readOnly$ | async } as readOnly">
+  <app-console
+    *ngIf="readOnly.value != null"
+    [readOnly]="readOnly.value"
+    [vmId]="vmId$ | async"
+  >
+  </app-console>
+</ng-container>

@@ -12,7 +12,7 @@ import { VmQuery } from '../../state/vm/vm.query';
   styleUrls: ['./console.component.scss'],
 })
 export class ConsoleComponent {
-  @Input() readOnly = false;
+  @Input() readOnly;
 
   @Input() set vmId(value: string) {
     this._vmId = value;
