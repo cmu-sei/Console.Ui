@@ -71,9 +71,11 @@ export class WmksComponent {
       takeWhile(() => !this.isDone)
     );
 
-    this.connectTimerSubscription = connectTimer$.subscribe(() =>
-      this.checkConnected()
-    );
+    this.connectTimerSubscription = connectTimer$.subscribe(() => {
+      if (this.readOnly != null) {
+        this.checkConnected();
+      }
+    });
   }
 
   private checkConnected() {
