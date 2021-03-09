@@ -1,6 +1,7 @@
 // Copyright 2021 Carnegie Mellon University. All Rights Reserved.
 // Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
 
+import { HttpErrorResponse } from '@angular/common/http';
 import {
   Component,
   Input,
@@ -14,7 +15,6 @@ import { ActivatedRoute } from '@angular/router';
 import {
   ComnAuthService,
   ComnSettingsService,
-  Theme,
 } from '@cmusei/crucible-common';
 import { Subject } from 'rxjs';
 import { take, takeUntil } from 'rxjs/operators';
@@ -261,11 +261,12 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
         (response) => {
           this.uploadEnabled = true;
         },
-        (error) => {
+        (error: HttpErrorResponse) => {
+          // error.error.title contains the relevant message
           this.uploadEnabled = false;
-          if (error.error.includes('credentials')) {
+          if (error.error.title.includes('credentials')) {
             this.enableFileUpload('Bad Credentials.  Please try again.');
-          } else if (error.error.includes('parameter')) {
+          } else if (error.error.title.includes('parameter')) {
             this.enableFileUpload('The entered path was not valid.');
           } else {
             this.enableFileUpload('Unhandled error. Please try again.');
