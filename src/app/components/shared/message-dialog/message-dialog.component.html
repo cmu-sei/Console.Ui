@@ -5,6 +5,7 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
 
 <h1 mat-dialog-title>{{ title }}</h1>
 <div class="textarea">{{ message }}</div>
+<mat-spinner *ngIf="data.showSpinnner" style="margin: 0 auto;"></mat-spinner>
 
 <mat-dialog-actions fxLayout="row" fxLayoutAlign="space-around center">
   <button mat-stroked-button (click)="onClick(false)" tabIndex="1">Ok</button>
