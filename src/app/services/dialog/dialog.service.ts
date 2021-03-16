@@ -59,4 +59,8 @@ export class DialogService {
 
     return dialogRef.afterClosed();
   }
+
+  public closeAll() {
+    this.dialog.closeAll();
+  }
 }

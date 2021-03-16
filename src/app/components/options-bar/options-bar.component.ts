@@ -281,14 +281,24 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
       console.log('file selector did not have a value');
       return;
     }
+    this.dialogService.message('File Upload in Progress', '', {
+      showSpinnner: true
+    });
+
     this.uploading = true;
     this.vmService.sendFileToVm(this.vmId, fileSelector.files).subscribe(
       (response) => {
+        this.dialogService.closeAll();
+        this.dialogService.message('File Uploaded Successfully', '');
+
         fileSelector.value = '';
         this.uploading = false;
         console.log(response);
       },
-      (error) => {
+      (error: HttpErrorResponse) => {
+        this.dialogService.closeAll();
+        this.dialogService.message('Error Uploading File', 'Error: ' + error.error.title);
+        
         fileSelector.value = '';
         this.uploading = false;
         console.log(error);
