@@ -46,7 +46,7 @@
   },
   "devDependencies": {
     "@angular-devkit/build-angular": "^0.1102.6",
-    "@angular/cli": "^11.2.6",
+    "@angular/cli": "^11.2.7",
     "@angular/language-service": "^11.2.8",
     "@datorama/akita-ngdevtools": "^6.0.0",
     "@types/jasmine": "~3.6.9",
