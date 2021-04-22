@@ -45,7 +45,7 @@
     "@cmusei/crucible-common": "0.1.0"
   },
   "devDependencies": {
-    "@angular-devkit/build-angular": "^0.1102.9",
+    "@angular-devkit/build-angular": "^0.1102.10",
     "@angular/cli": "^11.2.9",
     "@angular/language-service": "^11.2.11",
     "@datorama/akita-ngdevtools": "^6.0.0",
