@@ -25,5 +25,12 @@
     { "width": 1280, "height": 720 },
     { "width": 1024, "height": 768 },
     { "width": 800, "height": 600 }
+  ],
+  "PasteSpeeds": [
+    { "name": "Fastest", "value": 10 },
+    { "name": "Fast", "value": 30 },
+    { "name": "Normal", "value": 60 },
+    { "name": "Slow", "value": 100 },
+    { "name": "Slowest", "value": 500 }
   ]
 }
