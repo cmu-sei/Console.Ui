@@ -10,7 +10,7 @@
     "automaticSilentRenew": true,
     "silent_redirect_uri": "http://localhost:4305/auth-callback-silent"
   },
-  "UseLocalAuthStorage": true,
+  "UseLocalAuthStorage": false,
   "VmResolutionOptions": [
     { "width": 2560, "height": 1600 },
     { "width": 1920, "height": 1440 },
