@@ -179,7 +179,6 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
       .sendText('Enter Text to Send')
       .subscribe((enteredText: any) => {
         if (enteredText.textToSend) {
-          console.log(enteredText);
           this.paste(enteredText.textToSend, enteredText.timeout);
         }
       });
