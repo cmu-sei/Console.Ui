@@ -177,9 +177,9 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
   sendInputString() {
     this.dialogService
       .sendText('Enter Text to Send')
-      .subscribe((enteredText) => {
-        if (enteredText) {
-          this.vmService.wmks.sendInputString(enteredText);
+      .subscribe((enteredText: any) => {
+        if (enteredText.textToSend) {
+          this.paste(enteredText.textToSend, enteredText.timeout);
         }
       });
   }
@@ -386,10 +386,20 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
   async pasteFromClipboard() {
     try {
       const clip = await navigator.clipboard.readText();
-      this.vmService.wmks.sendInputString(clip);
+      await this.paste(clip);
+      
     } catch (err) {
       // If an error occur trying to read the local clipboard, simply open the input menu.
       this.sendInputString();
+    }
+  }
+
+  async paste(text: string, timeoutStr: string = "50") {
+    const timeout = parseInt(timeoutStr);
+    for (const line of text.split('\n')) {
+      this.vmService.wmks.sendInputString(line);
+      this.vmService.wmks.sendInputString('\n');
+      await new Promise(r => setTimeout(r, timeout));
     }
   }
 

@@ -3,6 +3,7 @@
 
 import { Component, Inject } from '@angular/core';
 import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { ComnSettingsService } from '@cmusei/crucible-common';
 
 @Component({
   selector: 'send-text-dialog',
@@ -12,9 +13,11 @@ import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 export class SendTextDialogComponent {
   public title: string;
   public textToSend: string;
+  public pasteSpeed: string;
 
-  constructor(
-    @Inject(MAT_DIALOG_DATA) data,
+  constructor(    
+    @Inject(MAT_DIALOG_DATA) data,    
+    public settingsService: ComnSettingsService,
     private dialogRef: MatDialogRef<SendTextDialogComponent>
   ) {
     this.dialogRef.disableClose = true;
@@ -25,7 +28,14 @@ export class SendTextDialogComponent {
     this.dialogRef.close(undefined);
   }
 
+  setPasteSpeed(speed: string) {
+    this.pasteSpeed = speed;
+  }
+
   send() {
-    this.dialogRef.close(this.textToSend);
+    this.dialogRef.close({
+      textToSend: this.textToSend,
+      timeout: this.pasteSpeed
+    });
   }
 }
