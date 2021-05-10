@@ -10,7 +10,7 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
     </button>
     <mat-menu #mainMenu="matMenu">
       <div>
-        <button *ngIf="!inFrame" mat-menu-item (click)="fullscreen()">
+        <button mat-menu-item (click)="fullscreen()">
           Fullscreen
         </button>
         <button *ngIf="inFrame" mat-menu-item (click)="openInTab()">
