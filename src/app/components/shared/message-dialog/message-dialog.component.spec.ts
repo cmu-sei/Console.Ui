@@ -9,12 +9,13 @@ describe('MessageDialogComponent', () => {
   let component: MessageDialogComponent;
   let fixture: ComponentFixture<MessageDialogComponent>;
 
-  beforeEach(waitForAsync(() => {
-    TestBed.configureTestingModule({
-      declarations: [ MessageDialogComponent ]
+  beforeEach(
+    waitForAsync(() => {
+      TestBed.configureTestingModule({
+        declarations: [MessageDialogComponent],
+      }).compileComponents();
     })
-    .compileComponents();
-  }));
+  );
 
   beforeEach(() => {
     fixture = TestBed.createComponent(MessageDialogComponent);
@@ -26,4 +27,3 @@ describe('MessageDialogComponent', () => {
     expect(component).toBeTruthy();
   });
 });
-

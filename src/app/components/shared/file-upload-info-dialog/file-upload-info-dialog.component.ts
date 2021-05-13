@@ -5,8 +5,8 @@ import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { Component, Inject } from '@angular/core';
 
 @Component({
-    selector: 'file-upload-info-dialog',
-    templateUrl: './file-upload-info-dialog.component.html'
+  selector: 'file-upload-info-dialog',
+  templateUrl: './file-upload-info-dialog.component.html',
 })
 export class FileUploadInfoDialogComponent {
   public title: string;
@@ -16,7 +16,8 @@ export class FileUploadInfoDialogComponent {
 
   constructor(
     @Inject(MAT_DIALOG_DATA) data,
-    private dialogRef: MatDialogRef<FileUploadInfoDialogComponent>) {
+    private dialogRef: MatDialogRef<FileUploadInfoDialogComponent>
+  ) {
     this.dialogRef.disableClose = true;
   }
 
@@ -25,8 +26,10 @@ export class FileUploadInfoDialogComponent {
   }
 
   done() {
-    this.dialogRef.close({'username': this.username, 'password': this.password, 'filepath': this.filepath});
+    this.dialogRef.close({
+      username: this.username,
+      password: this.password,
+      filepath: this.filepath,
+    });
   }
 }
-
-

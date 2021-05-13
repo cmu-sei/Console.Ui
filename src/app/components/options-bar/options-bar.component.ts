@@ -12,10 +12,7 @@ import {
 } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ActivatedRoute } from '@angular/router';
-import {
-  ComnAuthService,
-  ComnSettingsService,
-} from '@cmusei/crucible-common';
+import { ComnAuthService, ComnSettingsService } from '@cmusei/crucible-common';
 import { Subject } from 'rxjs';
 import { take, takeUntil } from 'rxjs/operators';
 import { VsphereVirtualMachine } from '../../generated/vm-api';
@@ -282,7 +279,7 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
       return;
     }
     this.dialogService.message('File Upload in Progress', '', {
-      showSpinnner: true
+      showSpinnner: true,
     });
 
     this.uploading = true;
@@ -297,8 +294,11 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
       },
       (error: HttpErrorResponse) => {
         this.dialogService.closeAll();
-        this.dialogService.message('Error Uploading File', 'Error: ' + error.error.title);
-        
+        this.dialogService.message(
+          'Error Uploading File',
+          'Error: ' + error.error.title
+        );
+
         fileSelector.value = '';
         this.uploading = false;
         console.log(error);
@@ -387,19 +387,18 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
     try {
       const clip = await navigator.clipboard.readText();
       await this.paste(clip);
-      
     } catch (err) {
       // If an error occur trying to read the local clipboard, simply open the input menu.
       this.sendInputString();
     }
   }
 
-  async paste(text: string, timeoutStr: string = "50") {
+  async paste(text: string, timeoutStr: string = '50') {
     const timeout = parseInt(timeoutStr);
     for (const line of text.split('\n')) {
       this.vmService.wmks.sendInputString(line);
       this.vmService.wmks.sendInputString('\n');
-      await new Promise(r => setTimeout(r, timeout));
+      await new Promise((r) => setTimeout(r, timeout));
     }
   }
 

@@ -9,12 +9,13 @@ describe('SendTextDialogComponent', () => {
   let component: SendTextDialogComponent;
   let fixture: ComponentFixture<SendTextDialogComponent>;
 
-  beforeEach(waitForAsync(() => {
-    TestBed.configureTestingModule({
-      declarations: [ SendTextDialogComponent ]
+  beforeEach(
+    waitForAsync(() => {
+      TestBed.configureTestingModule({
+        declarations: [SendTextDialogComponent],
+      }).compileComponents();
     })
-    .compileComponents();
-  }));
+  );
 
   beforeEach(() => {
     fixture = TestBed.createComponent(SendTextDialogComponent);
@@ -26,4 +27,3 @@ describe('SendTextDialogComponent', () => {
     expect(component).toBeTruthy();
   });
 });
-

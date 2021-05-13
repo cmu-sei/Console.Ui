@@ -9,12 +9,13 @@ describe('WmksComponent', () => {
   let component: WmksComponent;
   let fixture: ComponentFixture<WmksComponent>;
 
-  beforeEach(waitForAsync(() => {
-    TestBed.configureTestingModule({
-      declarations: [ WmksComponent ]
+  beforeEach(
+    waitForAsync(() => {
+      TestBed.configureTestingModule({
+        declarations: [WmksComponent],
+      }).compileComponents();
     })
-    .compileComponents();
-  }));
+  );
 
   beforeEach(() => {
     fixture = TestBed.createComponent(WmksComponent);
@@ -26,4 +27,3 @@ describe('WmksComponent', () => {
     expect(component).toBeTruthy();
   });
 });
-

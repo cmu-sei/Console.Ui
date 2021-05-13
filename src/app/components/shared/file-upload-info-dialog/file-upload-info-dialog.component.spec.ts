@@ -9,12 +9,13 @@ describe('FileUploadInfoDialogComponent', () => {
   let component: FileUploadInfoDialogComponent;
   let fixture: ComponentFixture<FileUploadInfoDialogComponent>;
 
-  beforeEach(waitForAsync(() => {
-    TestBed.configureTestingModule({
-      declarations: [ FileUploadInfoDialogComponent ]
+  beforeEach(
+    waitForAsync(() => {
+      TestBed.configureTestingModule({
+        declarations: [FileUploadInfoDialogComponent],
+      }).compileComponents();
     })
-    .compileComponents();
-  }));
+  );
 
   beforeEach(() => {
     fixture = TestBed.createComponent(FileUploadInfoDialogComponent);
@@ -26,4 +27,3 @@ describe('FileUploadInfoDialogComponent', () => {
     expect(component).toBeTruthy();
   });
 });
-

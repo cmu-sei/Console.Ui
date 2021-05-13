@@ -9,12 +9,13 @@ describe('ConsoleComponent', () => {
   let component: ConsoleComponent;
   let fixture: ComponentFixture<ConsoleComponent>;
 
-  beforeEach(waitForAsync(() => {
-    TestBed.configureTestingModule({
-      declarations: [ ConsoleComponent ]
+  beforeEach(
+    waitForAsync(() => {
+      TestBed.configureTestingModule({
+        declarations: [ConsoleComponent],
+      }).compileComponents();
     })
-    .compileComponents();
-  }));
+  );
 
   beforeEach(() => {
     fixture = TestBed.createComponent(ConsoleComponent);
@@ -26,4 +27,3 @@ describe('ConsoleComponent', () => {
     expect(component).toBeTruthy();
   });
 });
-

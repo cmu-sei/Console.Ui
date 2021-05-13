@@ -6,49 +6,61 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
 <form (ngSubmit)="send()" class="form-area">
   <div class="sendtext" fxLayout="column" fxLayoutAlign="space-around center">
     <div class="topbar-container" fxFill fxLayout="row">
-      <button 
+      <button
         mat-icon-button
         type="button"
         class="mat-small"
         [matMenuTriggerFor]="advancedTextMenu"
         matTooltip="Advanced"
         matTooltipPosition="after"
-        >
+      >
         <mat-icon class="text" svgIcon="gear" alt="Gear"></mat-icon>
       </button>
     </div>
     <mat-menu #advancedTextMenu="matMenu">
       <button
+        type="button"
+        mat-menu-item
+        [matMenuTriggerFor]="pasteMenu"
+        matTooltipPosition="after"
+        aria-label="warning"
+      >
+        <span
+          [matTooltip]="
+            'Delay between sending each line. 
+               Go slower if paste errors are occurring'
+          "
+          matTooltipPosition="above"
+        >
+          Paste Speed
+        </span>
+      </button>
+      <mat-menu #pasteMenu="matMenu">
+        <button
           type="button"
           mat-menu-item
-          [matMenuTriggerFor]="pasteMenu"
-          matTooltipPosition="after"
-          aria-label="warning"
+          *ngFor="let pasteSpeed of settingsService.settings.PasteSpeeds"
+          (click)="setPasteSpeed(pasteSpeed.value)"
         >
-          <span
-            [matTooltip]="
-              'Delay between sending each line. 
-               Go slower if paste errors are occurring'
-            "
-            matTooltipPosition="above"
-          >
-            Paste Speed
-          </span>
+          {{ pasteSpeed.name }}
         </button>
-        <mat-menu #pasteMenu="matMenu">
-          <button
-            type="button"
-            mat-menu-item
-            *ngFor="let pasteSpeed of settingsService.settings.PasteSpeeds"
-            (click)="setPasteSpeed(pasteSpeed.value)"
-          >
-            {{ pasteSpeed.name }}
-          </button>
-        </mat-menu>
       </mat-menu>
-    <h3>{{title}}</h3>
-    <textarea matInput class="text-area" matInput tabIndex="1" name="textToSend" [(ngModel)]="textToSend"></textarea>
-    <mat-dialog-actions style="padding-bottom: 25px;" fxFill fxLayout="row" fxLayoutAlign="space-around center">
+    </mat-menu>
+    <h3>{{ title }}</h3>
+    <textarea
+      matInput
+      class="text-area"
+      matInput
+      tabIndex="1"
+      name="textToSend"
+      [(ngModel)]="textToSend"
+    ></textarea>
+    <mat-dialog-actions
+      style="padding-bottom: 25px"
+      fxFill
+      fxLayout="row"
+      fxLayoutAlign="space-around center"
+    >
       <button mat-stroked-button (click)="close()" tabIndex="2">Cancel</button>
       <button mat-stroked-button (click)="send()" tabindex="3">Send</button>
     </mat-dialog-actions>

@@ -15,8 +15,8 @@ export class SendTextDialogComponent {
   public textToSend: string;
   public pasteSpeed: string;
 
-  constructor(    
-    @Inject(MAT_DIALOG_DATA) data,    
+  constructor(
+    @Inject(MAT_DIALOG_DATA) data,
     public settingsService: ComnSettingsService,
     private dialogRef: MatDialogRef<SendTextDialogComponent>
   ) {
@@ -35,7 +35,7 @@ export class SendTextDialogComponent {
   send() {
     this.dialogRef.close({
       textToSend: this.textToSend,
-      timeout: this.pasteSpeed
+      timeout: this.pasteSpeed,
     });
   }
 }

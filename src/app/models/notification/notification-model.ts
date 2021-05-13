@@ -2,11 +2,10 @@
 // Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
 
 export interface NotificationData {
-    taskId: string;
-    taskName: string;
-    taskType: string;
-    broadcastTime: string;
-    progress: string;
-    state: string;
+  taskId: string;
+  taskName: string;
+  taskType: string;
+  broadcastTime: string;
+  progress: string;
+  state: string;
 }
-

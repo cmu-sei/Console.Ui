@@ -9,12 +9,13 @@ describe('OptionsBarComponent', () => {
   let component: OptionsBarComponent;
   let fixture: ComponentFixture<OptionsBarComponent>;
 
-  beforeEach(waitForAsync(() => {
-    TestBed.configureTestingModule({
-      declarations: [ OptionsBarComponent ]
+  beforeEach(
+    waitForAsync(() => {
+      TestBed.configureTestingModule({
+        declarations: [OptionsBarComponent],
+      }).compileComponents();
     })
-    .compileComponents();
-  }));
+  );
 
   beforeEach(() => {
     fixture = TestBed.createComponent(OptionsBarComponent);
@@ -26,4 +27,3 @@ describe('OptionsBarComponent', () => {
     expect(component).toBeTruthy();
   });
 });
-

@@ -11,12 +11,13 @@ describe('ConsolePageComponent', () => {
   let component: ConsolePageComponent;
   let fixture: ComponentFixture<ConsolePageComponent>;
 
-  beforeEach(waitForAsync(() => {
-    TestBed.configureTestingModule({
-      declarations: [ ConsolePageComponent ]
+  beforeEach(
+    waitForAsync(() => {
+      TestBed.configureTestingModule({
+        declarations: [ConsolePageComponent],
+      }).compileComponents();
     })
-    .compileComponents();
-  }));
+  );
 
   beforeEach(() => {
     fixture = TestBed.createComponent(ConsolePageComponent);
