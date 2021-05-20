@@ -2,21 +2,21 @@
 // Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
 
 /* VENDER IMPORTS */
-@import '~@angular/material/theming';
-@include mat-core();
+@include mat.core();
 /* END VENDER IMPORTS */
 
 /* LOCAL IMPORTS */
+@use '~@angular/material' as mat;
 @import 'theme';
 /* END LOCAL IMPORTS */
 
 .light-theme {
-  @include angular-material-theme($light-theme);
+  @include mat.all-component-themes($light-theme);
   @include globals($light-theme);
 }
 
 .dark-theme {
-  @include angular-material-theme($dark-theme);
+  @include mat.all-component-themes($dark-theme);
   @include globals($dark-theme);
 }
 
