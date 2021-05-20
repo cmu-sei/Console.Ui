@@ -15,20 +15,20 @@
   },
   "private": true,
   "dependencies": {
-    "@angular-devkit/architect": "^0.1102.12",
-    "@angular/animations": "^11.2.11",
+    "@angular-devkit/architect": "^0.1200.1",
+    "@angular/animations": "^12.0.1",
     "@angular/cdk": "^11.2.10",
-    "@angular/common": "^11.2.11",
-    "@angular/compiler": "^11.2.11",
-    "@angular/compiler-cli": "^11.2.11",
-    "@angular/core": "^11.2.11",
-    "@angular/flex-layout": "^11.0.0-beta.33",
-    "@angular/forms": "^11.2.11",
-    "@angular/localize": "^11.2.11",
+    "@angular/common": "^12.0.1",
+    "@angular/compiler": "^12.0.1",
+    "@angular/compiler-cli": "^12.0.1",
+    "@angular/core": "^12.0.1",
+    "@angular/flex-layout": "12.0.0-beta.34",
+    "@angular/forms": "^12.0.1",
+    "@angular/localize": "^12.0.1",
     "@angular/material": "^11.2.10",
-    "@angular/platform-browser": "^11.2.11",
-    "@angular/platform-browser-dynamic": "^11.2.11",
-    "@angular/router": "^11.2.11",
+    "@angular/platform-browser": "^12.0.1",
+    "@angular/platform-browser-dynamic": "^12.0.1",
+    "@angular/router": "^12.0.1",
     "@aspnet/signalr": "1.1.4",
     "@cmusei/crucible-common": "0.1.0",
     "@datorama/akita": "^6.1.3",
@@ -43,12 +43,12 @@
     "rxjs": "^6.6.7",
     "tslib": "^2.2.0",
     "tslint-config-prettier": "^1.18.0",
-    "zone.js": "^0.11.4"
+    "zone.js": "~0.11.4"
   },
   "devDependencies": {
-    "@angular-devkit/build-angular": "^0.1102.12",
-    "@angular/cli": "^11.2.12",
-    "@angular/language-service": "^11.2.13",
+    "@angular-devkit/build-angular": "^12.0.1",
+    "@angular/cli": "^12.0.1",
+    "@angular/language-service": "^12.0.1",
     "@datorama/akita-ngdevtools": "^6.0.0",
     "@types/jasmine": "^3.7.4",
     "@types/jasminewd2": "^2.0.9",
@@ -66,6 +66,6 @@
     "protractor": "^7.0.0",
     "ts-node": "^9.1.1",
     "tslint": "^6.1.3",
-    "typescript": "^4.1.5"
+    "typescript": "^4.2.4"
   }
 }
