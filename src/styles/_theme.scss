@@ -1,6 +1,7 @@
-@use '~@angular/material' as mat;
 // Copyright 2021 Carnegie Mellon University. All Rights Reserved.
 // Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
+@use '~@angular/material' as mat;
+@import '~@angular/material/theming';
 
 $mat-cmu-tartan: (
   50: #ff3838,
@@ -18,20 +19,20 @@ $mat-cmu-tartan: (
   A400: #247,
   A700: #085,
   contrast: (
-    50: rgba(black, 0.87),
-    100: rgba(black, 0.87),
-    200: rgba(black, 0.87),
-    300: rgba(black, 0.87),
-    400: rgba(black, 0.87),
-    500: white,
-    600: white,
-    700: white,
-    800: white,
-    900: white,
-    A100: rgba(black, 0.87),
-    A200: white,
-    A400: white,
-    A700: white,
+    50: $dark-primary-text,
+    100: $dark-primary-text,
+    200: $dark-primary-text,
+    300: $dark-primary-text,
+    400: $dark-primary-text,
+    500: $light-primary-text,
+    600: $light-primary-text,
+    700: $light-primary-text,
+    800: $light-primary-text,
+    900: $light-primary-text,
+    A100: $dark-primary-text,
+    A200: $light-primary-text,
+    A400: $light-primary-text,
+    A700: $light-primary-text,
   ),
 );
 
@@ -46,7 +47,7 @@ $cmu-light-theme-background: (
   expansion-panel: #f1f1f2,
   disabled-button: rgba(black, 0.12),
   raised-button: white,
-  focused-button: rgba(black, 0.12),
+  focused-button: $dark-focused,
   selected-button: map_get(mat.$grey-palette, 300),
   selected-disabled-button: map_get(mat.$grey-palette, 400),
   disabled-button-toggle: map_get(mat.$grey-palette, 200),
@@ -57,13 +58,13 @@ $cmu-light-theme-background: (
 // Foreground palette for light themes.
 $cmu-light-theme-foreground: (
   base: black,
-  divider: rgba(black, 0.12),
-  dividers: rgba(black, 0.12),
-  disabled: rgba(black, 0.38),
+  divider: $dark-dividers,
+  dividers: $dark-dividers,
+  disabled: $dark-disabled-text,
   disabled-button: rgba(black, 0.26),
-  disabled-text: rgba(black, 0.38),
-  hint-text: rgba(black, 0.38),
-  secondary-text: rgba(black, 0.54),
+  disabled-text: $dark-disabled-text,
+  hint-text: $dark-disabled-text,
+  secondary-text: $dark-secondary-text,
   icon: rgba(black, 0.54),
   icons: rgba(black, 0.54),
   text: #242526,
@@ -84,7 +85,7 @@ $cmu-dark-theme-background: (
   disabled-button: rgba(white, 0.12),
   expansion-panel-header: map_get(mat.$grey-palette, 900),
   raised-button: map-get(mat.$grey-palette, 900),
-  focused-button: rgba(white, 0.12),
+  focused-button: $light-focused,
   selected-button: map_get(mat.$grey-palette, 900),
   selected-disabled-button: map_get(mat.$grey-palette, 900),
   disabled-button-toggle: black,
@@ -95,14 +96,14 @@ $cmu-dark-theme-background: (
 // Foreground palette for dark themes.
 $cmu-dark-theme-foreground: (
   base: white,
-  divider: rgba(white, 0.12),
-  dividers: rgba(white, 0.12),
-  disabled: rgba(white, 0.5),
+  divider: $light-dividers,
+  dividers: $light-dividers,
+  disabled: $light-disabled-text,
   button: #5acde6,
   disabled-button: rgba(white, 0.3),
-  disabled-text: rgba(white, 0.5),
-  hint-text: rgba(white, 0.5),
-  secondary-text: rgba(white, 0.7),
+  disabled-text: $light-disabled-text,
+  hint-text: $light-disabled-text,
+  secondary-text: $light-secondary-text,
   icon: #5acde6,
   icons: #5acde6,
   text: #efefef,
