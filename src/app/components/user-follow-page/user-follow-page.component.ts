@@ -58,7 +58,7 @@ export class UserFollowPageComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.leaveUser();
 
-    this.unsubscribe$.next();
+    this.unsubscribe$.next(null);
     this.unsubscribe$.complete();
   }
 
