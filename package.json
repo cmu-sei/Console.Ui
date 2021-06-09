@@ -32,7 +32,7 @@
     "@cmusei/crucible-common": "0.1.0",
     "@datorama/akita": "^6.2.0",
     "@datorama/akita-ng-router-store": "^6.0.0",
-    "@microsoft/signalr": "^5.0.6",
+    "@microsoft/signalr": "^5.0.7",
     "babel-polyfill": "^6.26.0",
     "core-js": "^3.14.0",
     "jquery": "^3.6.0",
