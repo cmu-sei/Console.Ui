@@ -48,7 +48,7 @@
     "@angular-devkit/build-angular": "^12.1.1",
     "@angular/cli": "^12.1.1",
     "@angular/language-service": "^12.1.1",
-    "@datorama/akita-ngdevtools": "^6.0.0",
+    "@datorama/akita-ngdevtools": "^6.0.1",
     "@types/jasmine": "^3.7.8",
     "@types/jasminewd2": "^2.0.10",
     "@types/jquery": "^3.5.6",
