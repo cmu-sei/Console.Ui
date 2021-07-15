@@ -33,8 +33,10 @@ COPY --from=builder /ng-app/dist /usr/share/nginx/html
 
 USER root
 RUN chmod 755 /usr/local/bin/settings-from-env.sh && \
-    chown -R nginx /usr/share/nginx/html/assets/config
+    chown nginx:nginx /usr/share/nginx/html/assets/config
 USER nginx
+
+RUN ls -lah /usr/share/nginx/html/assets
 
 EXPOSE 8080
 
