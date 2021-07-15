@@ -24,7 +24,7 @@ COPY settings-from-env.sh /usr/local/bin
 
 USER root
 RUN chmod 755 /usr/local/bin/settings-from-env.sh && \
-    chown nginx /usr/share/nginx/html/assets/config
+    chown -R nginx /usr/share/nginx/html/assets/config
 RUN rm -rf /usr/share/nginx/html/*
 USER nginx
 
