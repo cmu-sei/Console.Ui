@@ -27,6 +27,7 @@ USER nginx
 
 COPY default.conf /etc/nginx/conf.d/default.conf
 COPY nginx-basehref.sh /docker-entrypoint.d/90-basehref.sh
+COPY settings-from-env.sh /usr/local/bin
 COPY --from=builder /ng-app/dist /usr/share/nginx/html
 
 EXPOSE 8080
