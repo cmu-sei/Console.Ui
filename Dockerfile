@@ -23,7 +23,8 @@ FROM nginxinc/nginx-unprivileged:stable-alpine
 COPY settings-from-env.sh /usr/local/bin
 
 USER root
-RUN chmod 755 /usr/local/bin/settings-from-env.sh
+RUN chmod 755 /usr/local/bin/settings-from-env.sh &&
+    chown nginx:nginx /usr/share/nginx/html/assets/config
 RUN rm -rf /usr/share/nginx/html/*
 USER nginx
 
