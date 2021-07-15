@@ -20,14 +20,15 @@ RUN $(npm bin)/ng build --configuration production
 ### Stage 2: Setup ###
 
 FROM nginxinc/nginx-unprivileged:stable-alpine
+COPY settings-from-env.sh /usr/local/bin
 
 USER root
+RUN chmod 755 /usr/local/bin/settings-from-env.sh
 RUN rm -rf /usr/share/nginx/html/*
 USER nginx
 
 COPY default.conf /etc/nginx/conf.d/default.conf
 COPY nginx-basehref.sh /docker-entrypoint.d/90-basehref.sh
-COPY settings-from-env.sh /usr/local/bin
 COPY --from=builder /ng-app/dist /usr/share/nginx/html
 
 EXPOSE 8080
