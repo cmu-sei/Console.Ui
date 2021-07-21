@@ -31,7 +31,7 @@
     "@angular/router": "^12.1.0",
     "@cmusei/crucible-common": "0.1.1",
     "@datorama/akita": "^6.2.0",
-    "@datorama/akita-ng-router-store": "^6.0.0",
+    "@datorama/akita-ng-router-store": "^6.0.1",
     "@microsoft/signalr": "^5.0.8",
     "babel-polyfill": "^6.26.0",
     "core-js": "^3.15.2",
