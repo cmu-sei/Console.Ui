@@ -29,7 +29,7 @@
     "@angular/platform-browser": "^12.1.0",
     "@angular/platform-browser-dynamic": "^12.1.2",
     "@angular/router": "^12.1.0",
-    "@cmusei/crucible-common": "0.1.0",
+    "@cmusei/crucible-common": "0.1.1",
     "@datorama/akita": "^6.2.0",
     "@datorama/akita-ng-router-store": "^6.0.0",
     "@microsoft/signalr": "^5.0.8",
