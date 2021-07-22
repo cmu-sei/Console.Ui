@@ -21,14 +21,21 @@ RUN $(npm bin)/ng build --configuration production
 
 FROM nginxinc/nginx-unprivileged:stable-alpine
 
+# Clear all original files
 USER root
 RUN rm -rf /usr/share/nginx/html/*
 USER nginx
 
 COPY default.conf /etc/nginx/conf.d/default.conf
-COPY nginx-basehref.sh /docker-entrypoint.d/90-basehref.sh
+COPY scripts/settings-from-env.sh /usr/local/bin
+COPY scripts/nginx-basehref.sh /docker-entrypoint.d/90-basehref.sh
 COPY --from=builder /ng-app/dist /usr/share/nginx/html
+
+USER root
+RUN chmod 755 /usr/local/bin/settings-from-env.sh && \
+    chown nginx:nginx /usr/share/nginx/html/assets/config
+USER nginx
 
 EXPOSE 8080
 
-ENTRYPOINT ["nginx", "-g", "daemon off;"]
+CMD ["nginx", "-g", "daemon off;"]
