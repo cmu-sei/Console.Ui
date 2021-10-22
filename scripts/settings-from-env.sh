@@ -1,4 +1,6 @@
 #!/bin/sh
 set -e
-echo $SETTINGS > /usr/share/nginx/html/assets/config/settings.env.json
-nginx -g "daemon off;"
+FILE=/usr/share/nginx/html/assets/config/settings.env.json
+if [[ ! -e "$FILE" ]] && [[ -w "$FILE" ]]; then 
+  echo $SETTINGS > /usr/share/nginx/html/assets/config/settings.env.json
+fi
