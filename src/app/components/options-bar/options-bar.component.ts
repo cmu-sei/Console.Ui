@@ -25,7 +25,7 @@ import {
 } from '../../models/vm/vm-model';
 import { DialogService } from '../../services/dialog/dialog.service';
 import { NotificationService } from '../../services/notification/notification.service';
-import { VmService } from '../../state/vm/vm.service';
+import { VsphereService } from '../../state/vsphere/vsphere.service';
 
 declare var WMKS: any; // needed to check values
 const MAX_COPY_RETRIES = 1;
@@ -71,7 +71,7 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject();
 
   constructor(
-    public vmService: VmService,
+    public vmService: VsphereService,
     public settingsService: ComnSettingsService,
     private dialogService: DialogService,
     private notificationService: NotificationService,

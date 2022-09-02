@@ -1,0 +1,7 @@
+<ng-container *ngIf="{ value: proxmoxConsole$ | async } as proxmoxConsole">
+  <app-novnc
+    [url]="proxmoxConsole.value?.url"
+    [ticket]="proxmoxConsole.value?.ticket"
+    (reconnect)="getConsole($event)"
+  ></app-novnc>
+</ng-container>

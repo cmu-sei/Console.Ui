@@ -15,7 +15,7 @@ import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { SignalRService } from '../../services/signalr/signalr.service';
 import { UserQuery } from '../../state/user/user.query';
-import { VmQuery } from '../../state/vm/vm.query';
+import { VsphereQuery } from '../../state/vsphere/vsphere.query';
 
 @Component({
   selector: 'app-user-follow-page',
@@ -32,7 +32,7 @@ export class UserFollowPageComponent implements OnInit, OnDestroy {
   constructor(
     private routerQuery: RouterQuery,
     private signalrRService: SignalRService,
-    private vmQuery: VmQuery,
+    private vmQuery: VsphereQuery,
     private userQuery: UserQuery,
     private titleService: Title
   ) {

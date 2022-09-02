@@ -1,0 +1,11 @@
+.center {
+    position: relative;
+    margin: auto;
+    top: 40%;
+    text-align: center;
+}
+
+// novnc element has to have a fixed height when scaleViewport is set
+.screen {
+    height: 97vh;
+}

@@ -1,0 +1,15 @@
+<ng-container *ngIf="{ value: isConnected$ | async } as isConnected">
+  <div [hidden]="!isConnected.value === true">
+    <div #screen id="screen" class="background screen">
+      <!-- This is where the remote screen will appear -->
+    </div>
+  </div>
+
+  <div
+    *ngIf="isConnected.value === false"
+    class="align-items-center center align-content-center"
+    style="width: 70%"
+  >
+    <h1>Connecting...</h1>
+  </div>
+</ng-container>
