@@ -17,8 +17,6 @@ import { map, takeUntil } from 'rxjs/operators';
 import { SignalRService } from '../../services/signalr/signalr.service';
 import { VmQuery } from '../../state/vm/vm.query';
 import { VmService } from '../../state/vm/vm.service';
-import { VsphereQuery } from '../../state/vsphere/vsphere.query';
-import { VsphereService } from '../../state/vsphere/vsphere.service';
 
 @Component({
   selector: 'app-console-page',

@@ -13,7 +13,6 @@ import {
   MountVsphereIso,
   SetVsphereVirtualMachineResolution,
   ValidateVsphereVirtualMachineCredentials,
-  Vm,
   VmsService,
   VsphereService as ApiVsphereService,
   VsphereVirtualMachine,
