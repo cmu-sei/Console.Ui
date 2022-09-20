@@ -3,11 +3,32 @@ Copyright 2021 Carnegie Mellon University. All Rights Reserved.
 Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
 -->
 
-<div class="background">
-  <app-options-bar
-    [readOnly]="readOnly"
-    [vm]="vm$ | async"
-    [vmId]="vmId"
-  ></app-options-bar>
-  <app-wmks [readOnly]="readOnly" [vmId]="vmId"></app-wmks>
+<div class="container background">
+  <ng-container *ngIf="{ value: virtualMachine$ | async } as virtualMachine">
+    <ng-container
+      *ngIf="virtualMachine.value != null"
+      [ngSwitch]="virtualMachine.value.type"
+    >
+      <ng-container *ngSwitchCase="vmType.Proxmox">
+        <app-options-bar2
+          [vm]="virtualMachine.value"
+          [readOnly]="readOnly"
+        ></app-options-bar2>
+        <app-proxmox-console
+          fxFill
+          [vm]="virtualMachine.value"
+          [readOnly]="readOnly"
+        ></app-proxmox-console>
+      </ng-container>
+
+      <ng-container *ngSwitchDefault>
+        <app-options-bar
+          [readOnly]="readOnly"
+          [vm]="vsphereVm$ | async"
+          [vmId]="vmId"
+        ></app-options-bar>
+        <app-wmks [readOnly]="readOnly" [vmId]="vmId"></app-wmks>
+      </ng-container>
+    </ng-container>
+  </ng-container>
 </div>

@@ -8,7 +8,7 @@ import { ComnAuthService } from '@cmusei/crucible-common';
 import * as signalR from '@microsoft/signalr';
 import { BASE_PATH } from '../../generated/vm-api';
 import { UserService } from '../../state/user/user.service';
-import { VmService } from '../../state/vm/vm.service';
+import { VsphereService } from '../../state/vsphere/vsphere.service';
 
 @Injectable({
   providedIn: 'root',
@@ -24,7 +24,7 @@ export class SignalRService {
 
   constructor(
     private authService: ComnAuthService,
-    private vmService: VmService,
+    private vmService: VsphereService,
     private userService: UserService,
     @Inject(BASE_PATH) basePath: string
   ) {

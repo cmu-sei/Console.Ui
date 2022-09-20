@@ -43,12 +43,15 @@ import { DialogService } from './services/dialog/dialog.service';
 import { ErrorService } from './services/error/error.service';
 import { NotificationService } from './services/notification/notification.service';
 import { SystemMessageService } from './services/system-message/system-message.service';
-import { VmService } from './state/vm/vm.service';
+import { VsphereService } from './state/vsphere/vsphere.service';
 import { ConsolePageComponent } from './components/console-page/console-page.component';
 import { UserFollowPageComponent } from './components/user-follow-page/user-follow-page.component';
 import { AkitaNgRouterStoreModule } from '@datorama/akita-ng-router-store';
 import { environment } from '../environments/environment';
 import { BASE_PATH } from './generated/vm-api';
+import { NovncComponent } from './components/novnc/novnc.component';
+import { ProxmoxConsoleComponent } from './components/proxmox/proxmox-console/proxmox-console.component';
+import { OptionsBar2Component } from './components/options-bar2/options-bar2.component';
 
 export const settings: ComnSettingsConfig = {
   url: 'assets/config/settings.json',
@@ -83,6 +86,9 @@ const materialModules = [
     SystemMessageComponent,
     ConsolePageComponent,
     UserFollowPageComponent,
+    NovncComponent,
+    ProxmoxConsoleComponent,
+    OptionsBar2Component,
   ],
   imports: [
     BrowserModule,
@@ -100,7 +106,7 @@ const materialModules = [
     AppRoutingModule,
   ],
   providers: [
-    VmService,
+    VsphereService,
     SystemMessageService,
     DialogService,
     NotificationService,

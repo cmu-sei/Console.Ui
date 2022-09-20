@@ -11,7 +11,7 @@ import {
 import { interval, Subscription } from 'rxjs';
 import { startWith, takeWhile } from 'rxjs/operators';
 import { VmResolution } from '../../models/vm/vm-model';
-import { VmService } from '../../state/vm/vm.service';
+import { VsphereService } from '../../state/vsphere/vsphere.service';
 
 declare var WMKS: any; // needed to check values
 
@@ -41,7 +41,7 @@ export class WmksComponent {
   public isDone = false;
   public showWmks = true;
 
-  constructor(public vmService: VmService) {}
+  constructor(public vmService: VsphereService) {}
 
   private setVmId(value: string) {
     if (this.connectTimerSubscription != null) {

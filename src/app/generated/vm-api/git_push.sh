@@ -1,8 +1,3 @@
-<<LICENSE
- Copyright 2021 Carnegie Mellon University. All Rights Reserved.
- Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
->>
-
 #!/bin/sh
 # ref: https://help.github.com/articles/adding-an-existing-project-to-github-using-the-command-line/
 #

@@ -1,7 +1,7 @@
-/**
- * Copyright 2021 Carnegie Mellon University. All Rights Reserved.
- * Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
- */
+/*
+Copyright 2021 Carnegie Mellon University. All Rights Reserved. 
+ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
+*/
 
 /**
  * Player VM API
@@ -31,6 +31,7 @@ import { Vm } from '../model/models';
 import { VmCreateForm } from '../model/models';
 import { VmMap } from '../model/models';
 import { VmMapCreateForm } from '../model/models';
+import { VmMapUpdateForm } from '../model/models';
 import { VmUpdateForm } from '../model/models';
 
 import { BASE_PATH, COLLECTION_FORMATS }                     from '../variables';
@@ -748,6 +749,57 @@ export class VmsService {
     }
 
     /**
+     * Get a proxmox ticket
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     */
+    public getProxmoxTicket(observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'text/plain' | 'application/json' | 'text/json'}): Observable<string>;
+    public getProxmoxTicket(observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'text/plain' | 'application/json' | 'text/json'}): Observable<HttpResponse<string>>;
+    public getProxmoxTicket(observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'text/plain' | 'application/json' | 'text/json'}): Observable<HttpEvent<string>>;
+    public getProxmoxTicket(observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'text/plain' | 'application/json' | 'text/json'}): Observable<any> {
+
+        let headers = this.defaultHeaders;
+
+        // authentication (oauth2) required
+        if (this.configuration.accessToken) {
+            const accessToken = typeof this.configuration.accessToken === 'function'
+                ? this.configuration.accessToken()
+                : this.configuration.accessToken;
+            headers = headers.set('Authorization', 'Bearer ' + accessToken);
+        }
+
+        let httpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (httpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'text/plain',
+                'application/json',
+                'text/json'
+            ];
+            httpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
+        if (httpHeaderAcceptSelected !== undefined) {
+            headers = headers.set('Accept', httpHeaderAcceptSelected);
+        }
+
+
+        let responseType: 'text' | 'json' = 'json';
+        if(httpHeaderAcceptSelected && httpHeaderAcceptSelected.startsWith('text')) {
+            responseType = 'text';
+        }
+
+        return this.httpClient.get<string>(`${this.configuration.basePath}/api/vms/proxmox`,
+            {
+                responseType: <any>responseType,
+                withCredentials: this.configuration.withCredentials,
+                headers: headers,
+                observe: observe,
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
      * Get a map for a specific team
      * @param teamId The guid of the team to consider
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
@@ -1285,14 +1337,14 @@ export class VmsService {
     /**
      * Update a map
      * @param mapId The guid of the map to update
-     * @param vmMapCreateForm The data of the map to update
+     * @param vmMapUpdateForm The data of the map to update
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public updateMap(mapId: string, vmMapCreateForm?: VmMapCreateForm, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'text/plain' | 'application/json' | 'text/json'}): Observable<VmMap>;
-    public updateMap(mapId: string, vmMapCreateForm?: VmMapCreateForm, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'text/plain' | 'application/json' | 'text/json'}): Observable<HttpResponse<VmMap>>;
-    public updateMap(mapId: string, vmMapCreateForm?: VmMapCreateForm, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'text/plain' | 'application/json' | 'text/json'}): Observable<HttpEvent<VmMap>>;
-    public updateMap(mapId: string, vmMapCreateForm?: VmMapCreateForm, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'text/plain' | 'application/json' | 'text/json'}): Observable<any> {
+    public updateMap(mapId: string, vmMapUpdateForm?: VmMapUpdateForm, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'text/plain' | 'application/json' | 'text/json'}): Observable<VmMap>;
+    public updateMap(mapId: string, vmMapUpdateForm?: VmMapUpdateForm, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'text/plain' | 'application/json' | 'text/json'}): Observable<HttpResponse<VmMap>>;
+    public updateMap(mapId: string, vmMapUpdateForm?: VmMapUpdateForm, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'text/plain' | 'application/json' | 'text/json'}): Observable<HttpEvent<VmMap>>;
+    public updateMap(mapId: string, vmMapUpdateForm?: VmMapUpdateForm, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'text/plain' | 'application/json' | 'text/json'}): Observable<any> {
         if (mapId === null || mapId === undefined) {
             throw new Error('Required parameter mapId was null or undefined when calling updateMap.');
         }
@@ -1339,7 +1391,7 @@ export class VmsService {
         }
 
         return this.httpClient.put<VmMap>(`${this.configuration.basePath}/api/views/maps/${encodeURIComponent(String(mapId))}`,
-            vmMapCreateForm,
+            vmMapUpdateForm,
             {
                 responseType: <any>responseType,
                 withCredentials: this.configuration.withCredentials,

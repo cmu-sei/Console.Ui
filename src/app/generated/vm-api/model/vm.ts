@@ -1,7 +1,7 @@
-/**
- * Copyright 2021 Carnegie Mellon University. All Rights Reserved.
- * Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
- */
+/*
+Copyright 2021 Carnegie Mellon University. All Rights Reserved. 
+ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
+*/
 
 /**
  * Player VM API
@@ -14,6 +14,7 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { VmType } from './vmType';
 import { PowerState } from './powerState';
 import { ConsoleConnectionInfo } from './consoleConnectionInfo';
 
@@ -53,5 +54,6 @@ export interface Vm {
      */
     hasPendingTasks?: boolean;
     consoleConnectionInfo?: ConsoleConnectionInfo;
+    type?: VmType;
 }
 
