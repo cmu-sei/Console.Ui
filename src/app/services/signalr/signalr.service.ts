@@ -120,7 +120,7 @@ export class SignalRService {
   }
 
   private addUserHandlers() {
-    this.hubConnection.on('ActiveVirtualMachine', (vmId: string, userId: string) => {
+    this.hubConnection.on('ActiveVirtualMachine', (vmId: string) => {
       this.vmService.setActive(vmId);
     });
   }
