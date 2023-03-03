@@ -1,8 +1,7 @@
-// Copyright 2021 Carnegie Mellon University. All Rights Reserved.
+// Copyright 2023 Carnegie Mellon University. All Rights Reserved.
 // Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
 
 .options-container {
-  position: absolute;
   width: 100%;
   top: 0px;
   left: 0px;
@@ -54,4 +53,15 @@ a:visited {
   height: 21px;
   line-height: 0px;
   margin-left: 20px;
+}
+
+.item-position-top {
+  position:relative;
+  top:-10px;
+}
+
+.connected-users {
+  font-size: x-small;
+  font-family: 'open_sansregular';
+  margin-right: 5px;
 }

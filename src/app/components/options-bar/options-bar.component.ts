@@ -1,4 +1,4 @@
-// Copyright 2021 Carnegie Mellon University. All Rights Reserved.
+// Copyright 2023 Carnegie Mellon University. All Rights Reserved.
 // Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
 
 import { HttpErrorResponse } from '@angular/common/http';
@@ -13,7 +13,7 @@ import {
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ActivatedRoute } from '@angular/router';
 import { ComnAuthService, ComnSettingsService } from '@cmusei/crucible-common';
-import { Subject } from 'rxjs';
+import { Observable, Subject } from 'rxjs';
 import { take, takeUntil } from 'rxjs/operators';
 import { VsphereVirtualMachine } from '../../generated/vm-api';
 import { NotificationData } from '../../models/notification/notification-model';
@@ -25,6 +25,7 @@ import {
 } from '../../models/vm/vm-model';
 import { DialogService } from '../../services/dialog/dialog.service';
 import { NotificationService } from '../../services/notification/notification.service';
+import { SignalRService } from '../../services/signalr/signalr.service';
 import { VsphereService } from '../../state/vsphere/vsphere.service';
 
 declare var WMKS: any; // needed to check values
@@ -65,8 +66,9 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
   virtualMachineToolsStatus: any;
   currentVmContainerResolution: VmResolution;
   vmResolutionsOptions: VmResolution[];
+  showConnectedUsers = false;
+  currentVmUsers$: Observable<string[]>;
   private isDark = false;
-
   private copyTryCount: number;
   private destroy$ = new Subject();
 
@@ -77,7 +79,8 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
     private notificationService: NotificationService,
     private route: ActivatedRoute,
     private snackBar: MatSnackBar,
-    private authService: ComnAuthService
+    private authService: ComnAuthService,
+    private signalrService: SignalRService
   ) {}
 
   ngOnInit() {
@@ -87,9 +90,11 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
       { width: 800, height: 600 } as VmResolution,
     ];
 
+    this.currentVmUsers$ = this.signalrService.currentVmUsers$.asObservable();
     this.virtualMachineToolsStatus = VirtualMachineToolsStatus;
     this.clipBoardText = '';
     this.copyTryCount = 0;
+    this.showConnectedUsers = true;
 
     this.notificationService.tasksInProgress.subscribe((data) => {
       if (!!data && data.length > 0) {
@@ -434,4 +439,29 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
       .pipe(take(1))
       .subscribe();
   }
+
+  formatConnectedUser(users: string[] = null): string {
+    const MAX_USERS = 2;
+    let output = '';
+    let count = 0;
+    if (users && users.length > 0) {
+      for (const u of users) {
+        if (count >= MAX_USERS) {
+          output += ' and ' + (users.length - MAX_USERS).toString() + 'others...';
+          break;
+        }
+        output += u + ' ';
+        count++;
+      }
+    }
+    if (count > 0) {
+      output = 'Connected: ' + output;
+    }
+    return output;
+  }
+
+  formatConnectedUserToolTip(users: string[] = null): string {
+    return users.toString().replace(/,/g, '\n');
+  }
+
 }
