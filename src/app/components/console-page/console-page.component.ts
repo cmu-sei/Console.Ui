@@ -44,7 +44,7 @@ export class ConsolePageComponent implements OnInit, OnDestroy {
   ngOnInit() {
     this.vmId = this.routerQuery.getParams('id');
 
-    this.signalrRService.startConnection(this.vmId).then(() => {
+    this.signalrRService.startConnection().then(() => {
       if (document.hasFocus()) {
         this.signalrRService.setActiveVirtualMachine(this.vmId);
       }

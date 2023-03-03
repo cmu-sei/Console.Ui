@@ -23,7 +23,6 @@ export class SignalRService {
 
   private userId: string;
   private viewId: string;
-  private vmId: string;
 
   private apiUrl: string;
 
@@ -43,8 +42,7 @@ export class SignalRService {
     this.currentVmUsers$ = new BehaviorSubject<string[]>([]);
   }
 
-  public startConnection(vmId: string = ''): Promise<void> {
-    this.vmId = vmId;
+  public startConnection(): Promise<void> {
 
     if (this.connectionPromise) {
       return this.connectionPromise;
@@ -121,18 +119,16 @@ export class SignalRService {
     this.addCurrentUsersHandlers();
   }
 
-  public addUserHandlers() {
+  private addUserHandlers() {
     this.hubConnection.on('ActiveVirtualMachine', (vmId: string, userId: string) => {
       this.vmService.setActive(vmId);
     });
   }
 
-  public addCurrentUsersHandlers() {
-    if (this.vmId) {
-      this.hubConnection.on('CurrentVirtualMachineUsers', (vmId: string, users: string[]) => {
-        this.currentVmUsers$.next(users);
-      });
-    }
+  private addCurrentUsersHandlers() {
+    this.hubConnection.on('CurrentVirtualMachineUsers', (vmId: string, users: string[]) => {
+      this.currentVmUsers$.next(users);
+    });
   }
 
 }
