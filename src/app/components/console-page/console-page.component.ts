@@ -11,9 +11,10 @@ import {
   OnDestroy,
 } from '@angular/core';
 import { Title } from '@angular/platform-browser';
+import { ComnAuthService } from '@cmusei/crucible-common';
 import { RouterQuery } from '@datorama/akita-ng-router-store';
 import { Observable, Subject } from 'rxjs';
-import { map, takeUntil } from 'rxjs/operators';
+import { map, take, takeUntil } from 'rxjs/operators';
 import { SignalRService } from '../../services/signalr/signalr.service';
 import { VmQuery } from '../../state/vm/vm.query';
 import { VmService } from '../../state/vm/vm.service';
@@ -36,7 +37,8 @@ export class ConsolePageComponent implements OnInit, OnDestroy {
     private signalrRService: SignalRService,
     private vmQuery: VmQuery,
     private titleService: Title,
-    private vmService: VmService
+    private vmService: VmService,
+    private authService: ComnAuthService,
   ) {}
 
   ngOnInit() {

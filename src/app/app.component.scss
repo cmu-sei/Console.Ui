@@ -1,2 +1,44 @@
-// Copyright 2021 Carnegie Mellon University. All Rights Reserved.
+// Copyright 2023 Carnegie Mellon University. All Rights Reserved.
 // Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
+/*
+   Note about src: url() and BaseHref:
+   When using BaseHref SCSS and angular pre-processors do not like relative paths
+   We can escape the angular pre-processors by adding `^` to the start of the URL
+*/
+@font-face {
+    font-family: 'open_sansregular';
+    src: url('^assets/fonts/opensans-regular.woff2') format('woff2'),
+      url('^assets/fonts/opensans-regular.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+  }
+  
+  @font-face {
+    font-family: 'open_sansbold';
+    src: url('^assets/fonts/opensans-bold.woff2') format('woff2'),
+      url('^assets/fonts/opensans-bold.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+  }
+  
+  @font-face {
+    font-family: 'open_sansitalic';
+    src: url('^assets/fonts/opensans-italic.woff2') format('woff2'),
+      url('^assets/fonts/opensans-italic.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+  }
+  
+  body,
+  a {
+    font-family: 'open_sansregular';
+  }
+  
+  b {
+    font-family: 'open_sansbold';
+  }
+  
+  i {
+    font-family: 'open_sansitalic';
+  }
+  

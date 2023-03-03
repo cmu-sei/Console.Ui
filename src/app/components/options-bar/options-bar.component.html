@@ -1,12 +1,13 @@
 <!--
-Copyright 2021 Carnegie Mellon University. All Rights Reserved.
+Copyright 2023 Carnegie Mellon University. All Rights Reserved.
 Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
 -->
 
-<div class="options-container background">
-  <div class="options-content background">
-    <button mat-icon-button class="mat-small" [matMenuTriggerFor]="mainMenu">
+<div class="options-container options-content background" fxLayout="row" >
+  <div fxFlex="5" fxLayoutAlign="start center">
+    <button mat-icon-button class="mat-small item-position-top" [matMenuTriggerFor]="mainMenu">
       <mat-icon class="text" svgIcon="gear" alt="Gear"></mat-icon>
+      <label class="vm-name text">{{ vm?.name }}</label>
     </button>
     <mat-menu #mainMenu="matMenu">
       <div>
@@ -230,33 +231,40 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
         </mat-menu>
       </div>
     </mat-menu>
-
-    <label class="vm-name text">{{ vm?.name }}</label>
+  </div>
+  <div fxFlex="20">
     <span *ngFor="let task of tasksInProgress">
       <label class="vm-name text" *ngIf="task.state !== 'success'"
         >{{ task.taskName }} ... {{ task.progress }}%</label
       >
     </span>
-
-    <div *ngIf="!readOnly" fxFlex fxLayoutAlign="center start">
-      <button
-        mat-stroked-button
-        class="mat-top-button text"
-        title="Copy from Virtual Machine's clipboard"
-        (click)="copyVmClipboard()"
-      >
-        Copy
-        <mat-icon svgIcon="ic_clipboard_copy"></mat-icon>
-      </button>
-      <button
-        mat-stroked-button
-        class="mat-top-button text"
-        title="Paste into the Virtual Machine"
-        (click)="pasteFromClipboard()"
-      >
-        Paste
-        <mat-icon svgIcon="ic_clipboard_paste"></mat-icon>
-      </button>
-    </div>
   </div>
+
+  <div *ngIf="!readOnly" fxFlex="50" fxLayoutAlign="center start">
+    <button
+      mat-stroked-button
+      class="mat-top-button text"
+      title="Copy from Virtual Machine's clipboard"
+      (click)="copyVmClipboard()"
+    >
+      Copy
+      <mat-icon svgIcon="ic_clipboard_copy"></mat-icon>
+    </button>
+    <button
+      mat-stroked-button
+      class="mat-top-button text"
+      title="Paste into the Virtual Machine"
+      (click)="pasteFromClipboard()"
+    >
+      Paste
+      <mat-icon svgIcon="ic_clipboard_paste"></mat-icon>
+    </button>
+  </div>
+
+  <ng-container *ngIf="currentVmUsers$ | async as currentVmUsers">
+    <div *ngIf="showConnectedUsers && !readOnly" fxLayout="row" 
+      fxFlex [title]="formatConnectedUserToolTip(currentVmUsers)" class="item-position-top">
+        <p class="connected-users">{{formatConnectedUser(currentVmUsers)}}</p>
+    </div>
+  </ng-container>
 </div>

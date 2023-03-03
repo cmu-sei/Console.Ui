@@ -1,12 +1,14 @@
 /**
- * Copyright 2021 Carnegie Mellon University. All Rights Reserved.
+ * Copyright 2023 Carnegie Mellon University. All Rights Reserved.
  * Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
  */
 
 import { Inject, Injectable } from '@angular/core';
 import { ComnAuthService } from '@cmusei/crucible-common';
 import * as signalR from '@microsoft/signalr';
+import { BehaviorSubject, Observable } from 'rxjs';
 import { BASE_PATH } from '../../generated/vm-api';
+import { UserQuery } from '../../state/user/user.query';
 import { UserService } from '../../state/user/user.service';
 import { VsphereService } from '../../state/vsphere/vsphere.service';
 
@@ -14,6 +16,8 @@ import { VsphereService } from '../../state/vsphere/vsphere.service';
   providedIn: 'root',
 })
 export class SignalRService {
+
+  public currentVmUsers$: BehaviorSubject<string[]>;
   private hubConnection: signalR.HubConnection;
   private connectionPromise: Promise<void>;
 
@@ -26,6 +30,7 @@ export class SignalRService {
     private authService: ComnAuthService,
     private vmService: VsphereService,
     private userService: UserService,
+    private userQuery: UserQuery,
     @Inject(BASE_PATH) basePath: string
   ) {
     this.apiUrl = basePath;
@@ -33,13 +38,15 @@ export class SignalRService {
     this.authService.user$.subscribe(() => {
       this.reconnect();
     });
+
+    this.currentVmUsers$ = new BehaviorSubject<string[]>([]);
   }
 
   public startConnection(): Promise<void> {
+
     if (this.connectionPromise) {
       return this.connectionPromise;
     }
-
     this.hubConnection = new signalR.HubConnectionBuilder()
       .withUrl(`${this.apiUrl}/hubs/vm`, {
         accessTokenFactory: () => {
@@ -73,6 +80,7 @@ export class SignalRService {
     if (this.userId && this.viewId) {
       this.joinUser(this.userId, this.viewId);
     }
+
   }
 
   public joinUser(userId: string, viewId: string) {
@@ -108,6 +116,7 @@ export class SignalRService {
 
   private addHandlers() {
     this.addUserHandlers();
+    this.addCurrentUsersHandlers();
   }
 
   private addUserHandlers() {
@@ -115,6 +124,13 @@ export class SignalRService {
       this.vmService.setActive(vmId);
     });
   }
+
+  private addCurrentUsersHandlers() {
+    this.hubConnection.on('CurrentVirtualMachineUsers', (vmId: string, users: string[]) => {
+      this.currentVmUsers$.next(users);
+    });
+  }
+
 }
 
 class RetryPolicy {
