@@ -36,7 +36,7 @@ export class ErrorService implements ErrorHandler {
           'The Identity Server could not be reached for user authentication.'
         );
       } else {
-        messageService.displayMessage('Error', err.rejection.message);
+        console.log(err.rejection.message);
       }
     } else {
       console.log(err);
