@@ -2,7 +2,7 @@
 // Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
 
 import { Observable } from 'rxjs';
-import { MatDialogRef, MatDialog } from '@angular/material/dialog';
+import { MatLegacyDialogRef as MatDialogRef, MatLegacyDialog as MatDialog } from '@angular/material/legacy-dialog';
 import { Injectable } from '@angular/core';
 import { MessageDialogComponent } from '../../components/shared/message-dialog/message-dialog.component';
 import { SendTextDialogComponent } from '../../components/shared/send-text-dialog/send-text-dialog.component';
