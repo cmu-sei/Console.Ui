@@ -10,7 +10,7 @@ import {
   Pipe,
   PipeTransform,
 } from '@angular/core';
-import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatLegacySnackBar as MatSnackBar } from '@angular/material/legacy-snack-bar';
 import { ActivatedRoute } from '@angular/router';
 import { ComnAuthService, ComnSettingsService } from '@cmusei/crucible-common';
 import { Observable, Subject } from 'rxjs';
