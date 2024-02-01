@@ -6,14 +6,13 @@
 import { HttpClient } from '@angular/common/http';
 import { Inject, Injectable } from '@angular/core';
 import { BehaviorSubject, interval, Observable } from 'rxjs';
-import { startWith, take, takeWhile, tap } from 'rxjs/operators';
+import { filter, startWith, take, takeWhile, tap } from 'rxjs/operators';
 import {
   BASE_PATH,
   ChangeVsphereVirtualMachineNetwork,
   MountVsphereIso,
   SetVsphereVirtualMachineResolution,
   ValidateVsphereVirtualMachineCredentials,
-  VmsService,
   VsphereService as ApiVsphereService,
   VsphereVirtualMachine,
 } from '../../generated/vm-api';
@@ -47,11 +46,18 @@ export class VsphereService {
     height: 768,
   });
 
+  private connectedSubject = new BehaviorSubject<boolean>(false);
+  public connected$ = this.connectedSubject
+    .asObservable()
+    .pipe(filter((x) => x));
+  public disconnected$ = this.connectedSubject
+    .asObservable()
+    .pipe(filter((x) => !x));
+
   private apiUrl: string;
 
   constructor(
     private http: HttpClient,
-    private vmsService: VmsService,
     private vsphereService: ApiVsphereService,
     private vmStore: VmStore,
     @Inject(BASE_PATH) basePath: string
@@ -179,10 +185,6 @@ export class VsphereService {
           }
 
           if (this.model.ticket) {
-            if (this.wmks != null) {
-              this.wmks.disconnect();
-              this.wmks = null;
-            }
             this.CreateWmks(readOnly);
             const state = this.wmks.getConnectionState();
             if (state === WMKS.CONST.ConnectionState.DISCONNECTED) {
@@ -246,6 +248,7 @@ export class VsphereService {
           this.showError = false;
           this.showLock = false;
           this.model.vmToolsStatus = VirtualMachineToolsStatus.toolsNotRunning;
+          this.connectedSubject.next(true);
 
           interval(10000)
             .pipe(
@@ -279,17 +282,14 @@ export class VsphereService {
 
           // When this.showPoweringOff is false, the disconnect came from the VM shutting itself down
           if (this.showPoweringOff === false) {
-            // This is weird but there is no easy way to reload the wmks after it destroys itself when
-            // a VM shuts itself down.  Wait a few seconds and then reload the page which will trigger
-            // a reconnect to the already shutdown VM
-            setTimeout(() => {
-              console.log('attempt reload');
-              window.location.reload();
-            }, 3000);
+            this.wmks.destroy();
+            this.wmks = null;
           }
+
           this.showPoweringOff = false;
           this.showError = false;
           this.showLock = false;
+          this.connectedSubject.next(false);
           console.log('disconnect complete');
         }
       }
