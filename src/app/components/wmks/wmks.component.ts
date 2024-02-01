@@ -9,7 +9,7 @@ import {
   ViewChild,
 } from '@angular/core';
 import { interval, Subscription } from 'rxjs';
-import { startWith, takeWhile } from 'rxjs/operators';
+import { repeat, startWith, takeUntil, takeWhile } from 'rxjs/operators';
 import { VmResolution } from '../../models/vm/vm-model';
 import { VsphereService } from '../../state/vsphere/vsphere.service';
 
@@ -38,7 +38,6 @@ export class WmksComponent {
   @ViewChild('wmksContainer') wmksContainer: ElementRef;
 
   public progressMessage = 'Loading ...';
-  public isDone = false;
   public showWmks = true;
 
   constructor(public vmService: VsphereService) {}
@@ -49,6 +48,7 @@ export class WmksComponent {
     }
 
     if (this.vmService.wmks != null) {
+      this.vmService.wmks.destroy();
       this.vmService.wmks.unregister();
       this.vmService.wmks.disconnect();
       this.vmService.wmks = null;
@@ -59,7 +59,6 @@ export class WmksComponent {
     this.showWmks = true;
 
     this._vmId = value;
-    this.isDone = false;
 
     this.connect();
   }
@@ -68,7 +67,8 @@ export class WmksComponent {
     // This interval will fire every 5 seconds
     const connectTimer$ = interval(5000).pipe(
       startWith(0),
-      takeWhile(() => !this.isDone)
+      takeUntil(this.vmService.connected$),
+      repeat({ delay: () => this.vmService.disconnected$ })
     );
 
     this.connectTimerSubscription = connectTimer$.subscribe(() => {
@@ -83,7 +83,6 @@ export class WmksComponent {
     if (!this.vmService.wmks) {
       if (this.vmService.model.state === '0') {
         this.progressMessage = 'The VM Console API is currently not reachable.';
-        this.isDone = true;
       } else if (this.progressMessage.startsWith('The VM API')) {
         this.progressMessage = 'Loading ...';
       }
@@ -92,15 +91,17 @@ export class WmksComponent {
     } else {
       console.log('Connected');
       this.progressMessage = 'Loading ...';
-      const state = this.vmService.wmks.getConnectionState();
+      let state = this.vmService.wmks.getConnectionState();
       console.log('state=' + state);
 
       if (state === WMKS.CONST.ConnectionState.DISCONNECTED) {
         this.vmService.connect(this.vmId, this.readOnly);
+        state = this.vmService.wmks.getConnectionState();
       }
 
-      this.isDone = true;
-      this.onResize();
+      if (state === WMKS.CONST.ConnectionState.CONNECTED) {
+        this.onResize();
+      }
     }
   }
 

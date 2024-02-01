@@ -8,9 +8,11 @@
     "response_type": "code",
     "scope": "openid profile player player-vm",
     "automaticSilentRenew": true,
-    "silent_redirect_uri": "http://localhost:4305/auth-callback-silent"
+    "silent_redirect_uri": "http://localhost:4301/auth-callback-silent.html",
+    "redirectMethod": "replace"
   },
   "UseLocalAuthStorage": false,
+  "DebugLogging": false,
   "VmResolutionOptions": [
     { "width": 2560, "height": 1600 },
     { "width": 1920, "height": 1440 },
