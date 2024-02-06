@@ -6,11 +6,24 @@ import { Observable } from 'rxjs';
 import { Vm, VmType, VsphereVirtualMachine } from '../../generated/vm-api';
 import { VmService } from '../../state/vm/vm.service';
 import { VsphereQuery } from '../../state/vsphere/vsphere.query';
+import { AsyncPipe } from '@angular/common';
+import { WmksComponent } from '../wmks/wmks.component';
+import { OptionsBarComponent } from '../options-bar/options-bar.component';
+import { ProxmoxConsoleComponent } from '../proxmox/proxmox-console/proxmox-console.component';
+import { OptionsBar2Component } from '../options-bar2/options-bar2.component';
 
 @Component({
   selector: 'app-console',
   templateUrl: './console.component.html',
   styleUrls: ['./console.component.scss'],
+  standalone: true,
+  imports: [
+    OptionsBar2Component,
+    ProxmoxConsoleComponent,
+    OptionsBarComponent,
+    WmksComponent,
+    AsyncPipe,
+  ],
 })
 export class ConsoleComponent {
   @Input() readOnly;
@@ -36,6 +49,6 @@ export class ConsoleComponent {
 
   constructor(
     private vsphereQuery: VsphereQuery,
-    private vmService: VmService
+    private vmService: VmService,
   ) {}
 }

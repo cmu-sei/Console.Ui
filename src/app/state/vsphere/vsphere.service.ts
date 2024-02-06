@@ -60,7 +60,7 @@ export class VsphereService {
     private http: HttpClient,
     private vsphereService: ApiVsphereService,
     private vmStore: VmStore,
-    @Inject(BASE_PATH) basePath: string
+    @Inject(BASE_PATH) basePath: string,
   ) {
     this.apiUrl = basePath;
   }
@@ -118,7 +118,7 @@ export class VsphereService {
 
     return this.vsphereService.validateVsphereVirtualMachineCredentials(
       id,
-      data
+      data,
     );
   }
 
@@ -133,7 +133,7 @@ export class VsphereService {
     console.log('sending ' + files.length.toString() + ' files to the api');
     return this.http.post(
       `${this.apiUrl}/api/vms/vsphere/${id}/actions/upload-file`,
-      formData
+      formData,
     );
   }
 
@@ -200,7 +200,7 @@ export class VsphereService {
           this.model.name = 'Virtual Machine';
           this.model.id = id; // make sure that we dont lose the id
           this.model.state = error.message;
-        }
+        },
       );
   }
 
@@ -256,8 +256,8 @@ export class VsphereService {
               takeWhile(
                 () =>
                   this.model.vmToolsStatus ===
-                  VirtualMachineToolsStatus.toolsNotRunning
-              )
+                  VirtualMachineToolsStatus.toolsNotRunning,
+              ),
             )
             .subscribe(() => {
               this.checkForVmTools(this.model.id)
@@ -292,7 +292,7 @@ export class VsphereService {
           this.connectedSubject.next(false);
           console.log('disconnect complete');
         }
-      }
+      },
     );
 
     // Register the COPY event from the VM.
@@ -317,7 +317,7 @@ export class VsphereService {
       },
       () => {
         console.log('error sending poweron console API');
-      }
+      },
     );
   }
 
@@ -337,7 +337,7 @@ export class VsphereService {
       },
       () => {
         console.log('error sending poweroff to console API');
-      }
+      },
     );
   }
 
@@ -350,7 +350,7 @@ export class VsphereService {
       () => {
         console.log('error sending reboot to console API');
         this.model.ticket = null;
-      }
+      },
     );
   }
 
@@ -362,7 +362,7 @@ export class VsphereService {
       () => {
         console.log('error sending reboot to console API');
         this.model.ticket = null;
-      }
+      },
     );
   }
 
@@ -387,5 +387,16 @@ export class VsphereService {
       width: resolution.width,
     };
     return this.vsphereService.setVsphereVirtualMachineResolution(id, data);
+  }
+
+  public disconnect() {
+    if (this.wmks != null) {
+      this.wmks.destroy();
+      this.wmks.unregister();
+      // this.wmks.disconnect();
+      this.wmks = null;
+    }
+
+    this.connectedSubject.next(false);
   }
 }

@@ -1,67 +1,15 @@
 // Copyright 2023 Carnegie Mellon University. All Rights Reserved.
 // Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
 
-.options-container {
-  width: 100%;
-  top: 0px;
-  left: 0px;
-  z-index: 99;
-  padding-bottom: 1px;
-}
-
-.options-content {
-  margin-top: 10px;
-  margin-bottom: 10px;
-}
-
-a:visited {
-  color: black;
-}
-
-.mat-expansion-panel-header {
-  display: flex;
-  flex-direction: column;
-}
-
-.vm-name {
-  font-size: small;
-  margin-left: 10px;
-}
-
-.left {
-  float: left;
-  padding-bottom: 8px;
-}
-
-.mat-icon-button.mat-small {
-  line-height: 16px;
-  height: 16px;
-  width: 16px;
-  margin-top: 2px;
-  margin-left: 10px;
-  display: inline-block;
-  z-index: 1;
-}
-
-.mat-icon {
-  height: 18px;
-  width: 18px;
-}
-
-.mat-top-button {
+.clipboard-button {
   font-size: x-small;
-  height: 21px;
+  height: 21px !important;
   line-height: 0px;
   margin-left: 20px;
 }
 
-.item-position-top {
-  position:relative;
-  top:-10px;
-}
-
 .connected-users {
   font-size: x-small;
-  font-family: 'open_sansregular';
+  font-family: open_sansregular;
   margin-right: 5px;
 }

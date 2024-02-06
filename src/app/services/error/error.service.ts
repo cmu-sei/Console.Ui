@@ -24,7 +24,7 @@ export class ErrorService implements ErrorHandler {
       ) {
         messageService.displayMessage(
           'VM API Error',
-          'The VM Console API could not be reached.'
+          'The VM Console API could not be reached.',
         );
       } else {
         messageService.displayMessage(err.statusText, err.message);
@@ -33,7 +33,7 @@ export class ErrorService implements ErrorHandler {
       if (err.rejection.message === 'Network Error') {
         messageService.displayMessage(
           'Identity Server Error',
-          'The Identity Server could not be reached for user authentication.'
+          'The Identity Server could not be reached for user authentication.',
         );
       } else {
         console.log(err.rejection.message);

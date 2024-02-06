@@ -13,9 +13,8 @@ describe('NovncComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ NovncComponent ]
-    })
-    .compileComponents();
+      imports: [NovncComponent],
+    }).compileComponents();
   });
 
   beforeEach(() => {

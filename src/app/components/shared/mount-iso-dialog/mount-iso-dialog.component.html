@@ -3,57 +3,68 @@ Copyright 2021 Carnegie Mellon University. All Rights Reserved.
 Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
 -->
 
-<div mat-dialog-title>
-  <label>Select the file to mount ...&nbsp;&nbsp;&nbsp;</label>
+<div
+  mat-dialog-title
+  class="d-flex align-items-baseline justify-content-center"
+>
+  <label class="me-2">Select the file to mount</label>
   <mat-form-field>
-    <input
-      name="isoSearch"
-      matInput
-      (keyup)="onSearch($event.target.value)"
-      placeholder="Search"
-    />
+    <mat-label>Search</mat-label>
+    <input name="isoSearch" matInput (keyup)="onSearch($event.target.value)" />
   </mat-form-field>
 </div>
 <div style="overflow: scroll; height: 350px">
   <mat-selection-list #selectedIsos>
-    <div *ngFor="let result of isoResults">
-      <button mat-button (click)="result.hide = !result.hide">
-        <b
-          >{{ result.viewName }} Files ({{ result.isos.length }})
-          {{ result.hide ? '^' : '>' }}</b
-        >
-      </button>
-      <span *ngIf="!result.hide">
-        <mat-list-option
-          *ngFor="let iso of result.display"
-          [selected]="iso === selectedIso"
-          (click)="selectThisIso(iso)"
-        >
-          <h4 matLine>{{ iso.filename }}</h4>
-        </mat-list-option>
-      </span>
-      <div *ngFor="let teamResult of result.teamIsoResults">
-        <button mat-button (click)="teamResult.hide = !teamResult.hide">
+    @for (result of isoResults; track result) {
+      <div>
+        <button mat-button (click)="result.hide = !result.hide">
           <b
-            >{{ teamResult.teamName }} Files ({{ teamResult.isos.length }})
-            {{ teamResult.hide ? '^' : '>' }}</b
+            >{{ result.viewName }} Files ({{ result.isos.length }})
+            {{ result.hide ? '^' : '>' }}</b
           >
         </button>
-        <span *ngIf="!teamResult.hide">
-          <mat-list-option
-            *ngFor="let iso of teamResult.display"
-            [selected]="iso === selectedIso"
-            (click)="selectThisIso(iso)"
-          >
-            <h4 matLine>{{ iso.filename }}</h4>
-          </mat-list-option>
-        </span>
+        @if (!result.hide) {
+          <span>
+            @for (iso of result.display; track iso) {
+              <mat-list-option
+                [selected]="iso === selectedIso"
+                (click)="selectThisIso(iso)"
+                title="{{ iso.filename }}"
+              >
+                {{ iso.filename }}
+              </mat-list-option>
+            }
+          </span>
+        }
+        @for (teamResult of result.teamIsoResults; track teamResult) {
+          <div>
+            <button mat-button (click)="teamResult.hide = !teamResult.hide">
+              <b
+                >{{ teamResult.teamName }} Files ({{ teamResult.isos.length }})
+                {{ teamResult.hide ? '^' : '>' }}</b
+              >
+            </button>
+            @if (!teamResult.hide) {
+              <span>
+                @for (iso of teamResult.display; track iso) {
+                  <mat-list-option
+                    [selected]="iso === selectedIso"
+                    (click)="selectThisIso(iso)"
+                    title="{{ iso.filename }}"
+                  >
+                    {{ iso.filename }}
+                  </mat-list-option>
+                }
+              </span>
+            }
+          </div>
+        }
+        <mat-divider></mat-divider>
       </div>
-      <mat-divider></mat-divider>
-    </div>
+    }
   </mat-selection-list>
 </div>
-<mat-dialog-actions fxLayout="row" fxLayoutAlign="space-around center">
+<mat-dialog-actions class="justify-content-around">
   <button mat-stroked-button (click)="close()" tabIndex="4">Cancel</button>
   <button mat-stroked-button (click)="done()" tabindex="5">Mount</button>
 </mat-dialog-actions>

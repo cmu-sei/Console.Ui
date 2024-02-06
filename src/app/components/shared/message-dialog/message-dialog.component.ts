@@ -2,12 +2,21 @@
 // Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
 
 import { Component, Inject } from '@angular/core';
-import { MatLegacyDialogRef as MatDialogRef, MAT_LEGACY_DIALOG_DATA as MAT_DIALOG_DATA } from '@angular/material/legacy-dialog';
+import {
+  MatDialogRef,
+  MAT_DIALOG_DATA,
+  MatDialogTitle,
+  MatDialogActions,
+} from '@angular/material/dialog';
+import { MatButton } from '@angular/material/button';
+import { MatProgressSpinner } from '@angular/material/progress-spinner';
 
 @Component({
   selector: 'message-dialog',
   templateUrl: './message-dialog.component.html',
   styleUrls: ['./message-dialog.component.scss'],
+  standalone: true,
+  imports: [MatDialogTitle, MatProgressSpinner, MatDialogActions, MatButton],
 })
 export class MessageDialogComponent {
   public title: string;
@@ -15,7 +24,7 @@ export class MessageDialogComponent {
   public removeArtifacts: boolean = true;
   constructor(
     @Inject(MAT_DIALOG_DATA) public data: any,
-    public dialogRef: MatDialogRef<MessageDialogComponent>
+    public dialogRef: MatDialogRef<MessageDialogComponent>,
   ) {
     this.dialogRef.disableClose = true;
   }

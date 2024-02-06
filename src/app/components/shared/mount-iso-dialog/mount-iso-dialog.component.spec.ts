@@ -9,13 +9,11 @@ describe('MountIsoDialogComponent', () => {
   let component: MountIsoDialogComponent;
   let fixture: ComponentFixture<MountIsoDialogComponent>;
 
-  beforeEach(
-    waitForAsync(() => {
-      TestBed.configureTestingModule({
-        declarations: [MountIsoDialogComponent],
-      }).compileComponents();
-    })
-  );
+  beforeEach(waitForAsync(() => {
+    TestBed.configureTestingModule({
+      imports: [MountIsoDialogComponent],
+    }).compileComponents();
+  }));
 
   beforeEach(() => {
     fixture = TestBed.createComponent(MountIsoDialogComponent);

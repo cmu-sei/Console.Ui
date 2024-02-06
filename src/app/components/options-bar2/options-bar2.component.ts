@@ -11,12 +11,17 @@ import {
 } from '@angular/core';
 import { Vm, VmType } from '../../generated/vm-api';
 import { VmService } from '../../state/vm/vm.service';
+import { MatIcon } from '@angular/material/icon';
+import { MatMenuTrigger, MatMenu, MatMenuItem } from '@angular/material/menu';
+import { MatIconButton } from '@angular/material/button';
 
 @Component({
   selector: 'app-options-bar2',
   templateUrl: './options-bar2.component.html',
   styleUrls: ['./options-bar2.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  standalone: true,
+  imports: [MatIconButton, MatMenuTrigger, MatIcon, MatMenu, MatMenuItem],
 })
 export class OptionsBar2Component implements OnInit {
   // Generic Options Bar - Will eventually replace OptionsBarComponent

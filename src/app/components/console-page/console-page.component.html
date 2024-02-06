@@ -1,14 +1,12 @@
 <!--
- Copyright 2021 Carnegie Mellon University. All Rights Reserved.
- Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
+Copyright 2021 Carnegie Mellon University. All Rights Reserved.
+Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
 -->
 
 <!-- wait for readOnly http call to evaluate before initializing app-console -->
-<ng-container *ngIf="{ value: readOnly$ | async } as readOnly">
-  <app-console
-    *ngIf="readOnly.value != null"
-    [readOnly]="readOnly.value"
-    [vmId]="vmId$ | async"
-  >
-  </app-console>
-</ng-container>
+@if ({ value: readOnly$ | async }; as readOnly) {
+  @if (readOnly.value != null) {
+    <app-console [readOnly]="readOnly.value" [vmId]="vmId$ | async">
+    </app-console>
+  }
+}

@@ -4,18 +4,17 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
 -->
 
 <form (ngSubmit)="send()" class="form-area">
-  <div class="sendtext" fxLayout="column" fxLayoutAlign="space-around center">
-    <div class="topbar-container" fxFill fxLayout="row">
+  <div class="d-flex flex-column align-items-center">
+    <div matDialogTitle class="d-flex align-items-center">
       <button
         mat-icon-button
         type="button"
-        class="mat-small"
+        class="z-3"
         [matMenuTriggerFor]="advancedTextMenu"
-        matTooltip="Advanced"
-        matTooltipPosition="after"
       >
-        <mat-icon class="text" svgIcon="gear" alt="Gear"></mat-icon>
+        <mat-icon svgIcon="gear" alt="Gear"></mat-icon>
       </button>
+      <h3>{{ title }}</h3>
     </div>
     <mat-menu #advancedTextMenu="matMenu">
       <button
@@ -36,17 +35,20 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
         </span>
       </button>
       <mat-menu #pasteMenu="matMenu">
-        <button
-          type="button"
-          mat-menu-item
-          *ngFor="let pasteSpeed of settingsService.settings.PasteSpeeds"
-          (click)="setPasteSpeed(pasteSpeed.value)"
-        >
-          {{ pasteSpeed.name }}
-        </button>
+        @for (
+          pasteSpeed of settingsService.settings.PasteSpeeds;
+          track pasteSpeed
+        ) {
+          <button
+            type="button"
+            mat-menu-item
+            (click)="setPasteSpeed(pasteSpeed.value)"
+          >
+            {{ pasteSpeed.name }}
+          </button>
+        }
       </mat-menu>
     </mat-menu>
-    <h3>{{ title }}</h3>
     <textarea
       matInput
       class="text-area"
@@ -55,12 +57,7 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
       name="textToSend"
       [(ngModel)]="textToSend"
     ></textarea>
-    <mat-dialog-actions
-      style="padding-bottom: 25px"
-      fxFill
-      fxLayout="row"
-      fxLayoutAlign="space-around center"
-    >
+    <mat-dialog-actions class="w-100 pb-3 justify-content-evenly">
       <button mat-stroked-button (click)="close()" tabIndex="2">Cancel</button>
       <button mat-stroked-button (click)="send()" tabindex="3">Send</button>
     </mat-dialog-actions>

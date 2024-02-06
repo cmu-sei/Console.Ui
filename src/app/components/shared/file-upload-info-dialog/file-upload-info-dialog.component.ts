@@ -1,12 +1,31 @@
 // Copyright 2021 Carnegie Mellon University. All Rights Reserved.
 // Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
 
-import { MAT_LEGACY_DIALOG_DATA as MAT_DIALOG_DATA, MatLegacyDialogRef as MatDialogRef } from '@angular/material/legacy-dialog';
+import {
+  MAT_DIALOG_DATA,
+  MatDialogRef,
+  MatDialogTitle,
+  MatDialogActions,
+} from '@angular/material/dialog';
 import { Component, Inject } from '@angular/core';
+import { MatButton } from '@angular/material/button';
+import { MatInput } from '@angular/material/input';
+import { MatFormField, MatLabel } from '@angular/material/form-field';
+import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'file-upload-info-dialog',
   templateUrl: './file-upload-info-dialog.component.html',
+  standalone: true,
+  imports: [
+    MatDialogTitle,
+    FormsModule,
+    MatFormField,
+    MatLabel,
+    MatInput,
+    MatDialogActions,
+    MatButton,
+  ],
 })
 export class FileUploadInfoDialogComponent {
   public title: string;
@@ -16,7 +35,7 @@ export class FileUploadInfoDialogComponent {
 
   constructor(
     @Inject(MAT_DIALOG_DATA) data,
-    private dialogRef: MatDialogRef<FileUploadInfoDialogComponent>
+    private dialogRef: MatDialogRef<FileUploadInfoDialogComponent>,
   ) {
     this.dialogRef.disableClose = true;
   }

@@ -1,239 +1,50 @@
 // Copyright 2021 Carnegie Mellon University. All Rights Reserved.
 // Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
-@use '@angular/material' as mat;
-@import '@angular/material/theming';
 
-$mat-cmu-tartan: (
-  50: #ff3838,
-  100: #ebb3b3,
-  200: #e00,
-  300: #d00,
-  400: #c00,
-  500: #b00,
-  600: #a00,
-  700: #900,
-  800: #800,
-  900: #700,
-  A100: #a60,
-  A200: #067,
-  A400: #247,
-  A700: #085,
-  contrast: (
-    50: $dark-primary-text,
-    100: $dark-primary-text,
-    200: $dark-primary-text,
-    300: $dark-primary-text,
-    400: $dark-primary-text,
-    500: $light-primary-text,
-    600: $light-primary-text,
-    700: $light-primary-text,
-    800: $light-primary-text,
-    900: $light-primary-text,
-    A100: $dark-primary-text,
-    A200: $light-primary-text,
-    A400: $light-primary-text,
-    A700: $light-primary-text,
-  ),
+// Define the palettes for your theme using the Material Design palettes available in palette.scss
+// (imported above). For each palette, you can optionally specify a default, lighter, and darker
+// hue. Available color palettes: https://material.io/design/color/
+
+// Light theme
+$light-primary: mat.define-palette(mat.$red-palette);
+$light-accent: mat.define-palette(mat.$blue-palette, A200, A100, A400);
+
+// The warn palette is optional (defaults to red).
+$light-warn: mat.define-palette(mat.$red-palette);
+
+// Create the theme object. A theme consists of configurations for individual
+// theming systems such as "color" or "typography".
+$light-theme: mat.define-light-theme(
+  (
+    color: (
+      primary: $light-primary,
+      accent: $light-accent,
+      warn: $light-warn,
+    ),
+  )
 );
 
-// Background palette for light themes.
-$cmu-light-theme-background: (
-  status-bar: map_get(mat.$grey-palette, 300),
-  app-bar: white,
-  background: #f1f1f2,
-  hover: map-get(mat.$grey-palette, 300),
-  card: #f1f1f2,
-  dialog: white,
-  expansion-panel: #f1f1f2,
-  disabled-button: rgba(black, 0.12),
-  raised-button: white,
-  focused-button: $dark-focused,
-  selected-button: map_get(mat.$grey-palette, 300),
-  selected-disabled-button: map_get(mat.$grey-palette, 400),
-  disabled-button-toggle: map_get(mat.$grey-palette, 200),
-  unselected-chip: map_get(mat.$grey-palette, 300),
-  disabled-list-option: #f1f1f2,
+// Dark theme
+$dark-primary: mat.define-palette(mat.$red-palette);
+$dark-accent: mat.define-palette(mat.$blue-palette, A200, A100, A400);
+
+// The warn palette is optional (defaults to red).
+$dark-warn: mat.define-palette(mat.$red-palette);
+
+// Create the theme object. A theme consists of configurations for individual
+// theming systems such as "color" or "typography".
+$dark-theme: mat.define-dark-theme(
+  (
+    color: (
+      primary: $dark-primary,
+      accent: $dark-accent,
+      warn: $dark-warn,
+    ),
+  )
 );
 
-// Foreground palette for light themes.
-$cmu-light-theme-foreground: (
-  base: black,
-  divider: $dark-dividers,
-  dividers: $dark-dividers,
-  disabled: $dark-disabled-text,
-  disabled-button: rgba(black, 0.26),
-  disabled-text: $dark-disabled-text,
-  hint-text: $dark-disabled-text,
-  secondary-text: $dark-secondary-text,
-  icon: rgba(black, 0.54),
-  icons: rgba(black, 0.54),
-  text: #242526,
-  slider-min: rgba(black, 0.87),
-  slider-off: rgba(black, 0.26),
-  slider-off-active: rgba(black, 0.38),
-);
+@include mat.all-component-themes($light-theme);
 
-// Background palette for dark themes.
-$cmu-dark-theme-background: (
-  status-bar: black,
-  app-bar: map_get(mat.$grey-palette, 900),
-  background: #373739,
-  hover: map_get(mat.$gray-palette, 800),
-  card: map_get(mat.$grey-palette, 900),
-  dialog: map_get(mat.$grey-palette, 900),
-  button: map_get($mat-cmu-tartan, default),
-  disabled-button: rgba(white, 0.12),
-  expansion-panel-header: map_get(mat.$grey-palette, 900),
-  raised-button: map-get(mat.$grey-palette, 900),
-  focused-button: $light-focused,
-  selected-button: map_get(mat.$grey-palette, 900),
-  selected-disabled-button: map_get(mat.$grey-palette, 900),
-  disabled-button-toggle: black,
-  unselected-chip: map_get(mat.$grey-palette, 700),
-  disabled-list-option: map_get(mat.$grey-palette, 900),
-);
-
-// Foreground palette for dark themes.
-$cmu-dark-theme-foreground: (
-  base: white,
-  divider: $light-dividers,
-  dividers: $light-dividers,
-  disabled: $light-disabled-text,
-  button: #5acde6,
-  disabled-button: rgba(white, 0.3),
-  disabled-text: $light-disabled-text,
-  hint-text: $light-disabled-text,
-  secondary-text: $light-secondary-text,
-  icon: #5acde6,
-  icons: #5acde6,
-  text: #efefef,
-  slider-min: white,
-  slider-off: rgba(white, 0.3),
-  slider-off-active: rgba(white, 0.3),
-);
-
-$custom-colors: (
-  top-bar-bg: #373739,
-);
-
-// Creates a container object for a light theme to be given to individual component theme mixins.
-@function cmu-theme(
-  $primary,
-  $accent,
-  $warn: mat.define-palette(mat.$red-palette),
-  $foreground: mat.$light-theme-foreground-palette,
-  $background: mat.$dark-theme-background-palette,
-  $isDark: false,
-  $custom: null
-) {
-  @return (
-    primary: $primary,
-    accent: $accent,
-    warn: $warn,
-    is-dark: $isDark,
-    foreground: $foreground,
-    background: $background,
-    custom: $custom
-  );
+.dark-theme {
+  @include mat.all-component-colors($dark-theme);
 }
-
-$custom-typography: mat.define-legacy-typography-config(
-  $font-family: '"Open Sans", sans-serif',
-);
-@include mat.all-legacy-component-typographies($custom-typography);
-
-//globals mixin for edge cases.
-@mixin globals($theme) {
-  $primary: map-get($theme, primary);
-  $accent: map-get($theme, accent);
-  $warn: map-get($theme, warn);
-  $foreground: map-get($theme, foreground);
-  $background: map-get($theme, 'background');
-
-  .icon-35px {
-    height: 35px;
-    width: 35px;
-  }
-
-  .icon-24px {
-    height: 24px;
-    width: 24px;
-  }
-
-  .icon-20px {
-    height: 20px;
-    width: 20px;
-  }
-
-  .icon-color {
-    color: map-get($theme, 'text');
-  }
-
-  .selected {
-    background: mat.get-color-from-palette($primary);
-    &:hover,
-    &:focus {
-      background: mat.get-color-from-palette($primary) !important;
-    }
-  }
-
-  .disabled-text {
-    color: map-get($foreground, disabled-text);
-  }
-
-  .warn-text {
-    color: mat.get-color-from-palette($warn);
-  }
-
-  .background {
-    background-color: map-get($background, 'background');
-  }
-
-  .highlight {
-    &:hover,
-    &:focus {
-      background: map-get($background, hover);
-    }
-  }
-
-  .text {
-    color: map-get($foreground, 'text');
-  }
-
-  .mat-tooltip {
-    background-color: map-get($background, hover);
-    color: map-get($foreground, text);
-  }
-
-  .no-outline {
-    outline: none;
-  }
-
-  a {
-    color: map-get($foreground, text);
-    &:hover,
-    &:focus {
-      color: map-get($foreground, disabled);
-    }
-  }
-}
-
-$primary: mat.define-palette($mat-cmu-tartan);
-$accent: mat.define-palette($mat-cmu-tartan, A400, A200, A700);
-$warn: mat.define-palette(mat.$red-palette);
-
-$light-theme: cmu-theme(
-  $primary,
-  $accent,
-  $warn,
-  $cmu-light-theme-foreground,
-  $cmu-light-theme-background
-);
-$dark-theme: cmu-theme(
-  $primary,
-  $accent,
-  $warn,
-  $cmu-dark-theme-foreground,
-  $cmu-dark-theme-background,
-  true
-);

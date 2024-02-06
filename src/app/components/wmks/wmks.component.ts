@@ -6,12 +6,15 @@ import {
   ElementRef,
   HostListener,
   Input,
+  OnDestroy,
+  OnInit,
   ViewChild,
 } from '@angular/core';
 import { interval, Subscription } from 'rxjs';
 import { repeat, startWith, takeUntil, takeWhile } from 'rxjs/operators';
 import { VmResolution } from '../../models/vm/vm-model';
 import { VsphereService } from '../../state/vsphere/vsphere.service';
+import { MatIcon } from '@angular/material/icon';
 
 declare var WMKS: any; // needed to check values
 
@@ -19,8 +22,10 @@ declare var WMKS: any; // needed to check values
   selector: 'app-wmks',
   templateUrl: './wmks.component.html',
   styleUrls: ['./wmks.component.scss'],
+  standalone: true,
+  imports: [MatIcon],
 })
-export class WmksComponent {
+export class WmksComponent implements OnInit, OnDestroy {
   @Input() readOnly: boolean;
 
   @Input() set vmId(value: string) {
@@ -42,33 +47,12 @@ export class WmksComponent {
 
   constructor(public vmService: VsphereService) {}
 
-  private setVmId(value: string) {
-    if (this.connectTimerSubscription != null) {
-      this.connectTimerSubscription.unsubscribe();
-    }
-
-    if (this.vmService.wmks != null) {
-      this.vmService.wmks.destroy();
-      this.vmService.wmks.unregister();
-      this.vmService.wmks.disconnect();
-      this.vmService.wmks = null;
-    }
-
-    // destroy and re-create the wmksContainer
-    this.showWmks = false;
-    this.showWmks = true;
-
-    this._vmId = value;
-
-    this.connect();
-  }
-
-  private connect() {
+  ngOnInit(): void {
     // This interval will fire every 5 seconds
     const connectTimer$ = interval(5000).pipe(
       startWith(0),
       takeUntil(this.vmService.connected$),
-      repeat({ delay: () => this.vmService.disconnected$ })
+      repeat({ delay: () => this.vmService.disconnected$ }),
     );
 
     this.connectTimerSubscription = connectTimer$.subscribe(() => {
@@ -77,6 +61,28 @@ export class WmksComponent {
       }
     });
   }
+
+  ngOnDestroy(): void {
+    if (this.connectTimerSubscription != null) {
+      this.connectTimerSubscription.unsubscribe();
+    }
+  }
+
+  private setVmId(value: string) {
+    if (this.connectTimerSubscription != null) {
+      this.connectTimerSubscription.unsubscribe();
+    }
+
+    // destroy and re-create the wmksContainer
+    this.showWmks = false;
+    this.showWmks = true;
+
+    this._vmId = value;
+
+    this.vmService.disconnect();
+  }
+
+  private connect() {}
 
   private checkConnected() {
     this.progressMessage = this.progressMessage + '...';

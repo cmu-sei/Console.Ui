@@ -8,7 +8,7 @@
     "response_type": "code",
     "scope": "openid profile player player-vm",
     "automaticSilentRenew": true,
-    "silent_redirect_uri": "http://localhost:4301/auth-callback-silent.html",
+    "silent_redirect_uri": "http://localhost:4305/auth-callback-silent.html",
     "redirectMethod": "replace"
   },
   "UseLocalAuthStorage": false,

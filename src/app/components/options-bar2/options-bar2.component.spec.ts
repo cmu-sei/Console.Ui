@@ -13,9 +13,8 @@ describe('OptionsBar2Component', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ OptionsBar2Component ]
-    })
-    .compileComponents();
+      imports: [OptionsBar2Component],
+    }).compileComponents();
   });
 
   beforeEach(() => {

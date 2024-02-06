@@ -7,12 +7,16 @@ import { Component, ChangeDetectionStrategy, Input } from '@angular/core';
 import { Observable } from 'rxjs';
 import { delay } from 'rxjs/operators';
 import { ProxmoxConsole, ProxmoxService, Vm } from '../../../generated/vm-api';
+import { AsyncPipe } from '@angular/common';
+import { NovncComponent } from '../../novnc/novnc.component';
 
 @Component({
   selector: 'app-proxmox-console',
   templateUrl: './proxmox-console.component.html',
   styleUrls: ['./proxmox-console.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  standalone: true,
+  imports: [NovncComponent, AsyncPipe],
 })
 export class ProxmoxConsoleComponent {
   @Input() readOnly = false;

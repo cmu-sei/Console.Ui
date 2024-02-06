@@ -16,11 +16,14 @@ import {
 } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 import { NoVNCService } from '../../services/novnc/novnc.service';
+import { AsyncPipe } from '@angular/common';
 
 @Component({
   selector: 'app-novnc',
   templateUrl: './novnc.component.html',
   styleUrls: ['./novnc.component.scss'],
+  standalone: true,
+  imports: [AsyncPipe],
 })
 export class NovncComponent implements OnChanges, AfterViewInit {
   @Input() ticket: string;
@@ -44,7 +47,7 @@ export class NovncComponent implements OnChanges, AfterViewInit {
 
   ngAfterViewInit() {
     this.backgroundColor = getComputedStyle(
-      this.screen.nativeElement
+      this.screen.nativeElement,
     ).backgroundColor;
   }
 
@@ -64,13 +67,13 @@ export class NovncComponent implements OnChanges, AfterViewInit {
       ticket,
       'screen',
       this.readOnly,
-      this.backgroundColor
+      this.backgroundColor,
     );
 
     this.novncService.setConnectListener(this.connected.bind(this));
     this.novncService.setDisconnectListener(this.disconnected.bind(this));
     this.novncService.setSecurityFailureListener(
-      this.securityFailure.bind(this)
+      this.securityFailure.bind(this),
     );
   }
 
