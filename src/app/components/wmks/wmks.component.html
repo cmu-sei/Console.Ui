@@ -10,14 +10,6 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
     class="wmksContainer background"
     (window:resize)="onResize()"
   >
-    @if (this.vmService.showLoading) {
-      <div
-        class="align-items-center center align-content-center"
-        style="width: 70%"
-      >
-        <h1>{{ progressMessage }}</h1>
-      </div>
-    }
     @if (this.vmService.showPoweringOff) {
       <div
         class="align-items-center center align-content-center"
@@ -25,27 +17,31 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
       >
         <h1>Shutting Down... Please wait...</h1>
       </div>
-    }
-    @if (this.vmService.showPower) {
+    } @else if (this.vmService.showPower) {
       <mat-icon
         class="center"
         svgIcon="ic_power_settings_new_black_48px"
         alt="Off"
       ></mat-icon>
-    }
-    @if (this.vmService.showError) {
+    } @else if (this.vmService.showError) {
       <mat-icon
         class="center"
         svgIcon="ic_error_outline_black_48px"
         alt="Error"
       ></mat-icon>
-    }
-    @if (this.vmService.showLock) {
+    } @else if (this.vmService.showLock) {
       <mat-icon
         class="center"
         svgIcon="ic_lock_outline_black_48px"
         alt="Unauthorized"
       ></mat-icon>
+    } @else if (this.vmService.disconnected$ | async) {
+      <div
+        class="align-items-center center align-content-center"
+        style="width: 70%"
+      >
+        <h1>{{ progressMessage }}</h1>
+      </div>
     }
   </div>
 }
