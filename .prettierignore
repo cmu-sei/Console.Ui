@@ -2,3 +2,4 @@
 **/dist
 .github
 src/app/generated
+*.min.js
