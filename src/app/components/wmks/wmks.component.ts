@@ -15,6 +15,7 @@ import { repeat, startWith, takeUntil, takeWhile } from 'rxjs/operators';
 import { VmResolution } from '../../models/vm/vm-model';
 import { VsphereService } from '../../state/vsphere/vsphere.service';
 import { MatIcon } from '@angular/material/icon';
+import { AsyncPipe } from '@angular/common';
 
 declare var WMKS: any; // needed to check values
 
@@ -23,7 +24,7 @@ declare var WMKS: any; // needed to check values
   templateUrl: './wmks.component.html',
   styleUrls: ['./wmks.component.scss'],
   standalone: true,
-  imports: [MatIcon],
+  imports: [MatIcon, AsyncPipe],
 })
 export class WmksComponent implements OnInit, OnDestroy {
   @Input() readOnly: boolean;
@@ -42,7 +43,7 @@ export class WmksComponent implements OnInit, OnDestroy {
 
   @ViewChild('wmksContainer') wmksContainer: ElementRef;
 
-  public progressMessage = 'Loading ...';
+  public progressMessage = 'Connecting ...';
   public showWmks = true;
 
   constructor(public vmService: VsphereService) {}
@@ -82,21 +83,19 @@ export class WmksComponent implements OnInit, OnDestroy {
     this.vmService.disconnect();
   }
 
-  private connect() {}
-
   private checkConnected() {
     this.progressMessage = this.progressMessage + '...';
     if (!this.vmService.wmks) {
       if (this.vmService.model.state === '0') {
         this.progressMessage = 'The VM Console API is currently not reachable.';
       } else if (this.progressMessage.startsWith('The VM API')) {
-        this.progressMessage = 'Loading ...';
+        this.progressMessage = 'Connecting ...';
       }
       this.vmService.connect(this.vmId, this.readOnly);
       console.log('The vm state is ' + this.vmService.model.state);
     } else {
       console.log('Connected');
-      this.progressMessage = 'Loading ...';
+      this.progressMessage = 'Connecting ...';
       let state = this.vmService.wmks.getConnectionState();
       console.log('state=' + state);
 

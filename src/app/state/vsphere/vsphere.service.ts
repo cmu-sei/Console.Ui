@@ -6,7 +6,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Inject, Injectable } from '@angular/core';
 import { BehaviorSubject, interval, Observable } from 'rxjs';
-import { filter, startWith, take, takeWhile, tap } from 'rxjs/operators';
+import { filter, map, startWith, take, takeWhile, tap } from 'rxjs/operators';
 import {
   BASE_PATH,
   ChangeVsphereVirtualMachineNetwork,
@@ -47,12 +47,14 @@ export class VsphereService {
   });
 
   private connectedSubject = new BehaviorSubject<boolean>(false);
-  public connected$ = this.connectedSubject
-    .asObservable()
-    .pipe(filter((x) => x));
-  public disconnected$ = this.connectedSubject
-    .asObservable()
-    .pipe(filter((x) => !x));
+  public connected$ = this.connectedSubject.asObservable().pipe(
+    filter((x) => x),
+    map(() => true),
+  );
+  public disconnected$ = this.connectedSubject.asObservable().pipe(
+    filter((x) => !x),
+    map(() => true),
+  );
 
   private apiUrl: string;
 
@@ -274,18 +276,7 @@ export class VsphereService {
           this.showError = false;
           this.showLock = false;
         } else if (data.state === WMKS.CONST.ConnectionState.DISCONNECTED) {
-          // console.log('connection state change : disconnected');
-          // we should not connect if we sent poweroff
-          if (this.showPower === false) {
-            this.showLoading = true;
-          }
-
-          // When this.showPoweringOff is false, the disconnect came from the VM shutting itself down
-          if (this.showPoweringOff === false) {
-            this.wmks.destroy();
-            this.wmks = null;
-          }
-
+          this.disconnect();
           this.showPoweringOff = false;
           this.showError = false;
           this.showLock = false;
@@ -326,10 +317,6 @@ export class VsphereService {
       (response) => {
         if (response === 'poweroff submitted') {
           this.showPoweringOff = true;
-          // Wait before submitting the destroy to allow events from wmks to finish.
-          setTimeout(() => {
-            this.wmks.destroy();
-          }, 1000);
         } else if (response === 'already off') {
         } else if (response === 'poweroff error') {
           console.log('poweroff error received');
