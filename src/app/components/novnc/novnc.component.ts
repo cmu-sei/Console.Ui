@@ -75,6 +75,7 @@ export class NovncComponent implements OnChanges, AfterViewInit {
     this.novncService.setSecurityFailureListener(
       this.securityFailure.bind(this),
     );
+    this.novncService.setClipboardListener(this.clipboardEvent.bind(this));
   }
 
   connected(e) {
@@ -98,5 +99,10 @@ export class NovncComponent implements OnChanges, AfterViewInit {
 
   securityFailure(e) {
     console.log(e);
+  }
+
+  async clipboardEvent(e) {
+    console.log(e);
+    await navigator.clipboard.writeText(e.detail.text);
   }
 }
