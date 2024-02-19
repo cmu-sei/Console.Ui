@@ -53,4 +53,16 @@ export class VmService {
         break;
     }
   }
+
+  async sendClipboardText(id: string) {
+    const vm = this.vmQuery.getEntity(id);
+
+    const text = await navigator.clipboard.readText();
+
+    switch (vm.type) {
+      case 'Proxmox':
+        this.proxmoxService.sendClipboardText(text);
+        break;
+    }
+  }
 }

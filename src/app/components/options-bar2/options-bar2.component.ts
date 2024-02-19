@@ -44,4 +44,8 @@ export class OptionsBar2Component implements OnInit {
   public ctrlAltDel() {
     this.vmService.sendCtrlAltDel(this.vm.id);
   }
+
+  public sendClipboardText() {
+    this.vmService.sendClipboardText(this.vm.id);
+  }
 }

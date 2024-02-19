@@ -15,4 +15,8 @@ export class ProxmoxService {
   public sendCtrlAltDel() {
     this.novncService.sendCtrlAltDel();
   }
+
+  public sendClipboardText(text: string) {
+    this.novncService.sendClipboardText(text);
+  }
 }

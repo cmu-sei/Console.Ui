@@ -51,7 +51,15 @@ export class NoVNCService {
     this.rfb.addEventListener('securityfailure', func);
   }
 
+  public setClipboardListener(func: Function) {
+    this.rfb.addEventListener('clipboard', func);
+  }
+
   public sendCtrlAltDel() {
     this.rfb.sendCtrlAltDel();
+  }
+
+  public sendClipboardText(text: string) {
+    this.rfb.clipboardPasteFrom(text);
   }
 }
