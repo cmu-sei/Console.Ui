@@ -13,9 +13,8 @@ describe('ProxmoxConsoleComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ ProxmoxConsoleComponent ]
-    })
-    .compileComponents();
+      imports: [ProxmoxConsoleComponent],
+    }).compileComponents();
   });
 
   beforeEach(() => {

@@ -2,7 +2,7 @@
 // Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
 
 import { Observable } from 'rxjs';
-import { MatLegacyDialogRef as MatDialogRef, MatLegacyDialog as MatDialog } from '@angular/material/legacy-dialog';
+import { MatDialogRef, MatDialog } from '@angular/material/dialog';
 import { Injectable } from '@angular/core';
 import { MessageDialogComponent } from '../../components/shared/message-dialog/message-dialog.component';
 import { SendTextDialogComponent } from '../../components/shared/send-text-dialog/send-text-dialog.component';
@@ -17,7 +17,7 @@ export class DialogService {
   public message(
     title: string,
     message: string,
-    data?: any
+    data?: any,
   ): Observable<boolean> {
     let dialogRef: MatDialogRef<MessageDialogComponent>;
     dialogRef = this.dialog.open(MessageDialogComponent, { data: data || {} });
@@ -37,12 +37,12 @@ export class DialogService {
 
   public getFileUploadInfo(
     title: string,
-    configData?: any
+    configData?: any,
   ): Observable<boolean> {
     let dialogRef: MatDialogRef<FileUploadInfoDialogComponent>;
     dialogRef = this.dialog.open(
       FileUploadInfoDialogComponent,
-      configData || {}
+      configData || {},
     );
     dialogRef.componentInstance.title = title;
 
@@ -51,7 +51,7 @@ export class DialogService {
 
   public mountIso(
     isoResult: IsoResult[],
-    configData?: any
+    configData?: any,
   ): Observable<IsoFile> {
     let dialogRef: MatDialogRef<MountIsoDialogComponent>;
     dialogRef = this.dialog.open(MountIsoDialogComponent, configData || {});

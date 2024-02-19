@@ -11,13 +11,11 @@ describe('UserFollowPageComponent', () => {
   let component: UserFollowPageComponent;
   let fixture: ComponentFixture<UserFollowPageComponent>;
 
-  beforeEach(
-    waitForAsync(() => {
-      TestBed.configureTestingModule({
-        declarations: [UserFollowPageComponent],
-      }).compileComponents();
-    })
-  );
+  beforeEach(waitForAsync(() => {
+    TestBed.configureTestingModule({
+      imports: [UserFollowPageComponent],
+    }).compileComponents();
+  }));
 
   beforeEach(() => {
     fixture = TestBed.createComponent(UserFollowPageComponent);

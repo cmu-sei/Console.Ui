@@ -12,7 +12,7 @@ export class NotificationService {
   private apiUrl: string;
   public progressConnection: signalR.HubConnection;
   public tasksInProgress = new BehaviorSubject<Array<NotificationData>>(
-    new Array<NotificationData>()
+    new Array<NotificationData>(),
   );
 
   constructor(@Inject(BASE_PATH) basePath: string) {
@@ -42,10 +42,10 @@ export class NotificationService {
       })
       .catch(() => {
         console.log(
-          'Error while establishing Progress connection with the VM Console API.'
+          'Error while establishing Progress connection with the VM Console API.',
         );
         throw new Error(
-          'Error while establishing Progress connection with the VM Console API.'
+          'Error while establishing Progress connection with the VM Console API.',
         );
       });
   }
@@ -55,11 +55,11 @@ class RetryPolicy {
   constructor(
     private maxSeconds: number,
     private minJitterSeconds: number,
-    private maxJitterSeconds: number
+    private maxJitterSeconds: number,
   ) {}
 
   nextRetryDelayInMilliseconds(
-    retryContext: signalR.RetryContext
+    retryContext: signalR.RetryContext,
   ): number | null {
     let nextRetrySeconds = Math.pow(2, retryContext.previousRetryCount + 1);
 
@@ -69,7 +69,7 @@ class RetryPolicy {
 
     nextRetrySeconds +=
       Math.floor(
-        Math.random() * (this.maxJitterSeconds - this.minJitterSeconds + 1)
+        Math.random() * (this.maxJitterSeconds - this.minJitterSeconds + 1),
       ) + this.minJitterSeconds; // Add Jitter
 
     return nextRetrySeconds * 1000;

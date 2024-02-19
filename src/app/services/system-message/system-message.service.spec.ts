@@ -16,6 +16,6 @@ describe('SystemMessageService', () => {
     [SystemMessageService],
     (service: SystemMessageService) => {
       expect(service).toBeTruthy();
-    }
+    },
   ));
 });

@@ -9,13 +9,11 @@ describe('OptionsBarComponent', () => {
   let component: OptionsBarComponent;
   let fixture: ComponentFixture<OptionsBarComponent>;
 
-  beforeEach(
-    waitForAsync(() => {
-      TestBed.configureTestingModule({
-        declarations: [OptionsBarComponent],
-      }).compileComponents();
-    })
-  );
+  beforeEach(waitForAsync(() => {
+    TestBed.configureTestingModule({
+      imports: [OptionsBarComponent],
+    }).compileComponents();
+  }));
 
   beforeEach(() => {
     fixture = TestBed.createComponent(OptionsBarComponent);

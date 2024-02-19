@@ -16,12 +16,16 @@ import { takeUntil } from 'rxjs/operators';
 import { SignalRService } from '../../services/signalr/signalr.service';
 import { UserQuery } from '../../state/user/user.query';
 import { VsphereQuery } from '../../state/vsphere/vsphere.query';
+import { AsyncPipe } from '@angular/common';
+import { ConsoleComponent } from '../console/console.component';
 
 @Component({
   selector: 'app-user-follow-page',
   templateUrl: './user-follow-page.component.html',
   styleUrls: ['./user-follow-page.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  standalone: true,
+  imports: [ConsoleComponent, AsyncPipe],
 })
 export class UserFollowPageComponent implements OnInit, OnDestroy {
   vmId$ = this.vmQuery.selectActiveId();
@@ -34,7 +38,7 @@ export class UserFollowPageComponent implements OnInit, OnDestroy {
     private signalrRService: SignalRService,
     private vmQuery: VsphereQuery,
     private userQuery: UserQuery,
-    private titleService: Title
+    private titleService: Title,
   ) {
     titleService.setTitle('Following...');
   }

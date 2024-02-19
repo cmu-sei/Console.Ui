@@ -16,7 +16,6 @@ import { VsphereService } from '../../state/vsphere/vsphere.service';
   providedIn: 'root',
 })
 export class SignalRService {
-
   public currentVmUsers$: BehaviorSubject<string[]>;
   private hubConnection: signalR.HubConnection;
   private connectionPromise: Promise<void>;
@@ -31,7 +30,7 @@ export class SignalRService {
     private vmService: VsphereService,
     private userService: UserService,
     private userQuery: UserQuery,
-    @Inject(BASE_PATH) basePath: string
+    @Inject(BASE_PATH) basePath: string,
   ) {
     this.apiUrl = basePath;
 
@@ -43,7 +42,6 @@ export class SignalRService {
   }
 
   public startConnection(): Promise<void> {
-
     if (this.connectionPromise) {
       return this.connectionPromise;
     }
@@ -80,7 +78,6 @@ export class SignalRService {
     if (this.userId && this.viewId) {
       this.joinUser(this.userId, this.viewId);
     }
-
   }
 
   public joinUser(userId: string, viewId: string) {
@@ -126,22 +123,24 @@ export class SignalRService {
   }
 
   private addCurrentUsersHandlers() {
-    this.hubConnection.on('CurrentVirtualMachineUsers', (vmId: string, users: string[]) => {
-      this.currentVmUsers$.next(users);
-    });
+    this.hubConnection.on(
+      'CurrentVirtualMachineUsers',
+      (vmId: string, users: string[]) => {
+        this.currentVmUsers$.next(users);
+      },
+    );
   }
-
 }
 
 class RetryPolicy {
   constructor(
     private maxSeconds: number,
     private minJitterSeconds: number,
-    private maxJitterSeconds: number
+    private maxJitterSeconds: number,
   ) {}
 
   nextRetryDelayInMilliseconds(
-    retryContext: signalR.RetryContext
+    retryContext: signalR.RetryContext,
   ): number | null {
     let nextRetrySeconds = Math.pow(2, retryContext.previousRetryCount + 1);
 
@@ -151,7 +150,7 @@ class RetryPolicy {
 
     nextRetrySeconds +=
       Math.floor(
-        Math.random() * (this.maxJitterSeconds - this.minJitterSeconds + 1)
+        Math.random() * (this.maxJitterSeconds - this.minJitterSeconds + 1),
       ) + this.minJitterSeconds; // Add Jitter
 
     return nextRetrySeconds * 1000;

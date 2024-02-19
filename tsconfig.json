@@ -2,14 +2,13 @@
   "compileOnSave": false,
   "compilerOptions": {
     "outDir": "./dist/out-tsc",
+    "esModuleInterop": true,
     "sourceMap": true,
     "declaration": false,
     "moduleResolution": "node",
     "experimentalDecorators": true,
     "target": "ES2022",
-    "typeRoots": [
-      "node_modules/@types"
-    ],
+    "typeRoots": ["node_modules/@types"],
     "useDefineForClassFields": false
   }
 }

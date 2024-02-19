@@ -10,7 +10,7 @@ import {
   Pipe,
   PipeTransform,
 } from '@angular/core';
-import { MatLegacySnackBar as MatSnackBar } from '@angular/material/legacy-snack-bar';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { ActivatedRoute } from '@angular/router';
 import { ComnAuthService, ComnSettingsService } from '@cmusei/crucible-common';
 import { Observable, Subject } from 'rxjs';
@@ -27,11 +27,19 @@ import { DialogService } from '../../services/dialog/dialog.service';
 import { NotificationService } from '../../services/notification/notification.service';
 import { SignalRService } from '../../services/signalr/signalr.service';
 import { VsphereService } from '../../state/vsphere/vsphere.service';
+import { AsyncPipe } from '@angular/common';
+import { MatTooltip } from '@angular/material/tooltip';
+import { MatIcon } from '@angular/material/icon';
+import { MatMenuTrigger, MatMenu, MatMenuItem } from '@angular/material/menu';
+import { MatIconButton, MatButton } from '@angular/material/button';
 
 declare var WMKS: any; // needed to check values
 const MAX_COPY_RETRIES = 1;
 
-@Pipe({ name: 'keys' })
+@Pipe({
+  name: 'keys',
+  standalone: true,
+})
 export class KeysPipe implements PipeTransform {
   transform(value, args: string[]): any {
     const keys = [];
@@ -45,6 +53,18 @@ export class KeysPipe implements PipeTransform {
   selector: 'app-options-bar',
   templateUrl: './options-bar.component.html',
   styleUrls: ['./options-bar.component.scss'],
+  standalone: true,
+  imports: [
+    MatIconButton,
+    MatMenuTrigger,
+    MatIcon,
+    MatMenu,
+    MatMenuItem,
+    MatTooltip,
+    MatButton,
+    AsyncPipe,
+    KeysPipe,
+  ],
 })
 export class OptionsBarComponent implements OnInit, OnDestroy {
   @Input() vm: VsphereVirtualMachine;
@@ -80,7 +100,7 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
     private route: ActivatedRoute,
     private snackBar: MatSnackBar,
     private authService: ComnAuthService,
-    private signalrService: SignalRService
+    private signalrService: SignalRService,
   ) {}
 
   ngOnInit() {
@@ -103,7 +123,7 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
     });
     this.notificationService.connectToProgressHub(
       this.vmId,
-      this.authService.getAuthorizationToken()
+      this.authService.getAuthorizationToken(),
     );
 
     this.inFrame = this.inIframe();
@@ -233,7 +253,7 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
     ) {
       this.dialogService.message(
         'Alert!',
-        'Action requires VMware Tools to be running!'
+        'Action requires VMware Tools to be running!',
       );
       this.uploadEnabled = false;
       return;
@@ -273,7 +293,7 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
           } else {
             this.enableFileUpload('Unhandled error. Please try again.');
           }
-        }
+        },
       );
     });
   }
@@ -301,13 +321,13 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
         this.dialogService.closeAll();
         this.dialogService.message(
           'Error Uploading File',
-          'Error: ' + error.error.title
+          'Error: ' + error.error.title,
         );
 
         fileSelector.value = '';
         this.uploading = false;
         console.log(error);
-      }
+      },
     );
   }
 
@@ -324,15 +344,15 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
         this.publicIsos = [];
         this.teamIsos = [];
         this.retrievingIsos = false;
-      }
+      },
     );
   }
 
   mountIso(isoResult: IsoResult[]) {
     // select the iso
     const configData = {
-      width: '500px',
-      height: '540px',
+      width: '600px',
+      height: '500px',
     };
     this.dialogService.mountIso(isoResult, configData).subscribe((result) => {
       if (!result) {
@@ -345,7 +365,7 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
           // refresh the vm model
           (model: VmModel) => {
             this.vmService.model = model;
-          }
+          },
         );
     });
   }
@@ -381,7 +401,7 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
       } catch (err) {
         this.dialogService.message(
           'Select text and press Ctrl+C to copy to your local clipboard:',
-          clipText
+          clipText,
         );
         console.log('Problem', err);
       }
@@ -419,7 +439,7 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
           {
             duration: 10000,
             verticalPosition: 'top',
-          }
+          },
         );
         this.copyTryCount = 0;
       } else if (
@@ -447,12 +467,15 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
     if (users && users.length > 0) {
       for (const u of users) {
         if (count >= MAX_USERS) {
-          output += ' and ' + (users.length - MAX_USERS).toString() + 'others...';
+          output +=
+            ' and ' + (users.length - MAX_USERS).toString() + 'others...';
           break;
         }
-        output += u + ' ';
+        output += u + ', ';
         count++;
       }
+
+      output = output.slice(0, -2); // trim last comma
     }
     if (count > 0) {
       output = 'Connected: ' + output;
@@ -463,5 +486,4 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
   formatConnectedUserToolTip(users: string[] = null): string {
     return users.toString().replace(/,/g, '\n');
   }
-
 }

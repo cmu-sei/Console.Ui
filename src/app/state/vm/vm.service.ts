@@ -17,14 +17,14 @@ export class VmService {
     private vmStore: VmStore,
     private vmsService: VmsService,
     private vmQuery: VmQuery,
-    private proxmoxService: ProxmoxService
+    private proxmoxService: ProxmoxService,
   ) {}
 
   get(id: string) {
     return this.vmsService.getVm(id).pipe(
       tap((vm: Vm) => {
         this.vmStore.upsert(id, vm);
-      })
+      }),
     );
   }
 

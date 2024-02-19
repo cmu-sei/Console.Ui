@@ -1,20 +1,20 @@
 <!--
-Copyright 2021 Carnegie Mellon University. All Rights Reserved. 
- Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
+Copyright 2021 Carnegie Mellon University. All Rights Reserved.
+Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
 -->
 
-<ng-container *ngIf="{ value: isConnected$ | async } as isConnected">
+@if ({ value: isConnected$ | async }; as isConnected) {
   <div [hidden]="!isConnected.value === true">
     <div #screen id="screen" class="background screen">
       <!-- This is where the remote screen will appear -->
     </div>
   </div>
-
-  <div
-    *ngIf="isConnected.value === false"
-    class="align-items-center center align-content-center"
-    style="width: 70%"
-  >
-    <h1>Connecting...</h1>
-  </div>
-</ng-container>
+  @if (isConnected.value === false) {
+    <div
+      class="align-items-center center align-content-center"
+      style="width: 70%"
+    >
+      <h1>Connecting...</h1>
+    </div>
+  }
+}

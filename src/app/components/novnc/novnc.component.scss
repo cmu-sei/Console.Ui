@@ -4,13 +4,13 @@ Copyright 2021 Carnegie Mellon University. All Rights Reserved.
 */
 
 .center {
-    position: relative;
-    margin: auto;
-    top: 40%;
-    text-align: center;
+  position: relative;
+  margin: auto;
+  top: 40%;
+  text-align: center;
 }
 
 // novnc element has to have a fixed height when scaleViewport is set
 .screen {
-    height: 97vh;
+  height: 97vh;
 }

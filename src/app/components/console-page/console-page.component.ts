@@ -18,12 +18,16 @@ import { map, take, takeUntil } from 'rxjs/operators';
 import { SignalRService } from '../../services/signalr/signalr.service';
 import { VmQuery } from '../../state/vm/vm.query';
 import { VmService } from '../../state/vm/vm.service';
+import { AsyncPipe } from '@angular/common';
+import { ConsoleComponent } from '../console/console.component';
 
 @Component({
   selector: 'app-console-page',
   templateUrl: './console-page.component.html',
   styleUrls: ['./console-page.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  standalone: true,
+  imports: [ConsoleComponent, AsyncPipe],
 })
 export class ConsolePageComponent implements OnInit, OnDestroy {
   readOnly$: Observable<boolean>;
@@ -60,7 +64,7 @@ export class ConsolePageComponent implements OnInit, OnDestroy {
     this.readOnly$ = this.vmService.getVmPermissions(this.vmId).pipe(
       map((p) => {
         return p.includes('ReadOnly');
-      })
+      }),
     );
   }
 

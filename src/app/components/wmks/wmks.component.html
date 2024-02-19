@@ -3,43 +3,49 @@ Copyright 2021 Carnegie Mellon University. All Rights Reserved.
 Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
 -->
 
-<div
-  id="wmksContainer"
-  #wmksContainer
-  class="wmksContainer background text"
-  (window:resize)="onResize()"
-  *ngIf="showWmks"
->
+@if (showWmks) {
   <div
-    class="align-items-center center align-content-center"
-    style="width: 70%"
-    *ngIf="this.vmService.showLoading"
+    id="wmksContainer"
+    #wmksContainer
+    class="wmksContainer background"
+    (window:resize)="onResize()"
   >
-    <h1>{{ progressMessage }}</h1>
+    @if (this.vmService.showLoading) {
+      <div
+        class="align-items-center center align-content-center"
+        style="width: 70%"
+      >
+        <h1>{{ progressMessage }}</h1>
+      </div>
+    }
+    @if (this.vmService.showPoweringOff) {
+      <div
+        class="align-items-center center align-content-center"
+        style="width: 70%"
+      >
+        <h1>Shutting Down... Please wait...</h1>
+      </div>
+    }
+    @if (this.vmService.showPower) {
+      <mat-icon
+        class="center"
+        svgIcon="ic_power_settings_new_black_48px"
+        alt="Off"
+      ></mat-icon>
+    }
+    @if (this.vmService.showError) {
+      <mat-icon
+        class="center"
+        svgIcon="ic_error_outline_black_48px"
+        alt="Error"
+      ></mat-icon>
+    }
+    @if (this.vmService.showLock) {
+      <mat-icon
+        class="center"
+        svgIcon="ic_lock_outline_black_48px"
+        alt="Unauthorized"
+      ></mat-icon>
+    }
   </div>
-  <div
-    class="align-items-center center align-content-center"
-    style="width: 70%"
-    *ngIf="this.vmService.showPoweringOff"
-  >
-    <h1>Shutting Down... Please wait...</h1>
-  </div>
-  <mat-icon
-    *ngIf="this.vmService.showPower"
-    class="center"
-    svgIcon="ic_power_settings_new_black_48px"
-    alt="Off"
-  ></mat-icon>
-  <mat-icon
-    *ngIf="this.vmService.showError"
-    class="center"
-    svgIcon="ic_error_outline_black_48px"
-    alt="Error"
-  ></mat-icon>
-  <mat-icon
-    *ngIf="this.vmService.showLock"
-    class="center"
-    svgIcon="ic_lock_outline_black_48px"
-    alt="Unauthorized"
-  ></mat-icon>
-</div>
+}

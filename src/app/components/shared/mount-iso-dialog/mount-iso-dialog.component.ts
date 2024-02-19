@@ -1,10 +1,13 @@
 // Copyright 2021 Carnegie Mellon University. All Rights Reserved.
 // Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
 
-import { MAT_LEGACY_DIALOG_DATA as MAT_DIALOG_DATA, MatLegacyDialogRef as MatDialogRef } from '@angular/material/legacy-dialog';
+import {
+  MatDialogRef,
+  MatDialogTitle,
+  MatDialogActions,
+} from '@angular/material/dialog';
 import {
   Component,
-  Inject,
   ChangeDetectionStrategy,
   Input,
   OnInit,
@@ -14,11 +17,29 @@ import {
 import { IsoResult, IsoFile } from '../../../models/vm/iso-result';
 import { Subject } from 'rxjs';
 import { debounceTime, takeUntil, distinctUntilChanged } from 'rxjs/operators';
+import { MatDivider } from '@angular/material/divider';
+import { MatButton } from '@angular/material/button';
+import { MatSelectionList, MatListOption } from '@angular/material/list';
+import { MatInput } from '@angular/material/input';
+import { MatFormField, MatLabel } from '@angular/material/form-field';
 
 @Component({
   selector: 'mount-iso-dialog',
   templateUrl: './mount-iso-dialog.component.html',
+  styleUrls: ['./mount-iso-dialog.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  standalone: true,
+  imports: [
+    MatDialogTitle,
+    MatFormField,
+    MatLabel,
+    MatInput,
+    MatSelectionList,
+    MatButton,
+    MatListOption,
+    MatDivider,
+    MatDialogActions,
+  ],
 })
 export class MountIsoDialogComponent implements OnInit, OnDestroy {
   public data: any;
@@ -38,7 +59,7 @@ export class MountIsoDialogComponent implements OnInit, OnDestroy {
     });
   }
 
-  public selectedIso: any;
+  public selectedIso: IsoFile;
 
   private filterValue = '';
   private searchSubject$ = new Subject<string>();
@@ -46,7 +67,7 @@ export class MountIsoDialogComponent implements OnInit, OnDestroy {
 
   constructor(
     private dialogRef: MatDialogRef<MountIsoDialogComponent>,
-    private changeDetectorRef: ChangeDetectorRef
+    private changeDetectorRef: ChangeDetectorRef,
   ) {
     this.dialogRef.disableClose = true;
   }
@@ -56,7 +77,7 @@ export class MountIsoDialogComponent implements OnInit, OnDestroy {
       .pipe(
         debounceTime(200),
         distinctUntilChanged(),
-        takeUntil(this.unsubscribe$)
+        takeUntil(this.unsubscribe$),
       )
       .subscribe((searchTextValue) => {
         this.setFilter(searchTextValue);
@@ -67,7 +88,7 @@ export class MountIsoDialogComponent implements OnInit, OnDestroy {
     this.searchSubject$.next(searchTextValue);
   }
 
-  selectThisIso(iso: string) {
+  selectThisIso(iso: IsoFile) {
     this.selectedIso = iso;
   }
 
@@ -91,12 +112,12 @@ export class MountIsoDialogComponent implements OnInit, OnDestroy {
 
   applyFilter(isos: IsoFile[]): IsoFile[] {
     return isos.filter((x) =>
-      x.filename.toLowerCase().includes(this.filterValue)
+      x.filename.toLowerCase().includes(this.filterValue),
     );
   }
 
   close() {
-    this.dialogRef.close({});
+    this.dialogRef.close();
   }
 
   done() {

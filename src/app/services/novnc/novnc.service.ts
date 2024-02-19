@@ -19,7 +19,7 @@ export class NoVNCService {
     ticket: string,
     elementId: string,
     readOnly: boolean,
-    backgroundColor: string
+    backgroundColor: string,
   ) {
     // Creating a new RFB object will start a new connection
     this.rfb = new RFB(document.getElementById(elementId), url, {

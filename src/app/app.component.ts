@@ -8,11 +8,14 @@ import { ComnAuthQuery, ComnAuthService, Theme } from '@cmusei/crucible-common';
 import { RouterQuery } from '@datorama/akita-ng-router-store';
 import { Observable, Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
+import { RouterOutlet } from '@angular/router';
 
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss'],
+  standalone: true,
+  imports: [RouterOutlet],
 })
 export class AppComponent implements OnDestroy {
   title = 'VM Console';
@@ -26,7 +29,7 @@ export class AppComponent implements OnDestroy {
     private overlayContainer: OverlayContainer,
     private authQuery: ComnAuthQuery,
     private routerQuery: RouterQuery,
-    private authService: ComnAuthService
+    private authService: ComnAuthService,
   ) {
     this.addIcons();
 
@@ -61,42 +64,44 @@ export class AppComponent implements OnDestroy {
     this.iconRegistry.addSvgIcon(
       'ic_error_outline_black_48px',
       this.sanitizer.bypassSecurityTrustResourceUrl(
-        'assets/svg-icons/ic_error_outline_black_48px.svg'
-      )
+        'assets/svg-icons/ic_error_outline_black_48px.svg',
+      ),
     );
     this.iconRegistry.addSvgIcon(
       'ic_lock_outine_black_48px',
       this.sanitizer.bypassSecurityTrustResourceUrl(
-        'assets/svg-icons/ic_lock_outine_black_48px.svg'
-      )
+        'assets/svg-icons/ic_lock_outine_black_48px.svg',
+      ),
     );
     this.iconRegistry.addSvgIcon(
       'ic_power_settings_new_black_48px',
       this.sanitizer.bypassSecurityTrustResourceUrl(
-        'assets/svg-icons/ic_power_settings_new_black_48px.svg'
-      )
+        'assets/svg-icons/ic_power_settings_new_black_48px.svg',
+      ),
     );
     this.iconRegistry.addSvgIcon(
       'gear',
-      this.sanitizer.bypassSecurityTrustResourceUrl('assets/svg-icons/gear.svg')
+      this.sanitizer.bypassSecurityTrustResourceUrl(
+        'assets/svg-icons/gear.svg',
+      ),
     );
     this.iconRegistry.addSvgIcon(
       'ic_clear_black_24px',
       this.sanitizer.bypassSecurityTrustResourceUrl(
-        'assets/svg-icons/ic_clear_black_24px.svg'
-      )
+        'assets/svg-icons/ic_clear_black_24px.svg',
+      ),
     );
     this.iconRegistry.addSvgIcon(
       'ic_clipboard_copy',
       this.sanitizer.bypassSecurityTrustResourceUrl(
-        'assets/svg-icons/ic_clipboard_copy.svg'
-      )
+        'assets/svg-icons/ic_clipboard_copy.svg',
+      ),
     );
     this.iconRegistry.addSvgIcon(
       'ic_clipboard_paste',
       this.sanitizer.bypassSecurityTrustResourceUrl(
-        'assets/svg-icons/ic_clipboard_paste.svg'
-      )
+        'assets/svg-icons/ic_clipboard_paste.svg',
+      ),
     );
   }
 
