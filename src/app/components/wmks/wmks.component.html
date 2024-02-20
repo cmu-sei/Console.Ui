@@ -35,7 +35,7 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
         svgIcon="ic_lock_outline_black_48px"
         alt="Unauthorized"
       ></mat-icon>
-    } @else if (this.vmService.disconnected$ | async) {
+    } @else if (!(this.vmService.connectionStatus$ | async).connected) {
       <div
         class="align-items-center center align-content-center"
         style="width: 70%"

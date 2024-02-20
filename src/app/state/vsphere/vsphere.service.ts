@@ -47,6 +47,12 @@ export class VsphereService {
   });
 
   private connectedSubject = new BehaviorSubject<boolean>(false);
+
+  public connectionStatus$ = this.connectedSubject.asObservable().pipe(
+    map((x) => {
+      return { connected: x };
+    }),
+  );
   public connected$ = this.connectedSubject.asObservable().pipe(
     filter((x) => x),
     map(() => true),
