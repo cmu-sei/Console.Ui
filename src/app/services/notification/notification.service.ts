@@ -6,39 +6,60 @@ import * as signalR from '@microsoft/signalr';
 import { BehaviorSubject } from 'rxjs';
 import { BASE_PATH } from '../../generated/vm-api';
 import { NotificationData } from '../../models/notification/notification-model';
+import { ComnAuthService } from '@cmusei/crucible-common';
 
 @Injectable()
 export class NotificationService {
+  private hubConnection: signalR.HubConnection;
+  private connectionPromise: Promise<void>;
+
+  private vmId: string;
   private apiUrl: string;
-  public progressConnection: signalR.HubConnection;
+
   public tasksInProgress = new BehaviorSubject<Array<NotificationData>>(
     new Array<NotificationData>(),
   );
 
-  constructor(@Inject(BASE_PATH) basePath: string) {
+  constructor(
+    private authService: ComnAuthService,
+    @Inject(BASE_PATH) basePath: string,
+  ) {
     this.apiUrl = basePath;
+
+    this.authService.user$.subscribe(() => {
+      this.reconnect();
+    });
   }
 
-  connectToProgressHub(vmString: string, userToken: string) {
+  connectToProgressHub(vmId: string) {
+    this.vmId = vmId;
+
+    if (this.connectionPromise) {
+      return this.connectionPromise;
+    }
+
     console.log('Starting connection to ProgressHub');
-    this.progressConnection = new signalR.HubConnectionBuilder()
-      .withUrl(`${this.apiUrl}/hubs/progress?access_token=${userToken}`)
+    this.hubConnection = new signalR.HubConnectionBuilder()
+      .withUrl(`${this.apiUrl}/hubs/progress`, {
+        accessTokenFactory: () => {
+          return this.authService.getAuthorizationToken();
+        },
+      })
       .withAutomaticReconnect(new RetryPolicy(60, 0, 5))
       .build();
 
-    this.progressConnection.on('Progress', (data: [NotificationData]) => {
+    this.hubConnection.on('Progress', (data: [NotificationData]) => {
       this.tasksInProgress.next(data);
     });
 
-    this.progressConnection.on('Complete', (data: [NotificationData]) => {
+    this.hubConnection.on('Complete', (data: [NotificationData]) => {
       this.tasksInProgress.next(data);
     });
 
-    this.progressConnection
-      .start()
+    this.connectionPromise = this.hubConnection.start();
+    this.connectionPromise
       .then(() => {
-        this.progressConnection.invoke('Join', vmString);
-        console.log('Progress connection started');
+        this.joinGroups();
       })
       .catch(() => {
         console.log(
@@ -48,6 +69,24 @@ export class NotificationService {
           'Error while establishing Progress connection with the VM Console API.',
         );
       });
+
+    return this.connectionPromise;
+  }
+
+  private joinGroups() {
+    if (this.vmId) {
+      this.hubConnection.invoke('Join', this.vmId);
+      console.log('Progress connection started');
+    }
+  }
+
+  private reconnect() {
+    if (this.hubConnection != null) {
+      this.hubConnection.stop().then(() => {
+        this.connectionPromise = this.hubConnection.start();
+        this.connectionPromise.then(() => this.joinGroups());
+      });
+    }
   }
 }
 
