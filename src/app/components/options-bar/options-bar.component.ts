@@ -121,10 +121,7 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
         this.tasksInProgress = <Array<NotificationData>>data;
       }
     });
-    this.notificationService.connectToProgressHub(
-      this.vmId,
-      this.authService.getAuthorizationToken(),
-    );
+    this.notificationService.connectToProgressHub(this.vmId);
 
     this.inFrame = this.inIframe();
 
