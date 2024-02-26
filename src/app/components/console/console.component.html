@@ -6,7 +6,10 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
 <div class="container background">
   @if ({ value: virtualMachine$ | async }; as virtualMachine) {
     @if (virtualMachine.value != null) {
-      @defer (when virtualMachine.value.type == vmType.Proxmox) {
+      @defer (
+        when virtualMachine.value.type == vmType.Proxmox;
+        prefetch on idle
+      ) {
         <app-options-bar2
           [vm]="virtualMachine.value"
           [readOnly]="readOnly"
@@ -16,7 +19,10 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
           [readOnly]="readOnly"
         ></app-proxmox-console>
       }
-      @defer (when virtualMachine.value.type == vmType.Vsphere) {
+      @defer (
+        when virtualMachine.value.type == vmType.Vsphere || virtualMachine.value.type == vmType.Unknown;
+        prefetch on idle
+      ) {
         <app-options-bar
           [readOnly]="readOnly"
           [vm]="vsphereVm$ | async"
