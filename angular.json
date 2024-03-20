@@ -28,7 +28,8 @@
             ],
             "styles": [
               "src/styles/styles.scss",
-              "./node_modules/bootstrap/scss/bootstrap-utilities.scss"
+              "./node_modules/bootstrap/scss/bootstrap-utilities.scss",
+              "src/assets/vmware-wmks/css/wmks-all.css"
             ],
             "stylePreprocessorOptions": {
               "includePaths": [

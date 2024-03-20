@@ -9,7 +9,7 @@ import {
   MatDialogActions,
 } from '@angular/material/dialog';
 import { ComnSettingsService } from '@cmusei/crucible-common';
-import { MatInput } from '@angular/material/input';
+import { MatFormField, MatInput } from '@angular/material/input';
 import { MatTooltip } from '@angular/material/tooltip';
 import { MatIcon } from '@angular/material/icon';
 import { MatMenuTrigger, MatMenu, MatMenuItem } from '@angular/material/menu';
@@ -33,6 +33,7 @@ import { FormsModule } from '@angular/forms';
     MatInput,
     MatDialogActions,
     MatButton,
+    MatFormField,
   ],
 })
 export class SendTextDialogComponent {
