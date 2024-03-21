@@ -21,3 +21,7 @@
   box-sizing: border-box;
   resize: both;
 }
+
+::ng-deep .mat-mdc-form-field-infix {
+  width: auto !important;
+}
