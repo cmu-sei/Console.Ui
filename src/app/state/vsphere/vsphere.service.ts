@@ -22,6 +22,7 @@ import {
   VmResolution,
 } from '../../models/vm/vm-model';
 import { VmStore } from './vsphere.store';
+import { ComnSettingsService } from '@cmusei/crucible-common';
 
 declare var WMKS: any; // needed to check values
 
@@ -68,6 +69,7 @@ export class VsphereService {
     private http: HttpClient,
     private vsphereService: ApiVsphereService,
     private vmStore: VmStore,
+    public settingsService: ComnSettingsService,
     @Inject(BASE_PATH) basePath: string,
   ) {
     this.apiUrl = basePath;
@@ -217,7 +219,8 @@ export class VsphereService {
       changeResolution: this.model.isOwner,
       rescale: true,
       position: WMKS.CONST.Position.CENTER,
-      retryConnectionInterval: 5000, // Changed to 5 seconds.  This affects initial connection to console.
+      retryConnectionInterval:
+        this.settingsService.settings.WMKS.RetryConnectionInterval,
     });
 
     if (readOnly) {
