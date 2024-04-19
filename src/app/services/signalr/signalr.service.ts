@@ -22,6 +22,7 @@ export class SignalRService {
 
   private userId: string;
   private viewId: string;
+  private activeVmId: string;
 
   private apiUrl: string;
 
@@ -78,10 +79,15 @@ export class SignalRService {
     if (this.userId && this.viewId) {
       this.joinUser(this.userId, this.viewId);
     }
+
+    if (this.activeVmId) {
+      this.setActiveVirtualMachine(this.activeVmId);
+    }
   }
 
   public joinUser(userId: string, viewId: string) {
     this.userId = userId;
+    this.viewId = viewId;
 
     this.startConnection().then(() => {
       this.hubConnection.invoke('JoinUser', userId, viewId).then((vmUser) => {
@@ -100,12 +106,14 @@ export class SignalRService {
   }
 
   public setActiveVirtualMachine(vmId: string) {
+    this.activeVmId = vmId;
     this.startConnection().then(() => {
       this.hubConnection.invoke('SetActiveVirtualMachine', vmId);
     });
   }
 
   public unsetActiveVirtualMachine() {
+    this.activeVmId = null;
     this.startConnection().then(() => {
       this.hubConnection.invoke('UnsetActiveVirtualMachine');
     });

@@ -36,6 +36,6 @@
     { "name": "Slowest", "value": 500 }
   ],
   "WMKS": {
-    "RetryConnectionInterval": 5000
+    "RetryConnectionInterval": 0
   }
 }

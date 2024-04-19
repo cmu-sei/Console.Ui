@@ -387,9 +387,9 @@ export class VsphereService {
 
   public disconnect() {
     if (this.wmks != null) {
-      this.wmks.destroy();
       this.wmks.unregister();
-      // this.wmks.disconnect();
+      this.wmks.disconnect();
+      this.wmks.destroy();
       this.wmks = null;
     }
 
