@@ -4,7 +4,7 @@ Copyright 2021 Carnegie Mellon University. All Rights Reserved.
 */
 
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
+import { BehaviorSubject, Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { Vm, VmsService } from '../../generated/vm-api';
 import { ProxmoxService } from '../../services/proxmox/proxmox.service';
@@ -19,6 +19,9 @@ export class VmService {
     private vmQuery: VmQuery,
     private proxmoxService: ProxmoxService,
   ) {}
+
+  readOnlySubject = new BehaviorSubject(false);
+  readOnly$ = this.readOnlySubject.asObservable();
 
   get(id: string) {
     return this.vmsService.getVm(id).pipe(
@@ -64,5 +67,9 @@ export class VmService {
         this.proxmoxService.sendClipboardText(text);
         break;
     }
+  }
+
+  setReadOnly(value: boolean) {
+    this.readOnlySubject.next(value);
   }
 }

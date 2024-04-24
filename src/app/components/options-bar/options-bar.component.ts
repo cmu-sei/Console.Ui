@@ -4,15 +4,17 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import {
   Component,
+  EventEmitter,
   Input,
   OnDestroy,
   OnInit,
+  Output,
   Pipe,
   PipeTransform,
 } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ActivatedRoute } from '@angular/router';
-import { ComnAuthService, ComnSettingsService } from '@cmusei/crucible-common';
+import { ComnSettingsService } from '@cmusei/crucible-common';
 import { Observable, Subject } from 'rxjs';
 import { take, takeUntil } from 'rxjs/operators';
 import { VsphereVirtualMachine } from '../../generated/vm-api';
@@ -32,6 +34,11 @@ import { MatTooltip } from '@angular/material/tooltip';
 import { MatIcon } from '@angular/material/icon';
 import { MatMenuTrigger, MatMenu, MatMenuItem } from '@angular/material/menu';
 import { MatIconButton, MatButton } from '@angular/material/button';
+import {
+  MatSlideToggleChange,
+  MatSlideToggleModule,
+} from '@angular/material/slide-toggle';
+import { MatLabel } from '@angular/material/form-field';
 
 declare var WMKS: any; // needed to check values
 const MAX_COPY_RETRIES = 1;
@@ -64,12 +71,22 @@ export class KeysPipe implements PipeTransform {
     MatButton,
     AsyncPipe,
     KeysPipe,
+    MatSlideToggleModule,
+    MatLabel,
   ],
 })
 export class OptionsBarComponent implements OnInit, OnDestroy {
   @Input() vm: VsphereVirtualMachine;
   @Input() vmId: string;
   @Input() readOnly: boolean;
+
+  readOnlyManual: boolean;
+
+  get readOnlyInternal() {
+    return this.readOnlyManual || this.readOnly;
+  }
+
+  @Output() readOnlyChanged = new EventEmitter<boolean>();
 
   opened = false;
 
@@ -88,7 +105,6 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
   vmResolutionsOptions: VmResolution[];
   showConnectedUsers = false;
   currentVmUsers$: Observable<string[]>;
-  private isDark = false;
   private copyTryCount: number;
   private destroy$ = new Subject();
 
@@ -99,11 +115,11 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
     private notificationService: NotificationService,
     private route: ActivatedRoute,
     private snackBar: MatSnackBar,
-    private authService: ComnAuthService,
     private signalrService: SignalRService,
   ) {}
 
   ngOnInit() {
+    this.readOnlyManual = this.readOnly;
     this.vmResolutionsOptions = [
       { width: 1600, height: 1200 } as VmResolution,
       { width: 1024, height: 768 } as VmResolution,
@@ -205,7 +221,7 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
 
   disconnect() {
     console.log('disconnect requested');
-    this.vmService.wmks.disconnect();
+    this.vmService.disconnect();
   }
 
   reconnect() {
@@ -216,7 +232,7 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
 
   connect() {
     console.log('connect requested');
-    this.vmService.connect(this.vmId, this.readOnly);
+    this.vmService.connect(this.vmId, this.readOnlyInternal);
   }
 
   poweron() {
@@ -482,5 +498,11 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
 
   formatConnectedUserToolTip(users: string[] = null): string {
     return users.toString().replace(/,/g, '\n');
+  }
+
+  toggleReadOnly(event: MatSlideToggleChange) {
+    this.readOnlyChanged.emit(event.checked);
+    this.readOnlyManual = event.checked;
+    this.vmService.setReadOnly(event.checked);
   }
 }
