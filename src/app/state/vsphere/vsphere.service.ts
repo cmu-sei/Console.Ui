@@ -64,6 +64,9 @@ export class VsphereService {
   );
 
   private apiUrl: string;
+  private readOnlyObserver: MutationObserver;
+  private pointerEvents;
+  private tabIndex;
 
   constructor(
     private http: HttpClient,
@@ -195,7 +198,8 @@ export class VsphereService {
           }
 
           if (this.model.ticket) {
-            this.CreateWmks(readOnly);
+            this.CreateWmks();
+            this.setReadOnly(readOnly);
             const state = this.wmks.getConnectionState();
             if (state === WMKS.CONST.ConnectionState.DISCONNECTED) {
               // console.log('connecting to ' + this.model.ticket);
@@ -214,21 +218,17 @@ export class VsphereService {
       );
   }
 
-  public CreateWmks(readOnly: boolean) {
-    this.wmks = WMKS.createWMKS('wmksContainer', {
-      changeResolution: this.model.isOwner,
-      rescale: true,
-      position: WMKS.CONST.Position.CENTER,
-      retryConnectionInterval:
-        this.settingsService.settings.WMKS.RetryConnectionInterval,
-    });
+  public setReadOnly(value: boolean) {
+    const elem = document.getElementById('mainCanvas');
 
-    if (readOnly) {
-      const elem = document.getElementById('mainCanvas');
+    if (value) {
+      this.pointerEvents = elem.style.pointerEvents;
+      this.tabIndex = elem.tabIndex;
+
       elem.style.pointerEvents = 'none';
       elem.tabIndex = -1;
 
-      const observer = new MutationObserver((mutations) => {
+      this.readOnlyObserver = new MutationObserver((mutations) => {
         mutations.forEach((m) => {
           if (
             m.attributeName === 'style' &&
@@ -241,11 +241,25 @@ export class VsphereService {
         });
       });
 
-      observer.observe(elem, {
+      this.readOnlyObserver.observe(elem, {
         attributes: true,
         attributeFilter: ['style', 'tabindex'],
       });
+    } else if (this.readOnlyObserver) {
+      this.readOnlyObserver.disconnect();
+      elem.style.pointerEvents = this.pointerEvents;
+      elem.tabIndex = this.tabIndex;
     }
+  }
+
+  public CreateWmks() {
+    this.wmks = WMKS.createWMKS('wmksContainer', {
+      changeResolution: this.model.isOwner,
+      rescale: true,
+      position: WMKS.CONST.Position.CENTER,
+      retryConnectionInterval:
+        this.settingsService.settings.WMKS.RetryConnectionInterval,
+    });
 
     this.wmks.register(
       WMKS.CONST.Events.CONNECTION_STATE_CHANGE,

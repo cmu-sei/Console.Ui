@@ -2,7 +2,7 @@
 // Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
 
 import { Component, Input } from '@angular/core';
-import { Observable } from 'rxjs';
+import { BehaviorSubject, Observable } from 'rxjs';
 import { Vm, VmType, VsphereVirtualMachine } from '../../generated/vm-api';
 import { VmService } from '../../state/vm/vm.service';
 import { VsphereQuery } from '../../state/vsphere/vsphere.query';
@@ -26,7 +26,7 @@ import { OptionsBar2Component } from '../options-bar2/options-bar2.component';
   ],
 })
 export class ConsoleComponent {
-  @Input() readOnly;
+  @Input() readOnly = false;
 
   @Input() set vmId(value: string) {
     this._vmId = value;
@@ -47,8 +47,17 @@ export class ConsoleComponent {
   vsphereVm$: Observable<VsphereVirtualMachine>;
   virtualMachine$: Observable<Vm>;
 
+  readOnlyInternal = false;
+  readOnlySubject = new BehaviorSubject(this.readOnly);
+  readOnly$ = this.readOnlySubject.asObservable();
+
   constructor(
     private vsphereQuery: VsphereQuery,
     private vmService: VmService,
   ) {}
+
+  onReadOnlyChanged(event: boolean) {
+    this.readOnlyInternal = event;
+    this.readOnlySubject.next(this.readOnlyInternal || this.readOnly);
+  }
 }

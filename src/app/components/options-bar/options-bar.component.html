@@ -9,7 +9,9 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
       <button class="z-3" mat-icon-button [matMenuTriggerFor]="mainMenu">
         <mat-icon svgIcon="gear" alt="Gear"></mat-icon>
       </button>
-      <span class="ms-1">{{ vm?.name }}</span>
+      <span class="ms-1"
+        >{{ vm?.name }}{{ readOnlyInternal ? ' (Read Only)' : '' }}</span
+      >
       <mat-menu #mainMenu="matMenu">
         <div>
           <button mat-menu-item (click)="fullscreen()">Fullscreen</button>
@@ -20,6 +22,22 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
         </div>
 
         @if (!readOnly) {
+          <button mat-menu-item (click)="$event.stopPropagation()">
+            <mat-slide-toggle
+              labelPosition="before"
+              color="primary"
+              [checked]="readOnly"
+              (click)="$event.stopPropagation()"
+              (change)="toggleReadOnly($event)"
+            >
+              <mat-label class="mat-mdc-menu-item-text me-2"
+                >Read Only</mat-label
+              >
+            </mat-slide-toggle>
+          </button>
+        }
+
+        @if (!readOnlyInternal) {
           <div>
             <!-- Resolution -->
             @if (!vmService.model.isOwner) {
@@ -253,7 +271,7 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
     }
   </div>
 
-  @if (!readOnly) {
+  @if (!readOnlyInternal) {
     <div class="w-50 d-flex justify-content-center">
       <button
         mat-stroked-button

@@ -2,6 +2,7 @@
 // Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
 
 import {
+  ChangeDetectionStrategy,
   Component,
   ElementRef,
   HostListener,
@@ -25,6 +26,7 @@ declare var WMKS: any; // needed to check values
   styleUrls: ['./wmks.component.scss'],
   standalone: true,
   imports: [MatIcon, AsyncPipe],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class WmksComponent implements OnInit, OnDestroy {
   @Input() readOnly: boolean;
@@ -38,7 +40,6 @@ export class WmksComponent implements OnInit, OnDestroy {
   }
 
   _vmId: string;
-
   connectTimerSubscription: Subscription;
 
   @ViewChild('wmksContainer') wmksContainer: ElementRef;
