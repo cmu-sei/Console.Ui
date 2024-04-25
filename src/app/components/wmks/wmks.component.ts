@@ -67,6 +67,8 @@ export class WmksComponent implements OnInit, OnDestroy {
     if (this.connectTimerSubscription != null) {
       this.connectTimerSubscription.unsubscribe();
     }
+
+    this.vmService.disconnect();
   }
 
   private setVmId(value: string) {
@@ -74,12 +76,7 @@ export class WmksComponent implements OnInit, OnDestroy {
       this.connectTimerSubscription.unsubscribe();
     }
 
-    // destroy and re-create the wmksContainer
-    this.showWmks = false;
-    this.showWmks = true;
-
     this._vmId = value;
-
     this.vmService.disconnect();
   }
 
