@@ -29,7 +29,7 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
           [vmId]="vmId"
           (readOnlyChanged)="onReadOnlyChanged($event)"
         ></app-options-bar>
-        <app-wmks [readOnly]="readOnly$ | async" [vmId]="vmId"></app-wmks>
+        <app-wmks [readOnly]="readOnlyInternal" [vmId]="vmId"></app-wmks>
       }
     }
   }
