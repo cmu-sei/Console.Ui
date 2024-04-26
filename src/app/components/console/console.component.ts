@@ -26,9 +26,9 @@ import { OptionsBar2Component } from '../options-bar2/options-bar2.component';
   ],
 })
 export class ConsoleComponent {
-  @Input() readOnly = false;
+  @Input({ required: true }) readOnly;
 
-  @Input() set vmId(value: string) {
+  @Input({ required: true }) set vmId(value: string) {
     this._vmId = value;
     this.vsphereVm$ = this.vsphereQuery.selectEntity(value);
     this.virtualMachine$ = this.vmService.get(value);
@@ -47,9 +47,11 @@ export class ConsoleComponent {
   vsphereVm$: Observable<VsphereVirtualMachine>;
   virtualMachine$: Observable<Vm>;
 
-  readOnlyInternal = false;
-  readOnlySubject = new BehaviorSubject(this.readOnly);
-  readOnly$ = this.readOnlySubject.asObservable();
+  readOnlyManual = false;
+
+  get readOnlyInternal() {
+    return this.readOnlyManual || this.readOnly;
+  }
 
   constructor(
     private vsphereQuery: VsphereQuery,
@@ -57,7 +59,6 @@ export class ConsoleComponent {
   ) {}
 
   onReadOnlyChanged(event: boolean) {
-    this.readOnlyInternal = event;
-    this.readOnlySubject.next(this.readOnlyInternal || this.readOnly);
+    this.readOnlyManual = event;
   }
 }
