@@ -6,7 +6,11 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
 <!-- wait for readOnly http call to evaluate before initializing app-console -->
 @if ({ value: readOnly$ | async }; as readOnly) {
   @if (readOnly.value != null) {
-    <app-console [readOnly]="readOnly.value" [vmId]="vmId$ | async">
+    <app-console
+      [readOnly]="vmService.readOnly$ | async"
+      [allowReadOnlyToggle]="vmService.readOnlyToggleable$ | async"
+      [vmId]="vmId$ | async"
+    >
     </app-console>
   }
 }

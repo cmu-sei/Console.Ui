@@ -7,7 +7,7 @@ import { Inject, Injectable } from '@angular/core';
 import { ComnAuthService } from '@cmusei/crucible-common';
 import * as signalR from '@microsoft/signalr';
 import { BehaviorSubject, Observable } from 'rxjs';
-import { BASE_PATH } from '../../generated/vm-api';
+import { BASE_PATH, VmUser } from '../../generated/vm-api';
 import { UserQuery } from '../../state/user/user.query';
 import { UserService } from '../../state/user/user.service';
 import { VsphereService } from '../../state/vsphere/vsphere.service';
@@ -22,6 +22,7 @@ export class SignalRService {
 
   private userId: string;
   private viewId: string;
+  private vmId: string;
   private activeVmId: string;
 
   private apiUrl: string;
@@ -30,7 +31,6 @@ export class SignalRService {
     private authService: ComnAuthService,
     private vmService: VsphereService,
     private userService: UserService,
-    private userQuery: UserQuery,
     @Inject(BASE_PATH) basePath: string,
   ) {
     this.apiUrl = basePath;
@@ -83,25 +83,51 @@ export class SignalRService {
     if (this.activeVmId) {
       this.setActiveVirtualMachine(this.activeVmId);
     }
+
+    if (this.vmId) {
+      this.joinVm(this.vmId);
+    }
   }
 
-  public joinUser(userId: string, viewId: string) {
+  public joinUser(userId: string, viewId: string): Promise<VmUser> {
     this.userId = userId;
     this.viewId = viewId;
 
-    this.startConnection().then(() => {
-      this.hubConnection.invoke('JoinUser', userId, viewId).then((vmUser) => {
-        const user = { id: vmUser.userId, name: vmUser.username };
-        this.userService.add(user);
-        this.userService.setActive(user.id);
-        this.vmService.setActive(vmUser.activeVmId);
-      });
+    return this.startConnection().then(() => {
+      return this.hubConnection
+        .invoke('JoinUser', userId, viewId)
+        .then((vmUser: VmUser) => {
+          const user = { id: vmUser.userId, name: vmUser.username };
+          this.userService.add(user);
+          this.userService.setActive(user.id);
+          this.vmService.setActive(vmUser.activeVmId);
+          return vmUser;
+        });
     });
   }
 
   public leaveUser(userId: string, viewId: string) {
+    this.userId = null;
+    this.viewId = null;
+
     this.startConnection().then(() => {
       this.hubConnection.invoke('LeaveUser', userId, viewId);
+    });
+  }
+
+  public joinVm(vmId: string) {
+    this.vmId = vmId;
+
+    this.startConnection().then(() => {
+      this.hubConnection.invoke('JoinVm', vmId);
+    });
+  }
+
+  public leaveVm(vmId: string) {
+    this.vmId = null;
+
+    this.startConnection().then(() => {
+      this.hubConnection.invoke('LeaveVm', vmId);
     });
   }
 

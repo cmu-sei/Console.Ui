@@ -23,6 +23,7 @@ import {
 } from '../../models/vm/vm-model';
 import { VmStore } from './vsphere.store';
 import { ComnSettingsService } from '@cmusei/crucible-common';
+import { VmService } from '../vm/vm.service';
 
 declare var WMKS: any; // needed to check values
 
@@ -73,9 +74,18 @@ export class VsphereService {
     private vsphereService: ApiVsphereService,
     private vmStore: VmStore,
     public settingsService: ComnSettingsService,
+    private vmService: VmService,
     @Inject(BASE_PATH) basePath: string,
   ) {
     this.apiUrl = basePath;
+
+    this.vmService.readOnly$
+      .pipe(
+        tap((readOnly) => {
+          this.setReadOnly(readOnly);
+        }),
+      )
+      .subscribe();
   }
 
   add(vm: VsphereVirtualMachine) {
@@ -221,7 +231,7 @@ export class VsphereService {
   public setReadOnly(value: boolean) {
     const elem = document.getElementById('mainCanvas');
 
-    if (value) {
+    if (elem && value) {
       this.pointerEvents = elem.style.pointerEvents;
       this.tabIndex = elem.tabIndex;
 

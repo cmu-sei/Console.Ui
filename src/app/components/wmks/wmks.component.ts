@@ -26,7 +26,7 @@ declare var WMKS: any; // needed to check values
   styleUrls: ['./wmks.component.scss'],
   standalone: true,
   imports: [MatIcon, AsyncPipe],
-  changeDetection: ChangeDetectionStrategy.OnPush,
+  changeDetection: ChangeDetectionStrategy.Default,
 })
 export class WmksComponent implements OnInit, OnDestroy {
   @Input() readOnly: boolean;

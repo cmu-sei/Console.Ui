@@ -11,20 +11,10 @@
  */
 
 
-export interface VmUser { 
-    /**
-     * User\'s unique Id
-     */
-    userId?: string;
-    /**
-     * User\'s name
-     */
-    username?: string | null;
-    /**
-     * Id of the Vm this User is currently viewing, if any
-     */
-    activeVmId?: string | null;
-    lastVmId?: string | null;
-    lastSeen?: Date | null;
-}
+export type ProxmoxVmType = 'QEMU' | 'LXC';
+
+export const ProxmoxVmType = {
+    QEMU: 'QEMU' as ProxmoxVmType,
+    LXC: 'LXC' as ProxmoxVmType
+};
 

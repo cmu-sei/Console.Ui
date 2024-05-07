@@ -6,8 +6,14 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
 @if (user$ | async; as user) {
   @if (vmId$ | async; as vmId) {
     <div>
-      <h2 class="banner">Following {{ user.name }}</h2>
-      <app-console [readOnly]="true" [vmId]="vmId"></app-console>
+      <h2 class="banner">
+        Following {{ user.name }}{{ !(isActive$ | async) ? ' (inactive)' : '' }}
+      </h2>
+      <app-console
+        [readOnly]="true"
+        [allowReadOnlyToggle]="false"
+        [vmId]="vmId"
+      ></app-console>
     </div>
   } @else {
     <h1 class="center">

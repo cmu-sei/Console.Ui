@@ -9,22 +9,18 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { ProxmoxVmType } from './proxmoxVmType';
 
 
-export interface VmUser { 
+export interface ProxmoxVmInfo { 
     /**
-     * User\'s unique Id
+     * The unique integer Id of the VM in Proxmox
      */
-    userId?: string;
+    id?: number;
     /**
-     * User\'s name
+     * The node that this VM is currently running on
      */
-    username?: string | null;
-    /**
-     * Id of the Vm this User is currently viewing, if any
-     */
-    activeVmId?: string | null;
-    lastVmId?: string | null;
-    lastSeen?: Date | null;
+    node?: string | null;
+    type?: ProxmoxVmType;
 }
 

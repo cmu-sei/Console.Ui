@@ -27,6 +27,7 @@ import { OptionsBar2Component } from '../options-bar2/options-bar2.component';
 })
 export class ConsoleComponent {
   @Input({ required: true }) readOnly;
+  @Input({ required: true }) allowReadOnlyToggle;
 
   @Input({ required: true }) set vmId(value: string) {
     this._vmId = value;
@@ -47,18 +48,8 @@ export class ConsoleComponent {
   vsphereVm$: Observable<VsphereVirtualMachine>;
   virtualMachine$: Observable<Vm>;
 
-  readOnlyManual = false;
-
-  get readOnlyInternal() {
-    return this.readOnlyManual || this.readOnly;
-  }
-
   constructor(
     private vsphereQuery: VsphereQuery,
     private vmService: VmService,
   ) {}
-
-  onReadOnlyChanged(event: boolean) {
-    this.readOnlyManual = event;
-  }
 }
