@@ -2,6 +2,10 @@
   "name": "player.vm.console.ui",
   "version": "3.0.5",
   "license": "MIT",
+  "config": {
+    "openapiArgs": "--additional-properties ngVersion=17 --additional-properties modelPropertyNaming=original --type-mappings=DateTime=string",
+    "deleteGeneratedCommand": "rimraf src/app/generated/vm-api/"
+  },
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
@@ -10,7 +14,7 @@
     "lint": "ng lint",
     "e2e": "ng e2e",
     "swagger:gen": "curl --insecure http://localhost:4302/swagger/v1/swagger.json --output swagger.json && node_modules/@openapitools/openapi-generator-cli/bin/openapi-generator generate -i ./swagger.json -g typescript-angular -o src/app/generated/vm-api --additional-properties ngVersion=9.1 --additional-properties useRxJS6=true --additional-properties modelPropertyNaming=original",
-    "swagger:gen-win": "docker run --rm -v %CD%:/local openapitools/openapi-generator-cli:v4.3.1 generate -i http://host.docker.internal:4302/swagger/v1/swagger.json?format=openapi -g typescript-angular -o /local/src/app/generated/vm-api --additional-properties ngVersion=9.1 --additional-properties useRxJS6=true --additional-properties modelPropertyNaming=original --type-mappings=DateTime=Date"
+    "swagger:gen-docker": "cross-var $npm_package_config_deleteGeneratedCommand && cross-env-shell docker run --rm -v $INIT_CWD:/local openapitools/openapi-generator-cli:v6.2.0 generate -i http://host.docker.internal:4302/swagger/v1/swagger.json?format=openapi -g typescript-angular -o /local/src/app/generated/vm-api $npm_package_config_openapiArgs"
   },
   "private": true,
   "dependencies": {
@@ -51,6 +55,8 @@
     "@types/jquery": "^3.5.6",
     "@types/node": "^16.18.74",
     "codelyzer": "^6.0.2",
+    "cross-env": "^7.0.3",
+    "cross-var": "^1.1.0",
     "jasmine-core": "^3.8.0",
     "jasmine-spec-reporter": "^7.0.0",
     "karma": "^6.3.4",

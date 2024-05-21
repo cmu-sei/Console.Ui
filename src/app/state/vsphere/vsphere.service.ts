@@ -160,6 +160,14 @@ export class VsphereService {
     );
   }
 
+  public getVmFileUrl(id: string, filePath: string) {
+    return this.vsphereService.getFileUrlVsphereVirtualMachine(id, {
+      filePath: filePath,
+      username: this.uploadConfig.username,
+      password: this.uploadConfig.password,
+    });
+  }
+
   public changeNic(id: string, adapter: string, nic: string) {
     const data: ChangeVsphereVirtualMachineNetwork = {
       adapter: adapter,
