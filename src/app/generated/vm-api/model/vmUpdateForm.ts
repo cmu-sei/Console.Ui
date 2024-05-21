@@ -14,6 +14,7 @@ Copyright 2021 Carnegie Mellon University. All Rights Reserved.
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { ProxmoxVmInfo } from './proxmoxVmInfo';
 import { ConsoleConnectionInfo } from './consoleConnectionInfo';
 
 
@@ -23,5 +24,10 @@ export interface VmUpdateForm {
     userId?: string | null;
     allowedNetworks?: Array<string> | null;
     consoleConnectionInfo?: ConsoleConnectionInfo;
+    proxmoxVmInfo?: ProxmoxVmInfo;
+    /**
+     * If false, only allow opening this VM in a new tab
+     */
+    embeddable?: boolean;
 }
 

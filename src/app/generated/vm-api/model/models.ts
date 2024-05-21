@@ -21,6 +21,8 @@ export * from './permissions';
 export * from './powerState';
 export * from './problemDetails';
 export * from './proxmoxConsole';
+export * from './proxmoxVmInfo';
+export * from './proxmoxVmType';
 export * from './setVsphereVirtualMachineResolution';
 export * from './simpleTeam';
 export * from './teamIsoResult';

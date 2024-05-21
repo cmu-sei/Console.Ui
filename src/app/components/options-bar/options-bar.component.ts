@@ -4,11 +4,9 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import {
   Component,
-  EventEmitter,
   Input,
   OnDestroy,
   OnInit,
-  Output,
   Pipe,
   PipeTransform,
 } from '@angular/core';
@@ -39,6 +37,7 @@ import {
   MatSlideToggleModule,
 } from '@angular/material/slide-toggle';
 import { MatLabel } from '@angular/material/form-field';
+import { VmService } from '../../state/vm/vm.service';
 
 declare var WMKS: any; // needed to check values
 const MAX_COPY_RETRIES = 1;
@@ -79,14 +78,7 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
   @Input() vm: VsphereVirtualMachine;
   @Input() vmId: string;
   @Input() readOnly: boolean;
-
-  readOnlyManual: boolean;
-
-  get readOnlyInternal() {
-    return this.readOnlyManual || this.readOnly;
-  }
-
-  @Output() readOnlyChanged = new EventEmitter<boolean>();
+  @Input() allowReadOnlyToggle: boolean;
 
   opened = false;
 
@@ -109,17 +101,17 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject();
 
   constructor(
-    public vmService: VsphereService,
+    public vsphereService: VsphereService,
     public settingsService: ComnSettingsService,
     private dialogService: DialogService,
     private notificationService: NotificationService,
     private route: ActivatedRoute,
     private snackBar: MatSnackBar,
     private signalrService: SignalRService,
+    private vmService: VmService,
   ) {}
 
   ngOnInit() {
-    this.readOnlyManual = this.readOnly;
     this.vmResolutionsOptions = [
       { width: 1600, height: 1200 } as VmResolution,
       { width: 1024, height: 768 } as VmResolution,
@@ -141,7 +133,7 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
 
     this.inFrame = this.inIframe();
 
-    this.vmService.vmClipBoard
+    this.vsphereService.vmClipBoard
       .pipe(takeUntil(this.destroy$))
       .subscribe((data) => {
         if (data !== '') {
@@ -151,7 +143,7 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
         }
       });
 
-    this.vmService.vmResolution
+    this.vsphereService.vmResolution
       .pipe(takeUntil(this.destroy$))
       .subscribe((res) => (this.currentVmContainerResolution = res));
   }
@@ -174,27 +166,27 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
   }
 
   fullscreen() {
-    if (this.vmService.wmks.isFullScreen()) {
+    if (this.vsphereService.wmks.isFullScreen()) {
       // console.log('browser is fullscreen');
-    } else if (this.vmService.wmks.canFullScreen()) {
+    } else if (this.vsphereService.wmks.canFullScreen()) {
       // console.log('attempting fullscreen');
-      this.vmService.wmks.enterFullScreen();
+      this.vsphereService.wmks.enterFullScreen();
     } else {
       console.log('cannot do fullscreen');
     }
   }
 
   changeNic(adapter, nic) {
-    this.vmService
+    this.vsphereService
       .changeNic(this.vmId, adapter, nic)
       .subscribe((model: VmModel) => {
-        this.vmService.model = model;
+        this.vsphereService.model = model;
       });
   }
 
   cad() {
     console.log('sending CAD');
-    this.vmService.wmks.sendCAD();
+    this.vsphereService.wmks.sendCAD();
   }
 
   enableCopyPaste() {
@@ -221,7 +213,7 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
 
   disconnect() {
     console.log('disconnect requested');
-    this.vmService.disconnect();
+    this.vsphereService.disconnect();
   }
 
   reconnect() {
@@ -232,37 +224,38 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
 
   connect() {
     console.log('connect requested');
-    this.vmService.connect(this.vmId, this.readOnlyInternal);
+    this.vsphereService.connect(this.vmId, this.readOnly);
   }
 
   poweron() {
     console.log('poweron requested');
-    this.vmService.powerOn(this.vmId);
+    this.vsphereService.powerOn(this.vmId);
   }
 
   poweroff() {
     console.log('poweroff requested');
-    this.vmService.powerOff(this.vmId);
+    this.vsphereService.powerOff(this.vmId);
   }
 
   reboot() {
     console.log('reboot requested');
-    this.vmService.reBoot(this.vmId);
+    this.vsphereService.reBoot(this.vmId);
   }
 
   shutdownOS() {
     console.log('shutdown OS requested');
-    this.vmService.shutdownOS(this.vmId);
+    this.vsphereService.shutdownOS(this.vmId);
   }
 
   enableFileUpload(title) {
-    this.vmService.uploadConfig.username = '';
-    this.vmService.uploadConfig.password = '';
-    this.vmService.uploadConfig.filepath = '';
+    this.vsphereService.uploadConfig.username = '';
+    this.vsphereService.uploadConfig.password = '';
+    this.vsphereService.uploadConfig.filepath = '';
     if (
-      this.vmService.model.vmToolsStatus !==
+      this.vsphereService.model.vmToolsStatus !==
         VirtualMachineToolsStatus.toolsOk &&
-      this.vmService.model.vmToolsStatus !== VirtualMachineToolsStatus.toolsOld
+      this.vsphereService.model.vmToolsStatus !==
+        VirtualMachineToolsStatus.toolsOld
     ) {
       this.dialogService.message(
         'Alert!',
@@ -276,23 +269,23 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
       if (!enteredInfo['username']) {
         return;
       }
-      this.vmService.uploadConfig.username = enteredInfo['username'];
-      this.vmService.uploadConfig.password = enteredInfo['password'];
-      this.vmService.uploadConfig.filepath = enteredInfo['filepath'];
+      this.vsphereService.uploadConfig.username = enteredInfo['username'];
+      this.vsphereService.uploadConfig.password = enteredInfo['password'];
+      this.vsphereService.uploadConfig.filepath = enteredInfo['filepath'];
       if (
-        !this.vmService.uploadConfig.filepath.endsWith('\\') &&
-        !this.vmService.uploadConfig.filepath.endsWith('/')
+        !this.vsphereService.uploadConfig.filepath.endsWith('\\') &&
+        !this.vsphereService.uploadConfig.filepath.endsWith('/')
       ) {
-        if (this.vmService.uploadConfig.filepath.includes('\\')) {
-          this.vmService.uploadConfig.filepath += '\\';
-        } else if (this.vmService.uploadConfig.filepath.includes('/')) {
-          this.vmService.uploadConfig.filepath += '/';
+        if (this.vsphereService.uploadConfig.filepath.includes('\\')) {
+          this.vsphereService.uploadConfig.filepath += '\\';
+        } else if (this.vsphereService.uploadConfig.filepath.includes('/')) {
+          this.vsphereService.uploadConfig.filepath += '/';
         } else {
           this.enableFileUpload('The file path must be an absolute path.');
           return;
         }
       }
-      this.vmService.verifyCredentials(this.vmId).subscribe(
+      this.vsphereService.verifyCredentials(this.vmId).subscribe(
         (response) => {
           this.uploadEnabled = true;
         },
@@ -321,7 +314,7 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
     });
 
     this.uploading = true;
-    this.vmService.sendFileToVm(this.vmId, fileSelector.files).subscribe(
+    this.vsphereService.sendFileToVm(this.vmId, fileSelector.files).subscribe(
       (response) => {
         this.dialogService.closeAll();
         this.dialogService.message('File Uploaded Successfully', '');
@@ -347,7 +340,7 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
   startIsoMount() {
     // refresh the iso list
     this.retrievingIsos = true;
-    this.vmService.getIsos(this.vmId).subscribe(
+    this.vsphereService.getIsos(this.vmId).subscribe(
       (isoResult) => {
         this.retrievingIsos = false;
         this.mountIso(isoResult);
@@ -372,12 +365,12 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
         return;
       }
       // mount the iso
-      this.vmService
+      this.vsphereService
         .mountIso(this.vmId, result.path + result.filename)
         .subscribe(
           // refresh the vm model
           (model: VmModel) => {
-            this.vmService.model = model;
+            this.vsphereService.model = model;
           },
         );
     });
@@ -434,8 +427,8 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
   async paste(text: string, timeoutStr: string = '50') {
     const timeout = parseInt(timeoutStr);
     for (const line of text.split('\n')) {
-      this.vmService.wmks.sendInputString(line);
-      this.vmService.wmks.sendInputString('\n');
+      this.vsphereService.wmks.sendInputString(line);
+      this.vsphereService.wmks.sendInputString('\n');
       await new Promise((r) => setTimeout(r, timeout));
     }
   }
@@ -443,7 +436,7 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
   copyVmClipboard() {
     this.copyTryCount++;
     console.log('Trying to copy.  Count:  ', this.copyTryCount);
-    this.vmService.wmks.grab();
+    this.vsphereService.wmks.grab();
     setTimeout(() => {
       if (this.copyTryCount > MAX_COPY_RETRIES) {
         this.snackBar.open(
@@ -467,7 +460,7 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
 
   setResolution(vmResolution: VmResolution) {
     console.log('Setting Resolution:  ', vmResolution);
-    this.vmService
+    this.vsphereService
       .setResolution(this.vmId, vmResolution)
       .pipe(take(1))
       .subscribe();
@@ -501,8 +494,6 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
   }
 
   toggleReadOnly(event: MatSlideToggleChange) {
-    this.readOnlyChanged.emit(event.checked);
-    this.readOnlyManual = event.checked;
     this.vmService.setReadOnly(event.checked);
   }
 }

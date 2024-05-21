@@ -14,6 +14,7 @@ Copyright 2021 Carnegie Mellon University. All Rights Reserved.
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { ProxmoxVmInfo } from './proxmoxVmInfo';
 import { VmType } from './vmType';
 import { PowerState } from './powerState';
 import { ConsoleConnectionInfo } from './consoleConnectionInfo';
@@ -28,6 +29,10 @@ export interface Vm {
      * Url to the Vm\'s console
      */
     url?: string | null;
+    /**
+     * True if this VM\'s Url has not been explicitly set and a default value has been computed
+     */
+    defaultUrl?: boolean;
     /**
      * The Vm\'s name
      */
@@ -55,5 +60,10 @@ export interface Vm {
     hasPendingTasks?: boolean;
     consoleConnectionInfo?: ConsoleConnectionInfo;
     type?: VmType;
+    proxmoxVmInfo?: ProxmoxVmInfo;
+    /**
+     * If false, only allow opening this VM in a new tab
+     */
+    embeddable?: boolean;
 }
 

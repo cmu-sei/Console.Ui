@@ -11,13 +11,14 @@ import {
 } from '@angular/core';
 import { Title } from '@angular/platform-browser';
 import { RouterQuery } from '@datorama/akita-ng-router-store';
-import { Subject } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
+import { Observable, Subject } from 'rxjs';
+import { debounceTime, map, takeUntil } from 'rxjs/operators';
 import { SignalRService } from '../../services/signalr/signalr.service';
 import { UserQuery } from '../../state/user/user.query';
 import { VsphereQuery } from '../../state/vsphere/vsphere.query';
 import { AsyncPipe } from '@angular/common';
 import { ConsoleComponent } from '../console/console.component';
+import { VmUser } from '../../generated/vm-api';
 
 @Component({
   selector: 'app-user-follow-page',
@@ -28,8 +29,14 @@ import { ConsoleComponent } from '../console/console.component';
   imports: [ConsoleComponent, AsyncPipe],
 })
 export class UserFollowPageComponent implements OnInit, OnDestroy {
-  vmId$ = this.vmQuery.selectActiveId();
+  vmId$: Observable<string>;
+  isActive$ = this.vmQuery.selectActiveId().pipe(
+    map((x) => x != null),
+    debounceTime(100),
+  );
   user$ = this.userQuery.selectActive();
+
+  vmUser: VmUser = {};
 
   unsubscribe$ = new Subject();
 
@@ -48,7 +55,9 @@ export class UserFollowPageComponent implements OnInit, OnDestroy {
     const viewId = this.routerQuery.getParams('viewId');
 
     this.signalrRService.startConnection().then(() => {
-      this.signalrRService.joinUser(userId, viewId);
+      this.signalrRService.joinUser(userId, viewId).then((vmUser: VmUser) => {
+        this.vmUser = vmUser;
+      });
     });
 
     this.userQuery
@@ -57,6 +66,17 @@ export class UserFollowPageComponent implements OnInit, OnDestroy {
       .subscribe((user) => {
         this.titleService.setTitle(`${user.name} - Following`);
       });
+
+    this.vmId$ = this.vmQuery.selectActiveId().pipe(
+      map((x) => {
+        if (x == null) {
+          return this.vmUser?.lastVmId;
+        } else {
+          this.vmUser.lastVmId = x;
+          return x;
+        }
+      }),
+    );
   }
 
   ngOnDestroy(): void {

@@ -10,7 +10,7 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
         <mat-icon svgIcon="gear" alt="Gear"></mat-icon>
       </button>
       <span class="ms-1"
-        >{{ vm?.name }}{{ readOnlyInternal ? ' (Read Only)' : '' }}</span
+        >{{ vm?.name }}{{ readOnly ? ' (Read Only)' : '' }}</span
       >
       <mat-menu #mainMenu="matMenu">
         <div>
@@ -21,7 +21,7 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
           <button mat-menu-item (click)="reconnect()">Reconnect</button>
         </div>
 
-        @if (!readOnly) {
+        @if (allowReadOnlyToggle) {
           <button mat-menu-item (click)="$event.stopPropagation()">
             <mat-slide-toggle
               labelPosition="before"
@@ -37,10 +37,10 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
           </button>
         }
 
-        @if (!readOnlyInternal) {
+        @if (!readOnly) {
           <div>
             <!-- Resolution -->
-            @if (!vmService.model.isOwner) {
+            @if (!vsphereService.model.isOwner) {
               <button
                 mat-menu-item
                 [matMenuTriggerFor]="resolutionMenu"
@@ -49,10 +49,10 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
               >
                 <span
                   [matTooltip]="
-                    vmService.model.vmToolsStatus ===
+                    vsphereService.model.vmToolsStatus ===
                     virtualMachineToolsStatus.toolsNotInstalled
                       ? 'VmWare Tools is not installed'
-                      : vmService.model.vmToolsStatus ===
+                      : vsphereService.model.vmToolsStatus ===
                           virtualMachineToolsStatus.toolsNotRunning
                         ? 'VmWare Tools is not running'
                         : ''
@@ -67,9 +67,9 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
               <button
                 mat-menu-item
                 [disabled]="
-                  vmService.model.vmToolsStatus ===
+                  vsphereService.model.vmToolsStatus ===
                     virtualMachineToolsStatus.toolsNotRunning ||
-                  vmService.model.vmToolsStatus ===
+                  vsphereService.model.vmToolsStatus ===
                     virtualMachineToolsStatus.toolsNotInstalled
                 "
                 (click)="setResolution(currentVmContainerResolution)"
@@ -85,9 +85,9 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
                 <button
                   mat-menu-item
                   [disabled]="
-                    vmService.model.vmToolsStatus ===
+                    vsphereService.model.vmToolsStatus ===
                       virtualMachineToolsStatus.toolsNotRunning ||
-                    vmService.model.vmToolsStatus ===
+                    vsphereService.model.vmToolsStatus ===
                       virtualMachineToolsStatus.toolsNotInstalled
                   "
                   (click)="setResolution(vmRes)"
@@ -108,10 +108,10 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
               <button mat-menu-item (click)="reboot()">Reboot</button>
               <div
                 [matTooltip]="
-                  vmService.model.vmToolsStatus ===
+                  vsphereService.model.vmToolsStatus ===
                   virtualMachineToolsStatus.toolsNotInstalled
                     ? 'VmWare Tools is not installed'
-                    : vmService.model.vmToolsStatus ===
+                    : vsphereService.model.vmToolsStatus ===
                         virtualMachineToolsStatus.toolsNotRunning
                       ? 'VmWare Tools is not running'
                       : ''
@@ -121,9 +121,9 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
                 <button
                   mat-menu-item
                   [disabled]="
-                    vmService.model.vmToolsStatus ===
+                    vsphereService.model.vmToolsStatus ===
                       virtualMachineToolsStatus.toolsNotRunning ||
-                    vmService.model.vmToolsStatus ===
+                    vsphereService.model.vmToolsStatus ===
                       virtualMachineToolsStatus.toolsNotInstalled
                   "
                   (click)="shutdownOS()"
@@ -148,10 +148,10 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
               <!-- send to VM -->
               <div
                 [matTooltip]="
-                  vmService.model.vmToolsStatus ===
+                  vsphereService.model.vmToolsStatus ===
                   virtualMachineToolsStatus.toolsNotInstalled
                     ? 'VmWare Tools is not installed'
-                    : vmService.model.vmToolsStatus ===
+                    : vsphereService.model.vmToolsStatus ===
                         virtualMachineToolsStatus.toolsNotRunning
                       ? 'VmWare Tools is not running'
                       : ''
@@ -163,9 +163,9 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
                   (click)="enableFileUpload('VM Send File Settings')"
                   [disabled]="
                     uploading ||
-                    vmService.model.vmToolsStatus ===
+                    vsphereService.model.vmToolsStatus ===
                       virtualMachineToolsStatus.toolsNotRunning ||
-                    vmService.model.vmToolsStatus ===
+                    vsphereService.model.vmToolsStatus ===
                       virtualMachineToolsStatus.toolsNotInstalled
                   "
                   aria-label="warning"
@@ -207,11 +207,11 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
                 Send Text
               </button>
             </mat-menu>
-            @if (vmService.model.networkCards) {
+            @if (vsphereService.model.networkCards) {
               <span>
                 @if (
-                  vmService.model.canAccessNicConfiguration &&
-                  vmService.model.networkCards.availableNetworks.length > 0
+                  vsphereService.model.canAccessNicConfiguration &&
+                  vsphereService.model.networkCards.availableNetworks.length > 0
                 ) {
                   <button mat-menu-item [matMenuTriggerFor]="main_menu">
                     Network Cards
@@ -219,8 +219,8 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
                 }
                 <mat-menu #main_menu="matMenu">
                   @for (
-                    mainItem of vmService.model.networkCards.currentNetworks
-                      | keys;
+                    mainItem of vsphereService.model.networkCards
+                      .currentNetworks | keys;
                     track mainItem
                   ) {
                     <button mat-menu-item [matMenuTriggerFor]="sub_menu">
@@ -228,7 +228,7 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
                     </button>
                     <mat-menu #sub_menu="matMenu">
                       @for (
-                        subItem of vmService.model.networkCards
+                        subItem of vsphereService.model.networkCards
                           .availableNetworks;
                         track subItem
                       ) {
@@ -271,7 +271,7 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
     }
   </div>
 
-  @if (!readOnlyInternal) {
+  @if (!readOnly) {
     <div class="w-50 d-flex justify-content-center">
       <button
         mat-stroked-button

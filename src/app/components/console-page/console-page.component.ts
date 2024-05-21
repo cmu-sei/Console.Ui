@@ -41,14 +41,15 @@ export class ConsolePageComponent implements OnInit, OnDestroy {
     private signalrRService: SignalRService,
     private vmQuery: VmQuery,
     private titleService: Title,
-    private vmService: VmService,
-    private authService: ComnAuthService,
+    public vmService: VmService,
   ) {}
 
   ngOnInit() {
     this.vmId = this.routerQuery.getParams('id');
 
     this.signalrRService.startConnection().then(() => {
+      this.signalrRService.joinVm(this.vmId);
+
       if (document.hasFocus()) {
         this.signalrRService.setActiveVirtualMachine(this.vmId);
       }
@@ -69,6 +70,8 @@ export class ConsolePageComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.signalrRService.leaveVm(this.vmId);
+
     this.unsubscribe$.next(null);
     this.unsubscribe$.complete();
   }
