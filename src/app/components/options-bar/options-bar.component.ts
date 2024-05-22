@@ -14,7 +14,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { ActivatedRoute } from '@angular/router';
 import { ComnSettingsService } from '@cmusei/crucible-common';
 import { Observable, Subject } from 'rxjs';
-import { take, takeUntil } from 'rxjs/operators';
+import { map, take, takeUntil, tap } from 'rxjs/operators';
 import { VsphereVirtualMachine } from '../../generated/vm-api';
 import { NotificationData } from '../../models/notification/notification-model';
 import { IsoResult } from '../../models/vm/iso-result';
@@ -27,7 +27,7 @@ import { DialogService } from '../../services/dialog/dialog.service';
 import { NotificationService } from '../../services/notification/notification.service';
 import { SignalRService } from '../../services/signalr/signalr.service';
 import { VsphereService } from '../../state/vsphere/vsphere.service';
-import { AsyncPipe } from '@angular/common';
+import { AsyncPipe, NgIf } from '@angular/common';
 import { MatTooltip } from '@angular/material/tooltip';
 import { MatIcon } from '@angular/material/icon';
 import { MatMenuTrigger, MatMenu, MatMenuItem } from '@angular/material/menu';
@@ -72,6 +72,7 @@ export class KeysPipe implements PipeTransform {
     KeysPipe,
     MatSlideToggleModule,
     MatLabel,
+    NgIf,
   ],
 })
 export class OptionsBarComponent implements OnInit, OnDestroy {
@@ -97,6 +98,7 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
   vmResolutionsOptions: VmResolution[];
   showConnectedUsers = false;
   currentVmUsers$: Observable<string[]>;
+  isAdmin$: Observable<boolean>;
   private copyTryCount: number;
   private destroy$ = new Subject();
 
@@ -146,6 +148,10 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
     this.vsphereService.vmResolution
       .pipe(takeUntil(this.destroy$))
       .subscribe((res) => (this.currentVmContainerResolution = res));
+
+    this.isAdmin$ = this.vmService
+      .getVmPermissions(this.vmId)
+      .pipe(map((x) => x.includes('ViewAdmin')));
   }
 
   ngOnDestroy() {
@@ -286,8 +292,9 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
         }
       }
       this.vsphereService.verifyCredentials(this.vmId).subscribe(
-        (response) => {
+        () => {
           this.uploadEnabled = true;
+          this.dialogService.message('Credentials Verified', '');
         },
         (error: HttpErrorResponse) => {
           // error.error.title contains the relevant message
@@ -335,6 +342,22 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
         console.log(error);
       },
     );
+  }
+
+  downloadFileFromVm() {
+    this.dialogService
+      .getFileUploadInfo('Download File Settings', {
+        data: { showCredentials: false },
+      })
+      .subscribe((enteredInfo) => {
+        const filePath = enteredInfo['filepath'];
+        this.vsphereService.getVmFileUrl(this.vmId, filePath).subscribe((x) => {
+          const link = document.createElement('a');
+          link.href = x.url;
+          link.download = x.fileName;
+          link.click();
+        });
+      });
   }
 
   startIsoMount() {

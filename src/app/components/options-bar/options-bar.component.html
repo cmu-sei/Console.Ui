@@ -184,7 +184,22 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
                   "
                   matTooltipPosition="after"
                 >
-                  Send File to VM
+                  Send File To VM
+                </span>
+              </button>
+              <button
+                *ngIf="isAdmin$ | async"
+                mat-menu-item
+                (click)="downloadFileFromVm()"
+                [disabled]="!uploadEnabled || uploading"
+              >
+                <span
+                  [matTooltip]="
+                    uploadEnabled ? '' : 'VM Credentials must be entered'
+                  "
+                  matTooltipPosition="after"
+                >
+                  Download File From VM
                 </span>
               </button>
               <!-- mount ISO -->

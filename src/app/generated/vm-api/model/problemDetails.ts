@@ -15,8 +15,9 @@ Copyright 2021 Carnegie Mellon University. All Rights Reserved.
  * Do not edit the class manually.
  */
 
+
 export interface ProblemDetails { 
-  [key: string]: any;
+  [key: string]: any | any;
 
 
     type?: string | null;

@@ -12,6 +12,7 @@ import { MatButton } from '@angular/material/button';
 import { MatInput } from '@angular/material/input';
 import { MatFormField, MatLabel } from '@angular/material/form-field';
 import { FormsModule } from '@angular/forms';
+import { NgIf } from '@angular/common';
 
 @Component({
   selector: 'file-upload-info-dialog',
@@ -25,6 +26,7 @@ import { FormsModule } from '@angular/forms';
     MatInput,
     MatDialogActions,
     MatButton,
+    NgIf,
   ],
 })
 export class FileUploadInfoDialogComponent {
@@ -33,10 +35,15 @@ export class FileUploadInfoDialogComponent {
   public password = '';
   public filepath = '';
 
+  public showCredentials = true;
+
   constructor(
     @Inject(MAT_DIALOG_DATA) data,
     private dialogRef: MatDialogRef<FileUploadInfoDialogComponent>,
   ) {
+    if (data?.showCredentials != null) {
+      this.showCredentials = data.showCredentials;
+    }
     this.dialogRef.disableClose = true;
   }
 

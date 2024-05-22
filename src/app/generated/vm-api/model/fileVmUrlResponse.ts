@@ -14,13 +14,10 @@ Copyright 2021 Carnegie Mellon University. All Rights Reserved.
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
-import { EventType } from './eventType';
 
 
-export interface WebhookEvent { 
-    id?: string;
-    type?: EventType;
-    timestamp?: string;
-    payload?: string | null;
+export interface FileVmUrlResponse { 
+    url?: string | null;
+    fileName?: string | null;
 }
 

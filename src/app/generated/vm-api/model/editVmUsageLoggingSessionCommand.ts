@@ -24,7 +24,7 @@ export interface EditVmUsageLoggingSessionCommand {
     id?: string;
     teamIds?: Array<string> | null;
     sessionName?: string | null;
-    sessionStart?: Date;
-    sessionEnd?: Date;
+    sessionStart?: string;
+    sessionEnd?: string;
 }
 

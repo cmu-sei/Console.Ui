@@ -19,8 +19,8 @@ Copyright 2021 Carnegie Mellon University. All Rights Reserved.
 export interface VmUsageReport { 
     sessionId?: string;
     sessionName?: string | null;
-    sessionStart?: Date;
-    sessionEnd?: Date;
+    sessionStart?: string;
+    sessionEnd?: string;
     vmId?: string;
     vmName?: string | null;
     ipAddress?: string | null;

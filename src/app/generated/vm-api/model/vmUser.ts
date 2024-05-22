@@ -30,6 +30,6 @@ export interface VmUser {
      */
     activeVmId?: string | null;
     lastVmId?: string | null;
-    lastSeen?: Date | null;
+    lastSeen?: string | null;
 }
 

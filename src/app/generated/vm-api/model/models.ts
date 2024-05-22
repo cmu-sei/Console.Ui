@@ -12,6 +12,8 @@ export * from './coordinateCreateForm';
 export * from './createVmUsageLoggingSessionCommand';
 export * from './editVmUsageLoggingSessionCommand';
 export * from './eventType';
+export * from './fileVmUrlResponse';
+export * from './getFileUrlVsphereVirtualMachine';
 export * from './healthStatus';
 export * from './isoFile';
 export * from './isoResult';

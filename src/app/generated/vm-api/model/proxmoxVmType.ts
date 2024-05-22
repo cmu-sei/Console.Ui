@@ -19,7 +19,7 @@ Copyright 2021 Carnegie Mellon University. All Rights Reserved.
 export type ProxmoxVmType = 'QEMU' | 'LXC';
 
 export const ProxmoxVmType = {
-    QEMU: 'QEMU' as ProxmoxVmType,
-    LXC: 'LXC' as ProxmoxVmType
+    Qemu: 'QEMU' as ProxmoxVmType,
+    Lxc: 'LXC' as ProxmoxVmType
 };
 

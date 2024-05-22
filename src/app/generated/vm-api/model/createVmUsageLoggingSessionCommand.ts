@@ -23,7 +23,7 @@ export interface CreateVmUsageLoggingSessionCommand {
     viewId?: string | null;
     teamIds?: Array<string> | null;
     sessionName?: string | null;
-    sessionStart?: Date;
-    sessionEnd?: Date;
+    sessionStart?: string;
+    sessionEnd?: string;
 }
 
