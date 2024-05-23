@@ -53,11 +53,14 @@ export class UserFollowPageComponent implements OnInit, OnDestroy {
   ngOnInit() {
     const userId = this.routerQuery.getParams('userId');
     const viewId = this.routerQuery.getParams('viewId');
+    const teamId = this.routerQuery.getQueryParams('teamId');
 
     this.signalrRService.startConnection().then(() => {
-      this.signalrRService.joinUser(userId, viewId).then((vmUser: VmUser) => {
-        this.vmUser = vmUser;
-      });
+      this.signalrRService
+        .joinUser(userId, viewId, teamId)
+        .then((vmUser: VmUser) => {
+          this.vmUser = vmUser;
+        });
     });
 
     this.userQuery

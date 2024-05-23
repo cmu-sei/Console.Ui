@@ -8,7 +8,6 @@ import { ComnAuthService } from '@cmusei/crucible-common';
 import * as signalR from '@microsoft/signalr';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { BASE_PATH, VmUser } from '../../generated/vm-api';
-import { UserQuery } from '../../state/user/user.query';
 import { UserService } from '../../state/user/user.service';
 import { VsphereService } from '../../state/vsphere/vsphere.service';
 
@@ -22,6 +21,7 @@ export class SignalRService {
 
   private userId: string;
   private viewId: string;
+  private teamId: string;
   private vmId: string;
   private activeVmId: string;
 
@@ -76,8 +76,8 @@ export class SignalRService {
   }
 
   private joinGroups() {
-    if (this.userId && this.viewId) {
-      this.joinUser(this.userId, this.viewId);
+    if (this.userId && this.viewId && this.teamId) {
+      this.joinUser(this.userId, this.viewId, this.teamId);
     }
 
     if (this.activeVmId) {
@@ -89,13 +89,18 @@ export class SignalRService {
     }
   }
 
-  public joinUser(userId: string, viewId: string): Promise<VmUser> {
+  public joinUser(
+    userId: string,
+    viewId: string,
+    teamId: string,
+  ): Promise<VmUser> {
     this.userId = userId;
     this.viewId = viewId;
+    this.teamId = teamId;
 
     return this.startConnection().then(() => {
       return this.hubConnection
-        .invoke('JoinUser', userId, viewId)
+        .invoke('JoinUser', userId, viewId, teamId)
         .then((vmUser: VmUser) => {
           const user = { id: vmUser.userId, name: vmUser.username };
           this.userService.add(user);
