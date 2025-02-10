@@ -11,16 +11,12 @@
  */
 
 
-/**
- * A Logging session for Virtual Machines
- */
-export interface VmUsageLoggingSession { 
-    id?: string;
-    viewId?: string;
-    teamIds?: Array<string> | null;
-    sessionName?: string | null;
-    createdDt?: string;
-    sessionStart?: string;
-    sessionEnd?: string;
-}
+export type AppTeamPermission = 'ViewTeam' | 'ManageTeam' | 'EditTeam' | 'UploadTeamIsos';
+
+export const AppTeamPermission = {
+    ViewTeam: 'ViewTeam' as AppTeamPermission,
+    ManageTeam: 'ManageTeam' as AppTeamPermission,
+    EditTeam: 'EditTeam' as AppTeamPermission,
+    UploadTeamIsos: 'UploadTeamIsos' as AppTeamPermission
+};
 

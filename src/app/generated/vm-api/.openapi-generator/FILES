@@ -14,6 +14,9 @@ configuration.ts
 encoder.ts
 git_push.sh
 index.ts
+model/appSystemPermission.ts
+model/appTeamPermission.ts
+model/appViewPermission.ts
 model/bulkPowerOperation.ts
 model/bulkPowerOperationResponse.ts
 model/changeVsphereVirtualMachineNetwork.ts
@@ -31,7 +34,6 @@ model/isoResult.ts
 model/models.ts
 model/mountVsphereIso.ts
 model/nicOptions.ts
-model/permissions.ts
 model/powerState.ts
 model/problemDetails.ts
 model/proxmoxConsole.ts
@@ -47,6 +49,7 @@ model/vmCreateForm.ts
 model/vmMap.ts
 model/vmMapCreateForm.ts
 model/vmMapUpdateForm.ts
+model/vmPermissionResult.ts
 model/vmType.ts
 model/vmUpdateForm.ts
 model/vmUsageLoggingSession.ts

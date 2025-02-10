@@ -9,18 +9,12 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { AppViewPermission } from './appViewPermission';
+import { AppTeamPermission } from './appTeamPermission';
 
 
-/**
- * A Logging session for Virtual Machines
- */
-export interface VmUsageLoggingSession { 
-    id?: string;
-    viewId?: string;
-    teamIds?: Array<string> | null;
-    sessionName?: string | null;
-    createdDt?: string;
-    sessionStart?: string;
-    sessionEnd?: string;
+export interface VmPermissionResult { 
+    viewPermissions?: Array<AppViewPermission> | null;
+    teamPermissions?: Array<AppTeamPermission> | null;
 }
 

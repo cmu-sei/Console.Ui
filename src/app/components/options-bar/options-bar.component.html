@@ -159,6 +159,9 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
                 matTooltipPosition="after"
               >
                 <button
+                  *ngIf="
+                    (canUploadVmFiles$ | async) || (canDownloadVmFiles$ | async)
+                  "
                   mat-menu-item
                   (click)="enableFileUpload('VM Send File Settings')"
                   [disabled]="
@@ -174,6 +177,7 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
                 </button>
               </div>
               <button
+                *ngIf="canUploadVmFiles$ | async"
                 mat-menu-item
                 (click)="file.click()"
                 [disabled]="!uploadEnabled || uploading"
@@ -188,7 +192,7 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
                 </span>
               </button>
               <button
-                *ngIf="isAdmin$ | async"
+                *ngIf="canDownloadVmFiles$ | async"
                 mat-menu-item
                 (click)="downloadFileFromVm()"
                 [disabled]="!uploadEnabled || uploading"

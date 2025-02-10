@@ -15,7 +15,10 @@ import { ActivatedRoute } from '@angular/router';
 import { ComnSettingsService } from '@cmusei/crucible-common';
 import { Observable, Subject } from 'rxjs';
 import { map, take, takeUntil, tap } from 'rxjs/operators';
-import { VsphereVirtualMachine } from '../../generated/vm-api';
+import {
+  AppViewPermission,
+  VsphereVirtualMachine,
+} from '../../generated/vm-api';
 import { NotificationData } from '../../models/notification/notification-model';
 import { IsoResult } from '../../models/vm/iso-result';
 import {
@@ -38,6 +41,7 @@ import {
 } from '@angular/material/slide-toggle';
 import { MatLabel } from '@angular/material/form-field';
 import { VmService } from '../../state/vm/vm.service';
+import { UserPermissionsService } from '../../services/user-permissions/user-permissions.service';
 
 declare var WMKS: any; // needed to check values
 const MAX_COPY_RETRIES = 1;
@@ -98,9 +102,18 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
   vmResolutionsOptions: VmResolution[];
   showConnectedUsers = false;
   currentVmUsers$: Observable<string[]>;
-  isAdmin$: Observable<boolean>;
+
   private copyTryCount: number;
   private destroy$ = new Subject();
+
+  canDownloadVmFiles$ = this.userPermissionsService.can(
+    null,
+    AppViewPermission.DownloadVmFiles,
+  );
+  canUploadVmFiles$ = this.userPermissionsService.can(
+    null,
+    AppViewPermission.UploadVmFiles,
+  );
 
   constructor(
     public vsphereService: VsphereService,
@@ -111,6 +124,7 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
     private snackBar: MatSnackBar,
     private signalrService: SignalRService,
     private vmService: VmService,
+    private userPermissionsService: UserPermissionsService,
   ) {}
 
   ngOnInit() {
@@ -148,10 +162,6 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
     this.vsphereService.vmResolution
       .pipe(takeUntil(this.destroy$))
       .subscribe((res) => (this.currentVmContainerResolution = res));
-
-    this.isAdmin$ = this.vmService
-      .getVmPermissions(this.vmId)
-      .pipe(map((x) => x.includes('ViewAdmin')));
   }
 
   ngOnDestroy() {
