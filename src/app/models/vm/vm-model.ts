@@ -23,6 +23,7 @@ export class VmModel {
   networkCards: any;
   canAccessNicConfiguration: boolean;
   vmToolsStatus: VirtualMachineToolsStatus;
+  hasSnapshot: boolean;
 
   constructor() {
     this.id = null;

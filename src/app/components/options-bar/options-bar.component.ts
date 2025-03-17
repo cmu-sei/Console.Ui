@@ -13,8 +13,16 @@ import {
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ActivatedRoute } from '@angular/router';
 import { ComnSettingsService } from '@cmusei/crucible-common';
-import { Observable, Subject } from 'rxjs';
-import { map, take, takeUntil, tap } from 'rxjs/operators';
+import { Observable, of, Subject } from 'rxjs';
+import {
+  catchError,
+  filter,
+  map,
+  switchMap,
+  take,
+  takeUntil,
+  tap,
+} from 'rxjs/operators';
 import {
   AppViewPermission,
   VsphereVirtualMachine,
@@ -113,6 +121,10 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
   canUploadVmFiles$ = this.userPermissionsService.can(
     null,
     AppViewPermission.UploadVmFiles,
+  );
+  canRevertSnapshots$ = this.userPermissionsService.can(
+    null,
+    AppViewPermission.RevertVms,
   );
 
   constructor(
@@ -261,6 +273,26 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
   shutdownOS() {
     console.log('shutdown OS requested');
     this.vsphereService.shutdownOS(this.vmId);
+  }
+
+  revert() {
+    console.log('revert requested');
+    this.dialogService
+      .confirm({
+        title: 'Revert Vm',
+        message: 'Are you sure you want to revert this Vm?',
+      })
+      .pipe(
+        filter((confirmed) => confirmed === true),
+        // Switch to the revert service call
+        switchMap(() => this.vsphereService.revert(this.vmId)),
+        tap(() => this.dialogService.message('Revert Vm', 'Revert Successful')),
+        catchError((error) => {
+          this.dialogService.message('Revert Vm', 'Revert Failed');
+          return of(error);
+        }),
+      )
+      .subscribe();
   }
 
   enableFileUpload(title) {

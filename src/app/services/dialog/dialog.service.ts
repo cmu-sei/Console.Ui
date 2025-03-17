@@ -9,6 +9,10 @@ import { SendTextDialogComponent } from '../../components/shared/send-text-dialo
 import { FileUploadInfoDialogComponent } from '../../components/shared/file-upload-info-dialog/file-upload-info-dialog.component';
 import { MountIsoDialogComponent } from '../../components/shared/mount-iso-dialog/mount-iso-dialog.component';
 import { IsoResult, IsoFile } from '../../models/vm/iso-result';
+import {
+  ConfirmDialogComponent,
+  ConfirmDialogData,
+} from '../../components/shared/confirm-dialog/confirm-dialog.component';
 
 @Injectable()
 export class DialogService {
@@ -62,5 +66,10 @@ export class DialogService {
 
   public closeAll() {
     this.dialog.closeAll();
+  }
+
+  public confirm(data: ConfirmDialogData): Observable<any> {
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, { data: data });
+    return dialogRef.afterClosed();
   }
 }

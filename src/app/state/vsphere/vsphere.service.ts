@@ -396,6 +396,10 @@ export class VsphereService {
     );
   }
 
+  public revert(id: string) {
+    return this.vsphereService.revertVsphereVirtualMachine(id);
+  }
+
   public getUploadConfig(): Observable<any> {
     return this.uploadConfig.asObservable();
   }

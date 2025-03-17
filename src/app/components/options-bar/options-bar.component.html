@@ -13,13 +13,11 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
         >{{ vm?.name }}{{ readOnly ? ' (Read Only)' : '' }}</span
       >
       <mat-menu #mainMenu="matMenu">
-        <div>
-          <button mat-menu-item (click)="fullscreen()">Fullscreen</button>
-          @if (inFrame) {
-            <button mat-menu-item (click)="openInTab()">Open In New Tab</button>
-          }
-          <button mat-menu-item (click)="reconnect()">Reconnect</button>
-        </div>
+        <button mat-menu-item (click)="fullscreen()">Fullscreen</button>
+        @if (inFrame) {
+          <button mat-menu-item (click)="openInTab()">Open In New Tab</button>
+        }
+        <button mat-menu-item (click)="reconnect()">Reconnect</button>
 
         @if (allowReadOnlyToggle) {
           <button mat-menu-item (click)="$event.stopPropagation()">
@@ -38,32 +36,49 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
         }
 
         @if (!readOnly) {
-          <div>
-            <!-- Resolution -->
-            @if (!vsphereService.model.isOwner) {
-              <button
-                mat-menu-item
-                [matMenuTriggerFor]="resolutionMenu"
+          <!-- Resolution -->
+          @if (!vsphereService.model.isOwner) {
+            <button
+              mat-menu-item
+              [matMenuTriggerFor]="resolutionMenu"
+              matTooltipPosition="after"
+              aria-label="warning"
+            >
+              <span
+                [matTooltip]="
+                  vsphereService.model.vmToolsStatus ===
+                  virtualMachineToolsStatus.toolsNotInstalled
+                    ? 'VmWare Tools is not installed'
+                    : vsphereService.model.vmToolsStatus ===
+                        virtualMachineToolsStatus.toolsNotRunning
+                      ? 'VmWare Tools is not running'
+                      : ''
+                "
                 matTooltipPosition="after"
-                aria-label="warning"
               >
-                <span
-                  [matTooltip]="
-                    vsphereService.model.vmToolsStatus ===
-                    virtualMachineToolsStatus.toolsNotInstalled
-                      ? 'VmWare Tools is not installed'
-                      : vsphereService.model.vmToolsStatus ===
-                          virtualMachineToolsStatus.toolsNotRunning
-                        ? 'VmWare Tools is not running'
-                        : ''
-                  "
-                  matTooltipPosition="after"
-                >
-                  Resolution
-                </span>
-              </button>
-            }
-            <mat-menu #resolutionMenu="matMenu">
+                Resolution
+              </span>
+            </button>
+          }
+          <mat-menu #resolutionMenu="matMenu">
+            <button
+              mat-menu-item
+              [disabled]="
+                vsphereService.model.vmToolsStatus ===
+                  virtualMachineToolsStatus.toolsNotRunning ||
+                vsphereService.model.vmToolsStatus ===
+                  virtualMachineToolsStatus.toolsNotInstalled
+              "
+              (click)="setResolution(currentVmContainerResolution)"
+            >
+              Current Browser {{ currentVmContainerResolution.width }}x{{
+                currentVmContainerResolution.height
+              }}
+            </button>
+            @for (
+              vmRes of settingsService.settings.VmResolutionOptions;
+              track vmRes
+            ) {
               <button
                 mat-menu-item
                 [disabled]="
@@ -72,36 +87,15 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
                   vsphereService.model.vmToolsStatus ===
                     virtualMachineToolsStatus.toolsNotInstalled
                 "
-                (click)="setResolution(currentVmContainerResolution)"
+                (click)="setResolution(vmRes)"
               >
-                Current Browser {{ currentVmContainerResolution.width }}x{{
-                  currentVmContainerResolution.height
-                }}
-              </button>
-              @for (
-                vmRes of settingsService.settings.VmResolutionOptions;
-                track vmRes
-              ) {
-                <button
-                  mat-menu-item
-                  [disabled]="
-                    vsphereService.model.vmToolsStatus ===
-                      virtualMachineToolsStatus.toolsNotRunning ||
-                    vsphereService.model.vmToolsStatus ===
-                      virtualMachineToolsStatus.toolsNotInstalled
-                  "
-                  (click)="setResolution(vmRes)"
-                >
-                  {{ vmRes.width }}x{{ vmRes.height }}
-                </button>
-              }
-            </mat-menu>
-            <!-- Power -->
-            @if (powerOptions) {
-              <button mat-menu-item [matMenuTriggerFor]="powerMenu">
-                Power
+                {{ vmRes.width }}x{{ vmRes.height }}
               </button>
             }
+          </mat-menu>
+          <!-- Power -->
+          @if (powerOptions) {
+            <button mat-menu-item [matMenuTriggerFor]="powerMenu">Power</button>
             <mat-menu #powerMenu="matMenu">
               <button mat-menu-item (click)="poweron()">Power On</button>
               <button mat-menu-item (click)="poweroff()">Power Off</button>
@@ -134,149 +128,166 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
                 </button>
               </div>
             </mat-menu>
-            <!-- Files -->
-            <input
-              #file
-              id="fileInput"
-              type="file"
-              multiple
-              style="display: none"
-              (change)="uploadFileToVm(file)"
-            />
-            <button mat-menu-item [matMenuTriggerFor]="fileMenu">Files</button>
-            <mat-menu #fileMenu="matMenu">
-              <!-- send to VM -->
-              <div
+          }
+
+          <!-- Snapshots -->
+          @if (canRevertSnapshots$ | async) {
+            <button mat-menu-item [matMenuTriggerFor]="snapshotMenu">
+              Snapshots
+            </button>
+            <mat-menu #snapshotMenu="matMenu">
+              <button
+                mat-menu-item
+                (click)="revert()"
+                [disabled]="!vsphereService.model.hasSnapshot"
                 [matTooltip]="
+                  vsphereService.model.hasSnapshot
+                    ? 'Revert to the current snapshot'
+                    : 'No snapshots available'
+                "
+              >
+                Revert
+              </button>
+            </mat-menu>
+          }
+          <!-- Files -->
+          <input
+            #file
+            id="fileInput"
+            type="file"
+            multiple
+            style="display: none"
+            (change)="uploadFileToVm(file)"
+          />
+          <button mat-menu-item [matMenuTriggerFor]="fileMenu">Files</button>
+          <mat-menu #fileMenu="matMenu">
+            <!-- send to VM -->
+            <div
+              [matTooltip]="
+                vsphereService.model.vmToolsStatus ===
+                virtualMachineToolsStatus.toolsNotInstalled
+                  ? 'VmWare Tools is not installed'
+                  : vsphereService.model.vmToolsStatus ===
+                      virtualMachineToolsStatus.toolsNotRunning
+                    ? 'VmWare Tools is not running'
+                    : ''
+              "
+              matTooltipPosition="after"
+            >
+              <button
+                *ngIf="
+                  (canUploadVmFiles$ | async) || (canDownloadVmFiles$ | async)
+                "
+                mat-menu-item
+                (click)="enableFileUpload('VM Send File Settings')"
+                [disabled]="
+                  uploading ||
                   vsphereService.model.vmToolsStatus ===
-                  virtualMachineToolsStatus.toolsNotInstalled
-                    ? 'VmWare Tools is not installed'
-                    : vsphereService.model.vmToolsStatus ===
-                        virtualMachineToolsStatus.toolsNotRunning
-                      ? 'VmWare Tools is not running'
-                      : ''
+                    virtualMachineToolsStatus.toolsNotRunning ||
+                  vsphereService.model.vmToolsStatus ===
+                    virtualMachineToolsStatus.toolsNotInstalled
+                "
+                aria-label="warning"
+              >
+                Enter VM Credentials
+              </button>
+            </div>
+            <button
+              *ngIf="canUploadVmFiles$ | async"
+              mat-menu-item
+              (click)="file.click()"
+              [disabled]="!uploadEnabled || uploading"
+            >
+              <span
+                [matTooltip]="
+                  uploadEnabled ? '' : 'VM Credentials must be entered'
                 "
                 matTooltipPosition="after"
               >
-                <button
-                  *ngIf="
-                    (canUploadVmFiles$ | async) || (canDownloadVmFiles$ | async)
-                  "
-                  mat-menu-item
-                  (click)="enableFileUpload('VM Send File Settings')"
-                  [disabled]="
-                    uploading ||
-                    vsphereService.model.vmToolsStatus ===
-                      virtualMachineToolsStatus.toolsNotRunning ||
-                    vsphereService.model.vmToolsStatus ===
-                      virtualMachineToolsStatus.toolsNotInstalled
-                  "
-                  aria-label="warning"
-                >
-                  Enter VM Credentials
-                </button>
-              </div>
-              <button
-                *ngIf="canUploadVmFiles$ | async"
-                mat-menu-item
-                (click)="file.click()"
-                [disabled]="!uploadEnabled || uploading"
-              >
-                <span
-                  [matTooltip]="
-                    uploadEnabled ? '' : 'VM Credentials must be entered'
-                  "
-                  matTooltipPosition="after"
-                >
-                  Send File To VM
-                </span>
-              </button>
-              <button
-                *ngIf="canDownloadVmFiles$ | async"
-                mat-menu-item
-                (click)="downloadFileFromVm()"
-                [disabled]="!uploadEnabled || uploading"
-              >
-                <span
-                  [matTooltip]="
-                    uploadEnabled ? '' : 'VM Credentials must be entered'
-                  "
-                  matTooltipPosition="after"
-                >
-                  Download File From VM
-                </span>
-              </button>
-              <!-- mount ISO -->
-              <button
-                mat-menu-item
-                [disabled]="retrievingIsos"
-                (click)="startIsoMount()"
-              >
-                Mount ISO
-              </button>
-            </mat-menu>
-            <button mat-menu-item [matMenuTriggerFor]="keyboardMenu">
-              Keyboard
-            </button>
-            <mat-menu #keyboardMenu="matMenu">
-              <!-- send ctrl-alt-del -->
-              <button mat-menu-item (click)="cad()">Send Ctrl-Alt-Del</button>
-              <!-- paste text -->
-              <button mat-menu-item (click)="sendInputString()">
-                Send Text
-              </button>
-            </mat-menu>
-            @if (vsphereService.model.networkCards) {
-              <span>
-                @if (
-                  vsphereService.model.canAccessNicConfiguration &&
-                  vsphereService.model.networkCards.availableNetworks.length > 0
-                ) {
-                  <button mat-menu-item [matMenuTriggerFor]="main_menu">
-                    Network Cards
-                  </button>
-                }
-                <mat-menu #main_menu="matMenu">
-                  @for (
-                    mainItem of vsphereService.model.networkCards
-                      .currentNetworks | keys;
-                    track mainItem
-                  ) {
-                    <button mat-menu-item [matMenuTriggerFor]="sub_menu">
-                      {{ mainItem.key }}
-                    </button>
-                    <mat-menu #sub_menu="matMenu">
-                      @for (
-                        subItem of vsphereService.model.networkCards
-                          .availableNetworks;
-                        track subItem
-                      ) {
-                        <button
-                          (click)="changeNic(mainItem.key, subItem)"
-                          mat-menu-item
-                        >
-                          @if (mainItem.value == subItem) {
-                            <span>&#10004; </span>
-                          }
-                          {{ subItem }}
-                        </button>
-                      }
-                    </mat-menu>
-                  }
-                </mat-menu>
+                Send File To VM
               </span>
-            }
-            <!-- Clipboard -->
-            <button mat-menu-item [matMenuTriggerFor]="clipboardMenu">
-              Clipboard
             </button>
-            <mat-menu #clipboardMenu="matMenu">
-              <button mat-menu-item (click)="copyVmClipboard()">Copy</button>
-              <button mat-menu-item (click)="pasteFromClipboard()">
-                Paste
-              </button>
-            </mat-menu>
-          </div>
+            <button
+              *ngIf="canDownloadVmFiles$ | async"
+              mat-menu-item
+              (click)="downloadFileFromVm()"
+              [disabled]="!uploadEnabled || uploading"
+            >
+              <span
+                [matTooltip]="
+                  uploadEnabled ? '' : 'VM Credentials must be entered'
+                "
+                matTooltipPosition="after"
+              >
+                Download File From VM
+              </span>
+            </button>
+            <!-- mount ISO -->
+            <button
+              mat-menu-item
+              [disabled]="retrievingIsos"
+              (click)="startIsoMount()"
+            >
+              Mount ISO
+            </button>
+          </mat-menu>
+          <button mat-menu-item [matMenuTriggerFor]="keyboardMenu">
+            Keyboard
+          </button>
+          <mat-menu #keyboardMenu="matMenu">
+            <!-- send ctrl-alt-del -->
+            <button mat-menu-item (click)="cad()">Send Ctrl-Alt-Del</button>
+            <!-- paste text -->
+            <button mat-menu-item (click)="sendInputString()">Send Text</button>
+          </mat-menu>
+          @if (vsphereService.model.networkCards) {
+            <span>
+              @if (
+                vsphereService.model.canAccessNicConfiguration &&
+                vsphereService.model.networkCards.availableNetworks.length > 0
+              ) {
+                <button mat-menu-item [matMenuTriggerFor]="main_menu">
+                  Network Cards
+                </button>
+              }
+              <mat-menu #main_menu="matMenu">
+                @for (
+                  mainItem of vsphereService.model.networkCards.currentNetworks
+                    | keys;
+                  track mainItem
+                ) {
+                  <button mat-menu-item [matMenuTriggerFor]="sub_menu">
+                    {{ mainItem.key }}
+                  </button>
+                  <mat-menu #sub_menu="matMenu">
+                    @for (
+                      subItem of vsphereService.model.networkCards
+                        .availableNetworks;
+                      track subItem
+                    ) {
+                      <button
+                        (click)="changeNic(mainItem.key, subItem)"
+                        mat-menu-item
+                      >
+                        @if (mainItem.value == subItem) {
+                          <span>&#10004; </span>
+                        }
+                        {{ subItem }}
+                      </button>
+                    }
+                  </mat-menu>
+                }
+              </mat-menu>
+            </span>
+          }
+          <!-- Clipboard -->
+          <button mat-menu-item [matMenuTriggerFor]="clipboardMenu">
+            Clipboard
+          </button>
+          <mat-menu #clipboardMenu="matMenu">
+            <button mat-menu-item (click)="copyVmClipboard()">Copy</button>
+            <button mat-menu-item (click)="pasteFromClipboard()">Paste</button>
+          </mat-menu>
         }
       </mat-menu>
     </div>
