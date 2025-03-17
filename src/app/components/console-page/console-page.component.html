@@ -7,8 +7,8 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
 @if ({ value: readOnly$ | async }; as readOnly) {
   @if (readOnly.value != null) {
     <app-console
-      [readOnly]="vmService.readOnly$ | async"
-      [allowReadOnlyToggle]="vmService.readOnlyToggleable$ | async"
+      [readOnly]="userPermissionsService.readOnly$ | async"
+      [allowReadOnlyToggle]="userPermissionsService.readOnlyToggleable$ | async"
       [vmId]="vmId$ | async"
     >
     </app-console>

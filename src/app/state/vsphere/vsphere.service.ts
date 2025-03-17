@@ -24,6 +24,7 @@ import {
 import { VmStore } from './vsphere.store';
 import { ComnSettingsService } from '@cmusei/crucible-common';
 import { VmService } from '../vm/vm.service';
+import { UserPermissionsService } from '../../services/user-permissions/user-permissions.service';
 
 declare var WMKS: any; // needed to check values
 
@@ -75,11 +76,12 @@ export class VsphereService {
     private vmStore: VmStore,
     public settingsService: ComnSettingsService,
     private vmService: VmService,
+    private userPermissionsService: UserPermissionsService,
     @Inject(BASE_PATH) basePath: string,
   ) {
     this.apiUrl = basePath;
 
-    this.vmService.readOnly$
+    this.userPermissionsService.readOnly$
       .pipe(
         tap((readOnly) => {
           this.setReadOnly(readOnly);

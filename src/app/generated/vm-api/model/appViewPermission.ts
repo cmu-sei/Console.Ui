@@ -16,24 +16,14 @@ Copyright 2021 Carnegie Mellon University. All Rights Reserved.
  */
 
 
-export interface VmUser { 
-    /**
-     * User\'s unique Id
-     */
-    userId?: string;
-    /**
-     * User\'s primary Team when the activity took place
-     */
-    teamId?: string;
-    /**
-     * User\'s name
-     */
-    username?: string | null;
-    /**
-     * Id of the Vm this User is currently viewing, if any
-     */
-    activeVmId?: string | null;
-    lastVmId?: string | null;
-    lastSeen?: string | null;
-}
+export type AppViewPermission = 'ViewView' | 'ManageView' | 'EditView' | 'UploadViewIsos' | 'DownloadVmFiles' | 'UploadVmFiles';
+
+export const AppViewPermission = {
+    ViewView: 'ViewView' as AppViewPermission,
+    ManageView: 'ManageView' as AppViewPermission,
+    EditView: 'EditView' as AppViewPermission,
+    UploadViewIsos: 'UploadViewIsos' as AppViewPermission,
+    DownloadVmFiles: 'DownloadVmFiles' as AppViewPermission,
+    UploadVmFiles: 'UploadVmFiles' as AppViewPermission
+};
 

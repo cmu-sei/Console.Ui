@@ -14,26 +14,12 @@ Copyright 2021 Carnegie Mellon University. All Rights Reserved.
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { AppViewPermission } from './appViewPermission';
+import { AppTeamPermission } from './appTeamPermission';
 
 
-export interface VmUser { 
-    /**
-     * User\'s unique Id
-     */
-    userId?: string;
-    /**
-     * User\'s primary Team when the activity took place
-     */
-    teamId?: string;
-    /**
-     * User\'s name
-     */
-    username?: string | null;
-    /**
-     * Id of the Vm this User is currently viewing, if any
-     */
-    activeVmId?: string | null;
-    lastVmId?: string | null;
-    lastSeen?: string | null;
+export interface VmPermissionResult { 
+    viewPermissions?: Array<AppViewPermission> | null;
+    teamPermissions?: Array<AppTeamPermission> | null;
 }
 

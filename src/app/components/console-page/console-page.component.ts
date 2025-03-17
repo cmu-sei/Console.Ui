@@ -20,6 +20,7 @@ import { VmQuery } from '../../state/vm/vm.query';
 import { VmService } from '../../state/vm/vm.service';
 import { AsyncPipe } from '@angular/common';
 import { ConsoleComponent } from '../console/console.component';
+import { UserPermissionsService } from '../../services/user-permissions/user-permissions.service';
 
 @Component({
   selector: 'app-console-page',
@@ -41,11 +42,13 @@ export class ConsolePageComponent implements OnInit, OnDestroy {
     private signalrRService: SignalRService,
     private vmQuery: VmQuery,
     private titleService: Title,
-    public vmService: VmService,
+    private vmService: VmService,
+    public userPermissionsService: UserPermissionsService,
   ) {}
 
   ngOnInit() {
     this.vmId = this.routerQuery.getParams('id');
+    this.userPermissionsService.load(this.vmId).subscribe();
 
     this.signalrRService.startConnection().then(() => {
       this.signalrRService.joinVm(this.vmId);
@@ -62,11 +65,7 @@ export class ConsolePageComponent implements OnInit, OnDestroy {
         this.titleService.setTitle(vm.name);
       });
 
-    this.readOnly$ = this.vmService.getVmPermissions(this.vmId).pipe(
-      map((p) => {
-        return p.includes('ReadOnly');
-      }),
-    );
+    this.readOnly$ = this.userPermissionsService.readOnly$;
   }
 
   ngOnDestroy(): void {

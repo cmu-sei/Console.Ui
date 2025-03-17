@@ -16,9 +16,11 @@ Copyright 2021 Carnegie Mellon University. All Rights Reserved.
  */
 
 
-export type Permissions = 'ReadOnly';
+export type AppSystemPermission = 'ViewViews' | 'ManageViews' | 'EditViews';
 
-export const Permissions = {
-    ReadOnly: 'ReadOnly' as Permissions
+export const AppSystemPermission = {
+    ViewViews: 'ViewViews' as AppSystemPermission,
+    ManageViews: 'ManageViews' as AppSystemPermission,
+    EditViews: 'EditViews' as AppSystemPermission
 };
 
