@@ -16,7 +16,7 @@ Copyright 2021 Carnegie Mellon University. All Rights Reserved.
  */
 
 
-export type AppViewPermission = 'ViewView' | 'ManageView' | 'EditView' | 'UploadViewIsos' | 'DownloadVmFiles' | 'UploadVmFiles';
+export type AppViewPermission = 'ViewView' | 'ManageView' | 'EditView' | 'UploadViewIsos' | 'DownloadVmFiles' | 'UploadVmFiles' | 'RevertVms';
 
 export const AppViewPermission = {
     ViewView: 'ViewView' as AppViewPermission,
@@ -24,6 +24,7 @@ export const AppViewPermission = {
     EditView: 'EditView' as AppViewPermission,
     UploadViewIsos: 'UploadViewIsos' as AppViewPermission,
     DownloadVmFiles: 'DownloadVmFiles' as AppViewPermission,
-    UploadVmFiles: 'UploadVmFiles' as AppViewPermission
+    UploadVmFiles: 'UploadVmFiles' as AppViewPermission,
+    RevertVms: 'RevertVms' as AppViewPermission
 };
 

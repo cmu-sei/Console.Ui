@@ -30,5 +30,6 @@ export interface VsphereVirtualMachine {
     canAccessNicConfiguration?: boolean;
     allowedNetworks?: Array<string> | null;
     vmToolsStatus?: VirtualMachineToolsStatus;
+    hasSnapshot?: boolean;
 }
 

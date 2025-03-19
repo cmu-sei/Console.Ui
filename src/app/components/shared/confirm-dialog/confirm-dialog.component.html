@@ -1,0 +1,19 @@
+<!--
+Copyright 2021 Carnegie Mellon University. All Rights Reserved.
+Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
+-->
+
+<h1 mat-dialog-title>{{ title }}</h1>
+
+<mat-dialog-content>
+  <p>{{ message }}</p>
+</mat-dialog-content>
+
+<mat-dialog-actions>
+  <button mat-button (click)="confirm()" tabindex="1">
+    {{ buttonTrueText }}
+  </button>
+  <button mat-button (click)="cancel()" tabIndex="2">
+    {{ buttonFalseText }}
+  </button>
+</mat-dialog-actions>
