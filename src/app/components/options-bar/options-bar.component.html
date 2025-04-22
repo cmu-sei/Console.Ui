@@ -305,7 +305,7 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
     <div class="w-50 d-flex justify-content-center">
       <button
         mat-stroked-button
-        class="clipboard-button"
+        class="action-button"
         title="Copy from Virtual Machine's clipboard"
         (click)="copyVmClipboard()"
       >
@@ -314,12 +314,21 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
       </button>
       <button
         mat-stroked-button
-        class="clipboard-button"
+        class="action-button"
         title="Paste into the Virtual Machine"
         (click)="pasteFromClipboard()"
       >
         Paste
         <mat-icon svgIcon="ic_clipboard_paste"></mat-icon>
+      </button>
+      <button
+        mat-stroked-button
+        class="action-button"
+        title="Send Ctrl-Alt-Del to the Virtual Machine"
+        (click)="cad()"
+      >
+        Ctrl-Alt-Del
+        <mat-icon svgIcon="keyboard"></mat-icon>
       </button>
     </div>
   }

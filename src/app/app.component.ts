@@ -103,6 +103,12 @@ export class AppComponent implements OnDestroy {
         'assets/svg-icons/ic_clipboard_paste.svg',
       ),
     );
+    this.iconRegistry.addSvgIcon(
+      'keyboard',
+      this.sanitizer.bypassSecurityTrustResourceUrl(
+        'assets/svg-icons/keyboard.svg',
+      ),
+    );
   }
 
   ngOnDestroy() {
