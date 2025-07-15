@@ -251,26 +251,24 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
                 </button>
               }
               <mat-menu #main_menu="matMenu">
-                @for (
-                  mainItem of vsphereService.model.networkCards.currentNetworks
-                    | keys;
-                  track mainItem
-                ) {
+                @for (mainItem of availableNetworksSorted(); track mainItem) {
                   <button mat-menu-item [matMenuTriggerFor]="sub_menu">
                     {{ mainItem.key }}
                   </button>
+
                   <mat-menu #sub_menu="matMenu">
-                    @for (
-                      subItem of vsphereService.model.networkCards
-                        .availableNetworks;
-                      track subItem
-                    ) {
+                    @for (subItem of mainItem.sorted; track subItem) {
                       <button
                         (click)="changeNic(mainItem.key, subItem)"
                         mat-menu-item
                       >
-                        @if (mainItem.value == subItem) {
-                          <span>&#10004; </span>
+                        @if (
+                          subItem ===
+                          vsphereService.model.networkCards.currentNetworks[
+                            mainItem.key
+                          ]
+                        ) {
+                          <span>&#10004;</span>
                         }
                         {{ subItem }}
                       </button>
