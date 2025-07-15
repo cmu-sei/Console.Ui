@@ -4,11 +4,13 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import {
   Component,
+  computed,
   Input,
   OnDestroy,
   OnInit,
   Pipe,
   PipeTransform,
+  signal,
 } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ActivatedRoute } from '@angular/router';
@@ -127,6 +129,20 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
     AppViewPermission.RevertVms,
   );
 
+  private refreshNetworks = signal(0); // remove after refactoring to signals everywhere
+
+  availableNetworksSorted = computed(() => {
+    this.refreshNetworks();
+
+    const all = this.vsphereService.model.networkCards.availableNetworks;
+    const current = this.vsphereService.model.networkCards.currentNetworks;
+
+    return Object.entries(current).map(([key, selected]) => ({
+      key,
+      sorted: [selected, ...all.filter((n) => n !== selected)],
+    }));
+  });
+
   constructor(
     public vsphereService: VsphereService,
     public settingsService: ComnSettingsService,
@@ -209,6 +225,7 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
       .changeNic(this.vmId, adapter, nic)
       .subscribe((model: VmModel) => {
         this.vsphereService.model = model;
+        this.refreshNetworks.update((v) => v + 1);
       });
   }
 
