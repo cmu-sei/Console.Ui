@@ -40,16 +40,14 @@ import { DialogService } from '../../services/dialog/dialog.service';
 import { NotificationService } from '../../services/notification/notification.service';
 import { SignalRService } from '../../services/signalr/signalr.service';
 import { VsphereService } from '../../state/vsphere/vsphere.service';
-import { AsyncPipe, NgIf } from '@angular/common';
-import { MatTooltip } from '@angular/material/tooltip';
+import { AsyncPipe } from '@angular/common';
 import { MatIcon } from '@angular/material/icon';
 import { MatMenuTrigger, MatMenu, MatMenuItem } from '@angular/material/menu';
-import { MatIconButton, MatButton } from '@angular/material/button';
+import { MatIconButton } from '@angular/material/button';
 import {
   MatSlideToggleChange,
   MatSlideToggleModule,
 } from '@angular/material/slide-toggle';
-import { MatLabel } from '@angular/material/form-field';
 import { VmService } from '../../state/vm/vm.service';
 import { UserPermissionsService } from '../../services/user-permissions/user-permissions.service';
 
@@ -73,19 +71,15 @@ export class KeysPipe implements PipeTransform {
     selector: 'app-options-bar',
     templateUrl: './options-bar.component.html',
     styleUrls: ['./options-bar.component.scss'],
+    standalone: true,
     imports: [
         MatIconButton,
         MatMenuTrigger,
         MatIcon,
         MatMenu,
         MatMenuItem,
-        MatTooltip,
-        MatButton,
-        AsyncPipe,
-        KeysPipe,
         MatSlideToggleModule,
-        MatLabel,
-        NgIf,
+        AsyncPipe,
     ]
 })
 export class OptionsBarComponent implements OnInit, OnDestroy {
