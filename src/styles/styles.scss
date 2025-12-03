@@ -4,6 +4,7 @@
 // Custom Theming for Angular Material
 // For more information: https://material.angular.io/guide/theming
 @use '@angular/material' as mat;
+@use 'theme';
 // Plus imports for other components in your app.
 
 // Include the common styles for Angular Material. We include this here so that you only
@@ -13,21 +14,10 @@
 @include mat.app-background();
 
 /* BOOTSTRAP IMPORTS */
-/* Required */
-@import '../../node_modules/bootstrap/scss/functions';
-@import '../../node_modules/bootstrap/scss/variables';
-@import '../../node_modules/bootstrap/scss/variables-dark';
-@import '../../node_modules/bootstrap/scss/maps';
-@import '../../node_modules/bootstrap/scss/mixins';
-@import '../../node_modules/bootstrap/scss/root';
-
-/* Optional */
-@import '../../node_modules/bootstrap/scss/utilities';
+/* Using Bootstrap's pre-compiled CSS to avoid SASS deprecation warnings */
+/* The utilities are still imported via angular.json */
+/* If you need Bootstrap SCSS mixins/functions, import specific modules with @use */
 /* END BOOTSRAP IMPORTS */
-
-/* LOCAL IMPORTS */
-@import 'theme';
-/* END LOCAL IMPORTS */
 
 html,
 body {

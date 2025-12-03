@@ -74,13 +74,13 @@ export class ConsolePageComponent implements OnInit, OnDestroy {
     this.unsubscribe$.complete();
   }
 
-  @HostListener('window:focus', ['$event'])
+  @HostListener('window:focus')
   onFocus(): void {
     console.log('setting active vmId=' + this.vmId);
     this.signalrRService.setActiveVirtualMachine(this.vmId);
   }
 
-  @HostListener('window:blur', ['$event'])
+  @HostListener('window:blur')
   onBlur(): void {
     this.signalrRService.unsetActiveVirtualMachine();
   }

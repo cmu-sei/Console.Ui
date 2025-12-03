@@ -12,21 +12,20 @@ import { MatButton } from '@angular/material/button';
 import { MatInput } from '@angular/material/input';
 import { MatFormField, MatLabel } from '@angular/material/form-field';
 import { FormsModule } from '@angular/forms';
-import { NgIf } from '@angular/common';
+
 
 @Component({
     selector: 'file-upload-info-dialog',
     templateUrl: './file-upload-info-dialog.component.html',
     imports: [
-        MatDialogTitle,
-        FormsModule,
-        MatFormField,
-        MatLabel,
-        MatInput,
-        MatDialogActions,
-        MatButton,
-        NgIf,
-    ]
+    MatDialogTitle,
+    FormsModule,
+    MatFormField,
+    MatLabel,
+    MatInput,
+    MatDialogActions,
+    MatButton
+]
 })
 export class FileUploadInfoDialogComponent {
   public title: string;

@@ -5,12 +5,14 @@
     "esModuleInterop": true,
     "sourceMap": true,
     "declaration": false,
+    "module": "ES2022",
     "moduleResolution": "bundler",
     "experimentalDecorators": true,
     "target": "ES2022",
     "typeRoots": [
       "node_modules/@types"
     ],
-    "useDefineForClassFields": false
+    "useDefineForClassFields": false,
+    "lib": ["ES2022", "dom"]
   }
 }
