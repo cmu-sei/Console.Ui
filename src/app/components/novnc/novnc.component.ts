@@ -19,11 +19,10 @@ import { NoVNCService } from '../../services/novnc/novnc.service';
 import { AsyncPipe } from '@angular/common';
 
 @Component({
-  selector: 'app-novnc',
-  templateUrl: './novnc.component.html',
-  styleUrls: ['./novnc.component.scss'],
-  standalone: true,
-  imports: [AsyncPipe],
+    selector: 'app-novnc',
+    templateUrl: './novnc.component.html',
+    styleUrls: ['./novnc.component.scss'],
+    imports: [AsyncPipe]
 })
 export class NovncComponent implements OnChanges, AfterViewInit {
   @Input() ticket: string;

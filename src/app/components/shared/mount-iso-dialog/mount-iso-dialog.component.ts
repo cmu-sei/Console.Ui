@@ -24,22 +24,21 @@ import { MatInput } from '@angular/material/input';
 import { MatFormField, MatLabel } from '@angular/material/form-field';
 
 @Component({
-  selector: 'mount-iso-dialog',
-  templateUrl: './mount-iso-dialog.component.html',
-  styleUrls: ['./mount-iso-dialog.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush,
-  standalone: true,
-  imports: [
-    MatDialogTitle,
-    MatFormField,
-    MatLabel,
-    MatInput,
-    MatSelectionList,
-    MatButton,
-    MatListOption,
-    MatDivider,
-    MatDialogActions,
-  ],
+    selector: 'mount-iso-dialog',
+    templateUrl: './mount-iso-dialog.component.html',
+    styleUrls: ['./mount-iso-dialog.component.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    imports: [
+        MatDialogTitle,
+        MatFormField,
+        MatLabel,
+        MatInput,
+        MatSelectionList,
+        MatButton,
+        MatListOption,
+        MatDivider,
+        MatDialogActions,
+    ]
 })
 export class MountIsoDialogComponent implements OnInit, OnDestroy {
   public data: any;

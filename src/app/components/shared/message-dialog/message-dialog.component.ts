@@ -12,11 +12,10 @@ import { MatButton } from '@angular/material/button';
 import { MatProgressSpinner } from '@angular/material/progress-spinner';
 
 @Component({
-  selector: 'message-dialog',
-  templateUrl: './message-dialog.component.html',
-  styleUrls: ['./message-dialog.component.scss'],
-  standalone: true,
-  imports: [MatDialogTitle, MatProgressSpinner, MatDialogActions, MatButton],
+    selector: 'message-dialog',
+    templateUrl: './message-dialog.component.html',
+    styleUrls: ['./message-dialog.component.scss'],
+    imports: [MatDialogTitle, MatProgressSpinner, MatDialogActions, MatButton]
 })
 export class MessageDialogComponent {
   public title: string;

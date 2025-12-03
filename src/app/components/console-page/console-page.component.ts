@@ -23,12 +23,11 @@ import { ConsoleComponent } from '../console/console.component';
 import { UserPermissionsService } from '../../services/user-permissions/user-permissions.service';
 
 @Component({
-  selector: 'app-console-page',
-  templateUrl: './console-page.component.html',
-  styleUrls: ['./console-page.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush,
-  standalone: true,
-  imports: [ConsoleComponent, AsyncPipe],
+    selector: 'app-console-page',
+    templateUrl: './console-page.component.html',
+    styleUrls: ['./console-page.component.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    imports: [ConsoleComponent, AsyncPipe]
 })
 export class ConsolePageComponent implements OnInit, OnDestroy {
   readOnly$: Observable<boolean>;

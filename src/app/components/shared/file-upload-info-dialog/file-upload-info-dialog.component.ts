@@ -15,19 +15,18 @@ import { FormsModule } from '@angular/forms';
 import { NgIf } from '@angular/common';
 
 @Component({
-  selector: 'file-upload-info-dialog',
-  templateUrl: './file-upload-info-dialog.component.html',
-  standalone: true,
-  imports: [
-    MatDialogTitle,
-    FormsModule,
-    MatFormField,
-    MatLabel,
-    MatInput,
-    MatDialogActions,
-    MatButton,
-    NgIf,
-  ],
+    selector: 'file-upload-info-dialog',
+    templateUrl: './file-upload-info-dialog.component.html',
+    imports: [
+        MatDialogTitle,
+        FormsModule,
+        MatFormField,
+        MatLabel,
+        MatInput,
+        MatDialogActions,
+        MatButton,
+        NgIf,
+    ]
 })
 export class FileUploadInfoDialogComponent {
   public title: string;

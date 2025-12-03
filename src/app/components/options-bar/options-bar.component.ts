@@ -70,24 +70,23 @@ export class KeysPipe implements PipeTransform {
   }
 }
 @Component({
-  selector: 'app-options-bar',
-  templateUrl: './options-bar.component.html',
-  styleUrls: ['./options-bar.component.scss'],
-  standalone: true,
-  imports: [
-    MatIconButton,
-    MatMenuTrigger,
-    MatIcon,
-    MatMenu,
-    MatMenuItem,
-    MatTooltip,
-    MatButton,
-    AsyncPipe,
-    KeysPipe,
-    MatSlideToggleModule,
-    MatLabel,
-    NgIf,
-  ],
+    selector: 'app-options-bar',
+    templateUrl: './options-bar.component.html',
+    styleUrls: ['./options-bar.component.scss'],
+    imports: [
+        MatIconButton,
+        MatMenuTrigger,
+        MatIcon,
+        MatMenu,
+        MatMenuItem,
+        MatTooltip,
+        MatButton,
+        AsyncPipe,
+        KeysPipe,
+        MatSlideToggleModule,
+        MatLabel,
+        NgIf,
+    ]
 })
 export class OptionsBarComponent implements OnInit, OnDestroy {
   @Input() vm: VsphereVirtualMachine;
