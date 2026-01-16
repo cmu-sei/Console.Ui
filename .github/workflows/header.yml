@@ -3,7 +3,7 @@ name: Header_Check
 on:
   pull_request:
     branches:
-      - development
+      - main
 
 jobs:
   build:
@@ -13,22 +13,22 @@ jobs:
       - uses: actions/checkout@v2
         with:
           ref: ${{ github.head_ref }}
-        
+
       - uses: actions/setup-python@v2
         with:
           python-version: '3.x'
           architecture: 'x64'
-          
+
       - name: Check for and Add Headers
         run: |
           python ./.github/workflows/script.py
-          
+
       - name: Git Diff
         id: git_diff
         run: |
           FILESCHANGED=$(git diff --quiet || echo "TRUE")
-          echo "FILESCHANGED=$FILESCHANGED" >> $GITHUB_ENV     
-          
+          echo "FILESCHANGED=$FILESCHANGED" >> $GITHUB_ENV
+
       - name: Commit and push files
         if: env.FILESCHANGED == 'TRUE'
         run: |
@@ -43,4 +43,3 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           branch: ${{ github.head_ref }}
-      
