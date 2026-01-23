@@ -4,7 +4,7 @@
  */
 
 import { Injectable } from '@angular/core';
-import RFB from '../../../../node_modules/@novnc/novnc/core/rfb.js';
+import RFB from '@novnc/novnc/lib/rfb.js';
 
 @Injectable({
   providedIn: 'root',
