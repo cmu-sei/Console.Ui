@@ -3,9 +3,11 @@
 
 .action-button {
   font-size: x-small;
-  height: 21px !important;
-  line-height: 0px;
-  margin-left: 20px;
+  height: 32px;
+  padding: 4px 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .connected-users {
