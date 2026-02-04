@@ -43,7 +43,7 @@ import { VsphereService } from '../../state/vsphere/vsphere.service';
 import { AsyncPipe } from '@angular/common';
 import { MatIcon } from '@angular/material/icon';
 import { MatMenuTrigger, MatMenu, MatMenuItem } from '@angular/material/menu';
-import { MatIconButton } from '@angular/material/button';
+import { MatButton, MatIconButton } from '@angular/material/button';
 import {
   MatSlideToggleChange,
   MatSlideToggleModule,
@@ -68,19 +68,20 @@ export class KeysPipe implements PipeTransform {
   }
 }
 @Component({
-    selector: 'app-options-bar',
-    templateUrl: './options-bar.component.html',
-    styleUrls: ['./options-bar.component.scss'],
-    standalone: true,
-    imports: [
-        MatIconButton,
-        MatMenuTrigger,
-        MatIcon,
-        MatMenu,
-        MatMenuItem,
-        MatSlideToggleModule,
-        AsyncPipe,
-    ]
+  selector: 'app-options-bar',
+  templateUrl: './options-bar.component.html',
+  styleUrls: ['./options-bar.component.scss'],
+  standalone: true,
+  imports: [
+    MatIconButton,
+    MatButton,
+    MatMenuTrigger,
+    MatIcon,
+    MatMenu,
+    MatMenuItem,
+    MatSlideToggleModule,
+    AsyncPipe,
+  ],
 })
 export class OptionsBarComponent implements OnInit, OnDestroy {
   @Input() vm: VsphereVirtualMachine;
