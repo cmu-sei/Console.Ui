@@ -2,7 +2,7 @@
 // Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
 
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, combineLatest, Observable } from 'rxjs';
+import { BehaviorSubject, combineLatest, Observable, ReplaySubject } from 'rxjs';
 import { map, tap } from 'rxjs/operators';
 import {
   AppTeamPermission,
@@ -27,7 +27,7 @@ export class UserPermissionsService {
     private route: ActivatedRoute,
   ) {}
 
-  private readOnlyToggleableSubject = new BehaviorSubject(false);
+  private readOnlyToggleableSubject = new ReplaySubject<boolean>(1);
   readOnlyToggleable$ = this.readOnlyToggleableSubject.asObservable();
 
   readOnly$ = combineLatest([
