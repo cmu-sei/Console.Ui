@@ -8,7 +8,7 @@
 @use 'sass:map';
 @use '@angular/material' as mat;
 
-$custom-typography: mat.define-typography-config(
+$custom-typography: mat.m2-define-typography-config(
   $font-family: '"Open Sans", sans-serif',
 );
 @include mat.all-component-typographies($custom-typography);
@@ -50,15 +50,15 @@ $cmu-palette: (
 );
 
 // Light theme
-$light-primary: mat.define-palette($cmu-palette);
-$light-accent: mat.define-palette($cmu-palette, A400, A200, A700);
+$light-primary: mat.m2-define-palette($cmu-palette);
+$light-accent: mat.m2-define-palette($cmu-palette, A400, A200, A700);
 
 // The warn palette is optional (defaults to red).
-$light-warn: mat.define-palette(mat.$red-palette);
+$light-warn: mat.m2-define-palette(mat.$m2-red-palette);
 
 // Create the theme object. A theme consists of configurations for individual
 // theming systems such as "color" or "typography".
-$light-theme: mat.define-light-theme(
+$light-theme: mat.m2-define-light-theme(
   (
     color: (
       primary: $light-primary,
@@ -79,13 +79,13 @@ $light-theme-overrides: (
 $light-theme: map.deep-merge($light-theme, $light-theme-overrides);
 
 // Dark theme
-$dark-primary: mat.define-palette($cmu-palette);
-$dark-accent: mat.define-palette($cmu-palette, A400, A200, A700);
-$dark-warn: mat.define-palette(mat.$red-palette);
+$dark-primary: mat.m2-define-palette($cmu-palette);
+$dark-accent: mat.m2-define-palette($cmu-palette, A400, A200, A700);
+$dark-warn: mat.m2-define-palette(mat.$m2-red-palette);
 
 // Create the theme object. A theme consists of configurations for individual
 // theming systems such as "color" or "typography".
-$dark-theme: mat.define-dark-theme(
+$dark-theme: mat.m2-define-dark-theme(
   (
     color: (
       primary: $dark-primary,

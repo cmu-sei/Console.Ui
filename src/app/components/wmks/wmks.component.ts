@@ -21,12 +21,11 @@ import { AsyncPipe } from '@angular/common';
 declare var WMKS: any; // needed to check values
 
 @Component({
-  selector: 'app-wmks',
-  templateUrl: './wmks.component.html',
-  styleUrls: ['./wmks.component.scss'],
-  standalone: true,
-  imports: [MatIcon, AsyncPipe],
-  changeDetection: ChangeDetectionStrategy.Default,
+    selector: 'app-wmks',
+    templateUrl: './wmks.component.html',
+    styleUrls: ['./wmks.component.scss'],
+    imports: [MatIcon, AsyncPipe],
+    changeDetection: ChangeDetectionStrategy.Default
 })
 export class WmksComponent implements OnInit, OnDestroy {
   @Input() readOnly: boolean;
