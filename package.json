@@ -33,7 +33,7 @@
     "@datorama/akita": "^8.0.1",
     "@datorama/akita-ng-router-store": "^8.0.0",
     "@microsoft/signalr": "^10.0.0",
-    "@novnc/novnc": "1.4.0",
+    "@novnc/novnc": "1.5.0",
     "babel-polyfill": "^6.26.0",
     "bootstrap": "^5.3.8",
     "jquery": "^3.7.1",
