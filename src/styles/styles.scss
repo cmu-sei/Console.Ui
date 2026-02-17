@@ -1,31 +1,50 @@
 // Copyright 2021 Carnegie Mellon University. All Rights Reserved.
 // Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
 
-// Custom Theming for Angular Material
-// For more information: https://material.angular.io/guide/theming
+/* IMPORTS - All @use statements must come first */
 @use '@angular/material' as mat;
-@use 'theme';
-// Plus imports for other components in your app.
+@use './theme-colors' as theme;
+/* END IMPORTS */
 
-// Include the common styles for Angular Material. We include this here so that you only
-// have to load a single css file for Angular Material in your app.
-// Be sure that you only ever include this mixin once!
+/* VENDER INCLUDES */
 @include mat.elevation-classes();
 @include mat.app-background();
+/* END VENDER INCLUDES */
 
-/* BOOTSTRAP IMPORTS */
-/* Using Bootstrap's pre-compiled CSS to avoid SASS deprecation warnings */
-/* The utilities are still imported via angular.json */
-/* If you need Bootstrap SCSS mixins/functions, import specific modules with @use */
-/* END BOOTSRAP IMPORTS */
+html {
+  @include mat.theme((color: theme.$primary-palette,
+      typography: '"Open Sans", sans-serif',
+    ),
+    $overrides: ((background: #f1f1f2,
+        surface: var(--mat-sys-background),
+        surface-variant: var(--mat-sys-background),
+        icon: var(--mat-sys-primary),
+      )));
+  @include mat.icon-button-overrides((icon-color: var(--mat-sys-primary)));
+}
+
+.darkMode {
+  @include mat.theme((color: (primary: theme.$primary-palette,
+        typography: '"Open Sans", sans-serif',
+        theme-type: dark,
+      ),
+    ),
+    $overrides: ((background: #313131,
+        surface: var(--mat-sys-background),
+        surface-variant: var(--mat-sys-background),
+        icon: var(--mat-sys-primary),
+      )));
+  @include mat.icon-button-overrides((icon-color: var(--mat-sys-primary)));
+}
 
 html,
 body {
   height: 100%;
   margin: 0;
 }
+
 body {
-  margin: 0;
+  font-family: "Open Sans", sans-serif;
 }
 
 .full-height {
@@ -38,10 +57,68 @@ app-root {
   height: 100%;
 }
 
-html,
-body {
-  height: 100%;
+.mat-mdc-paginator,
+.mat-expansion-panel,
+.mat-mdc-table {
+  background-color: var(--mat-sys-background) !important;
 }
-body {
-  margin: 0;
+
+// Override the disabled icon color specifically for mat-icon-button
+.mat-mdc-icon-button[disabled] .mat-icon {
+  --mat-icon-color-disabled: var(--mat-sys-outline-variant);
+}
+
+// remove the border around paginator items per page selection
+mat-paginator {
+  --mat-form-field-outlined-outline-color: transparent;
+  --mat-form-field-outlined-hover-outline-color: transparent;
+  --mat-form-field-outlined-focus-outline-color: transparent;
+}
+
+// Ensure mat-select dropdown panels match the mat-select background color
+.mat-mdc-select-panel {
+  background-color: var(--mat-sys-outline-variant) !important;
+}
+
+// Ensure mat-option elements match the mat-select background color
+.mat-mdc-option {
+  --mat-option-label-text-color: var(--mat-sys-on-background);
+  --mat-option-hover-state-layer-color: var(--mat-sys-outline);
+  --mat-option-focus-state-layer-color: var(--mat-sys-outline);
+  --mat-option-selected-state-layer-color: var(--mat-sys-outline);
+}
+
+.mat-mdc-option:not(.mat-mdc-option-disabled) {
+  background-color: var(--mat-sys-background);
+}
+
+.mat-mdc-option:hover:not(.mat-mdc-option-disabled) {
+  background-color: var(--mat-sys-surface-variant);
+}
+
+.background {
+  background-color: var(--mat-sys-background);
+}
+
+.text {
+  color: var(--mat-sys-on-surface);
+}
+
+a {
+  color: var(--mat-sys-on-surface);
+}
+
+.mat-mdc-header-cell,
+.mat-mdc-form-field,
+.mat-mdc-floating-label,
+.mat-mdc-sort-header-content,
+.mat-mdc-paginator-page-size-label,
+.mat-mdc-paginator-range-label,
+.mat-expansion-panel-header-description {
+  color: var(--mat-sys-on-surface) !important;
+}
+
+.mat-expansion-panel,
+.mat-drawer-inner-container {
+  background-color: var(--mat-sys-background) !important;
 }

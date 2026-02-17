@@ -2,6 +2,7 @@
 // Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
 
 import {
+  APP_INITIALIZER,
   enableProdMode,
   ErrorHandler,
   importProvidersFrom,
@@ -32,6 +33,8 @@ import { ErrorService } from './app/services/error/error.service';
 import { NotificationService } from './app/services/notification/notification.service';
 import { DialogService } from './app/services/dialog/dialog.service';
 import { SystemMessageService } from './app/services/system-message/system-message.service';
+import { DynamicThemeService } from './app/services/dynamic-theme.service';
+import { initializeTheme } from './app/services/theme-initializer.factory';
 import { provideRouter } from '@angular/router';
 import { routes } from './app/app-routing/app-routing.module';
 
@@ -89,6 +92,13 @@ bootstrapApplication(AppComponent, {
     {
       provide: MAT_TOOLTIP_DEFAULT_OPTIONS,
       useValue: myCustomTooltipDefaults,
+    },
+    DynamicThemeService,
+    {
+      provide: APP_INITIALIZER,
+      useFactory: initializeTheme,
+      deps: [ComnSettingsService, DynamicThemeService],
+      multi: true,
     },
     provideAnimationsAsync(),
     provideHttpClient(withInterceptorsFromDi()),

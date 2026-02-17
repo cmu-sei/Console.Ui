@@ -35,6 +35,7 @@
     "@microsoft/signalr": "^10.0.0",
     "@novnc/novnc": "1.5.0",
     "babel-polyfill": "^6.26.0",
+    "@material/material-color-utilities": "^0.4.0",
     "bootstrap": "^5.3.8",
     "jquery": "^3.7.1",
     "jquery-ui-dist": "^1.13.3",
