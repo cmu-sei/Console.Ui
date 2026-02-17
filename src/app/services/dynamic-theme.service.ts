@@ -93,6 +93,17 @@ export class DynamicThemeService {
   }
 
   /**
+   * Returns the Material 3 primary color generated from a source hex color
+   * @param hexColor Source color in hex format
+   * @param isDark Whether to use the dark scheme
+   * @returns The computed primary hex color
+   */
+  getPrimaryColor(hexColor: string, isDark: boolean): string {
+    const { light, dark } = this.generateThemeFromHex(hexColor);
+    return hexFromArgb(isDark ? dark.primary : light.primary);
+  }
+
+  /**
    * Builds CSS variable object from Material 3 scheme
    * @param scheme Material 3 color scheme
    * @returns Object mapping CSS variable names to hex colors

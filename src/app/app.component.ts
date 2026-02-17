@@ -9,6 +9,7 @@ import { Observable, Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { RouterOutlet } from '@angular/router';
 import { DynamicThemeService } from './services/dynamic-theme.service';
+import { FaviconService } from './services/favicon.service';
 
 @Component({
     selector: 'app-root',
@@ -28,6 +29,7 @@ export class AppComponent implements OnDestroy {
     private authService: ComnAuthService,
     private settingsService: ComnSettingsService,
     private themeService: DynamicThemeService,
+    private faviconService: FaviconService,
   ) {
     this.addIcons();
 
@@ -51,10 +53,12 @@ export class AppComponent implements OnDestroy {
       case Theme.LIGHT:
         document.body.classList.toggle('darkMode', false);
         this.themeService.applyLightTheme(hexColor);
+        this.faviconService.updateFavicon(this.themeService.getPrimaryColor(hexColor, false));
         break;
       case Theme.DARK:
         document.body.classList.toggle('darkMode', true);
         this.themeService.applyDarkTheme(hexColor);
+        this.faviconService.updateFavicon(this.themeService.getPrimaryColor(hexColor, true));
         break;
     }
   }
