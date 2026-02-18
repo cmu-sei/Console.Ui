@@ -18,6 +18,14 @@ html {
     $overrides: ((background: #f1f1f2,
         surface: var(--mat-sys-background),
         surface-variant: var(--mat-sys-background),
+        surface-dim: var(--mat-sys-background),
+        surface-bright: var(--mat-sys-background),
+        surface-container-lowest: var(--mat-sys-background),
+        surface-container-low: var(--mat-sys-background),
+        surface-container: var(--mat-sys-background),
+        surface-container-high: var(--mat-sys-background),
+        surface-container-highest: var(--mat-sys-background),
+        surface-tint: var(--mat-sys-primary),
         icon: var(--mat-sys-primary),
       )));
   @include mat.icon-button-overrides((icon-color: var(--mat-sys-primary)));
@@ -32,6 +40,14 @@ html {
     $overrides: ((background: #313131,
         surface: var(--mat-sys-background),
         surface-variant: var(--mat-sys-background),
+        surface-dim: var(--mat-sys-background),
+        surface-bright: var(--mat-sys-background),
+        surface-container-lowest: var(--mat-sys-background),
+        surface-container-low: var(--mat-sys-background),
+        surface-container: var(--mat-sys-background),
+        surface-container-high: var(--mat-sys-background),
+        surface-container-highest: var(--mat-sys-background),
+        surface-tint: var(--mat-sys-primary),
         icon: var(--mat-sys-primary),
       )));
   @include mat.icon-button-overrides((icon-color: var(--mat-sys-primary)));
@@ -75,8 +91,9 @@ mat-paginator {
   --mat-form-field-outlined-focus-outline-color: transparent;
 }
 
-// Ensure mat-select dropdown panels match the mat-select background color
-.mat-mdc-select-panel {
+// Ensure mat-select and mat-menu dropdown panels use a consistent background color
+.mat-mdc-select-panel,
+.mat-mdc-menu-panel {
   background-color: var(--mat-sys-outline-variant) !important;
 }
 
