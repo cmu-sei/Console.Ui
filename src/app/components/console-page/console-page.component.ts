@@ -23,12 +23,11 @@ import { ConsoleComponent } from '../console/console.component';
 import { UserPermissionsService } from '../../services/user-permissions/user-permissions.service';
 
 @Component({
-  selector: 'app-console-page',
-  templateUrl: './console-page.component.html',
-  styleUrls: ['./console-page.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush,
-  standalone: true,
-  imports: [ConsoleComponent, AsyncPipe],
+    selector: 'app-console-page',
+    templateUrl: './console-page.component.html',
+    styleUrls: ['./console-page.component.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    imports: [ConsoleComponent, AsyncPipe]
 })
 export class ConsolePageComponent implements OnInit, OnDestroy {
   readOnly$: Observable<boolean>;
@@ -75,13 +74,13 @@ export class ConsolePageComponent implements OnInit, OnDestroy {
     this.unsubscribe$.complete();
   }
 
-  @HostListener('window:focus', ['$event'])
+  @HostListener('window:focus')
   onFocus(): void {
     console.log('setting active vmId=' + this.vmId);
     this.signalrRService.setActiveVirtualMachine(this.vmId);
   }
 
-  @HostListener('window:blur', ['$event'])
+  @HostListener('window:blur')
   onBlur(): void {
     this.signalrRService.unsetActiveVirtualMachine();
   }

@@ -10,7 +10,7 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
       <mat-label>File Path</mat-label>
       <input matInput tabIndex="1" name="filepath" [(ngModel)]="filepath" />
     </mat-form-field>
-    <ng-container *ngIf="showCredentials">
+    @if (showCredentials) {
       <mat-form-field>
         <mat-label>VM Username</mat-label>
         <input matInput tabIndex="2" name="username" [(ngModel)]="username" />
@@ -23,9 +23,9 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
           tabIndex="3"
           name="password"
           [(ngModel)]="password"
-        />
+          />
       </mat-form-field>
-    </ng-container>
+    }
   </div>
   <mat-dialog-actions class="justify-content-around">
     <button mat-stroked-button (click)="close()" tabIndex="4">Cancel</button>

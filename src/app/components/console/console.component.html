@@ -3,7 +3,7 @@ Copyright 2021 Carnegie Mellon University. All Rights Reserved.
 Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
 -->
 
-<div class="container background">
+<div class="console-container background">
   @if ({ value: virtualMachine$ | async }; as virtualMachine) {
     @if (virtualMachine.value != null) {
       @defer (

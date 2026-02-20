@@ -1,40 +1,66 @@
 // Copyright 2021 Carnegie Mellon University. All Rights Reserved.
 // Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
 
-// Custom Theming for Angular Material
-// For more information: https://material.angular.io/guide/theming
+/* IMPORTS - All @use statements must come first */
 @use '@angular/material' as mat;
-// Plus imports for other components in your app.
+@use './theme-colors' as theme;
+/* END IMPORTS */
 
-// Include the common styles for Angular Material. We include this here so that you only
-// have to load a single css file for Angular Material in your app.
-// Be sure that you only ever include this mixin once!
-@include mat.core();
+/* VENDER INCLUDES */
+@include mat.elevation-classes();
+@include mat.app-background();
+/* END VENDER INCLUDES */
 
-/* BOOTSTRAP IMPORTS */
-/* Required */
-@import '../../node_modules/bootstrap/scss/functions';
-@import '../../node_modules/bootstrap/scss/variables';
-@import '../../node_modules/bootstrap/scss/variables-dark';
-@import '../../node_modules/bootstrap/scss/maps';
-@import '../../node_modules/bootstrap/scss/mixins';
-@import '../../node_modules/bootstrap/scss/root';
+html {
+  @include mat.theme((color: theme.$primary-palette,
+      typography: '"Open Sans", sans-serif',
+    ),
+    $overrides: ((background: #f1f1f2,
+        surface: var(--mat-sys-background),
+        surface-variant: var(--mat-sys-background),
+        surface-dim: var(--mat-sys-background),
+        surface-bright: var(--mat-sys-background),
+        surface-container-lowest: var(--mat-sys-background),
+        surface-container-low: var(--mat-sys-background),
+        surface-container: var(--mat-sys-background),
+        surface-container-high: var(--mat-sys-background),
+        surface-container-highest: var(--mat-sys-background),
+        surface-tint: var(--mat-sys-primary),
+        icon: var(--mat-sys-primary),
+      )));
+  @include mat.icon-button-overrides((icon-color: var(--mat-sys-primary)));
+}
 
-/* Optional */
-@import '../../node_modules/bootstrap/scss/utilities';
-/* END BOOTSRAP IMPORTS */
-
-/* LOCAL IMPORTS */
-@import 'theme';
-/* END LOCAL IMPORTS */
+.darkMode {
+  @include mat.theme((color: (primary: theme.$primary-palette,
+        typography: '"Open Sans", sans-serif',
+        theme-type: dark,
+      ),
+    ),
+    $overrides: ((background: #313131,
+        surface: var(--mat-sys-background),
+        surface-variant: var(--mat-sys-background),
+        surface-dim: var(--mat-sys-background),
+        surface-bright: var(--mat-sys-background),
+        surface-container-lowest: var(--mat-sys-background),
+        surface-container-low: var(--mat-sys-background),
+        surface-container: var(--mat-sys-background),
+        surface-container-high: var(--mat-sys-background),
+        surface-container-highest: var(--mat-sys-background),
+        surface-tint: var(--mat-sys-primary),
+        icon: var(--mat-sys-primary),
+      )));
+  @include mat.icon-button-overrides((icon-color: var(--mat-sys-primary)));
+}
 
 html,
 body {
   height: 100%;
   margin: 0;
 }
+
 body {
-  margin: 0;
+  font-family: "Open Sans", sans-serif;
 }
 
 .full-height {
@@ -47,10 +73,74 @@ app-root {
   height: 100%;
 }
 
-html,
-body {
-  height: 100%;
+.mat-mdc-paginator,
+.mat-expansion-panel,
+.mat-mdc-table {
+  background-color: var(--mat-sys-background) !important;
 }
-body {
-  margin: 0;
+
+// Override the disabled icon color specifically for mat-icon-button
+.mat-mdc-icon-button[disabled] .mat-icon {
+  --mat-icon-color-disabled: var(--mat-sys-outline-variant);
+}
+
+// default all icons to the primary theme color
+mat-icon, .mat-icon {
+  --mat-icon-color: var(--mat-sys-primary);
+}
+
+// remove the border around paginator items per page selection
+mat-paginator {
+  --mat-form-field-outlined-outline-color: transparent;
+  --mat-form-field-outlined-hover-outline-color: transparent;
+  --mat-form-field-outlined-focus-outline-color: transparent;
+}
+
+// Ensure mat-select and mat-menu dropdown panels use a consistent background color
+.mat-mdc-select-panel,
+.mat-mdc-menu-panel {
+  background-color: var(--mat-sys-outline-variant) !important;
+}
+
+// Ensure mat-option elements match the mat-select background color
+.mat-mdc-option {
+  --mat-option-label-text-color: var(--mat-sys-on-background);
+  --mat-option-hover-state-layer-color: var(--mat-sys-outline);
+  --mat-option-focus-state-layer-color: var(--mat-sys-outline);
+  --mat-option-selected-state-layer-color: var(--mat-sys-outline);
+}
+
+.mat-mdc-option:not(.mat-mdc-option-disabled) {
+  background-color: var(--mat-sys-background);
+}
+
+.mat-mdc-option:hover:not(.mat-mdc-option-disabled) {
+  background-color: var(--mat-sys-surface-variant);
+}
+
+.background {
+  background-color: var(--mat-sys-background);
+}
+
+.text {
+  color: var(--mat-sys-on-surface);
+}
+
+a {
+  color: var(--mat-sys-on-surface);
+}
+
+.mat-mdc-header-cell,
+.mat-mdc-form-field,
+.mat-mdc-floating-label,
+.mat-mdc-sort-header-content,
+.mat-mdc-paginator-page-size-label,
+.mat-mdc-paginator-range-label,
+.mat-expansion-panel-header-description {
+  color: var(--mat-sys-on-surface) !important;
+}
+
+.mat-expansion-panel,
+.mat-drawer-inner-container {
+  background-color: var(--mat-sys-background) !important;
 }

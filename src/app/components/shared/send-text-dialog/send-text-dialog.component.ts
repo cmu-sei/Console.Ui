@@ -17,24 +17,23 @@ import { MatIconButton, MatButton } from '@angular/material/button';
 import { FormsModule } from '@angular/forms';
 
 @Component({
-  selector: 'send-text-dialog',
-  templateUrl: './send-text-dialog.component.html',
-  styleUrls: ['./send-text-dialog.component.scss'],
-  standalone: true,
-  imports: [
-    FormsModule,
-    MatDialogTitle,
-    MatIconButton,
-    MatMenuTrigger,
-    MatIcon,
-    MatMenu,
-    MatMenuItem,
-    MatTooltip,
-    MatInput,
-    MatDialogActions,
-    MatButton,
-    MatFormField,
-  ],
+    selector: 'send-text-dialog',
+    templateUrl: './send-text-dialog.component.html',
+    styleUrls: ['./send-text-dialog.component.scss'],
+    imports: [
+        FormsModule,
+        MatDialogTitle,
+        MatIconButton,
+        MatMenuTrigger,
+        MatIcon,
+        MatMenu,
+        MatMenuItem,
+        MatTooltip,
+        MatInput,
+        MatDialogActions,
+        MatButton,
+        MatFormField,
+    ]
 })
 export class SendTextDialogComponent {
   public title: string;

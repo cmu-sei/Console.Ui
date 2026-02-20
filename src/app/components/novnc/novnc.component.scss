@@ -12,5 +12,5 @@ Copyright 2021 Carnegie Mellon University. All Rights Reserved.
 
 // novnc element has to have a fixed height when scaleViewport is set
 .screen {
-  height: 97vh;
+  height: calc(100vh - 48px);  // 100vh minus options bar height
 }

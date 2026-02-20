@@ -13,17 +13,16 @@ import { ProxmoxConsoleComponent } from '../proxmox/proxmox-console/proxmox-cons
 import { OptionsBar2Component } from '../options-bar2/options-bar2.component';
 
 @Component({
-  selector: 'app-console',
-  templateUrl: './console.component.html',
-  styleUrls: ['./console.component.scss'],
-  standalone: true,
-  imports: [
-    OptionsBar2Component,
-    ProxmoxConsoleComponent,
-    OptionsBarComponent,
-    WmksComponent,
-    AsyncPipe,
-  ],
+    selector: 'app-console',
+    templateUrl: './console.component.html',
+    styleUrls: ['./console.component.scss'],
+    imports: [
+        OptionsBar2Component,
+        ProxmoxConsoleComponent,
+        OptionsBarComponent,
+        WmksComponent,
+        AsyncPipe,
+    ]
 })
 export class ConsoleComponent {
   @Input({ required: true }) readOnly;
