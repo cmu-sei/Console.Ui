@@ -13,30 +13,84 @@
   },
   "UseLocalAuthStorage": false,
   "DebugLogging": false,
+  "AppPrimaryThemeColor": "#3B62A5",
   "VmResolutionOptions": [
-    { "width": 2560, "height": 1600 },
-    { "width": 1920, "height": 1440 },
-    { "width": 1920, "height": 1200 },
-    { "width": 1600, "height": 1200 },
-    { "width": 1400, "height": 1050 },
-    { "width": 1280, "height": 1024 },
-    { "width": 1440, "height": 900 },
-    { "width": 1280, "height": 960 },
-    { "width": 1366, "height": 768 },
-    { "width": 1280, "height": 800 },
-    { "width": 1280, "height": 720 },
-    { "width": 1024, "height": 768 },
-    { "width": 800, "height": 600 }
+    {
+      "width": 2560,
+      "height": 1600
+    },
+    {
+      "width": 1920,
+      "height": 1440
+    },
+    {
+      "width": 1920,
+      "height": 1200
+    },
+    {
+      "width": 1600,
+      "height": 1200
+    },
+    {
+      "width": 1400,
+      "height": 1050
+    },
+    {
+      "width": 1280,
+      "height": 1024
+    },
+    {
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "width": 1280,
+      "height": 960
+    },
+    {
+      "width": 1366,
+      "height": 768
+    },
+    {
+      "width": 1280,
+      "height": 800
+    },
+    {
+      "width": 1280,
+      "height": 720
+    },
+    {
+      "width": 1024,
+      "height": 768
+    },
+    {
+      "width": 800,
+      "height": 600
+    }
   ],
   "PasteSpeeds": [
-    { "name": "Fastest", "value": 10 },
-    { "name": "Fast", "value": 30 },
-    { "name": "Normal", "value": 60 },
-    { "name": "Slow", "value": 100 },
-    { "name": "Slowest", "value": 500 }
+    {
+      "name": "Fastest",
+      "value": 10
+    },
+    {
+      "name": "Fast",
+      "value": 30
+    },
+    {
+      "name": "Normal",
+      "value": 60
+    },
+    {
+      "name": "Slow",
+      "value": 100
+    },
+    {
+      "name": "Slowest",
+      "value": 500
+    }
   ],
   "WMKS": {
     "RetryConnectionInterval": 0
-  },
-  "AppPrimaryThemeColor": "#4c7aa2"
+  }
 }

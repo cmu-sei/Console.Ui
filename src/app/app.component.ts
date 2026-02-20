@@ -8,8 +8,6 @@ import { RouterQuery } from '@datorama/akita-ng-router-store';
 import { Observable, Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { RouterOutlet } from '@angular/router';
-import { DynamicThemeService } from './services/dynamic-theme.service';
-import { FaviconService } from './services/favicon.service';
 
 @Component({
     selector: 'app-root',
@@ -28,8 +26,6 @@ export class AppComponent implements OnDestroy {
     private routerQuery: RouterQuery,
     private authService: ComnAuthService,
     private settingsService: ComnSettingsService,
-    private themeService: DynamicThemeService,
-    private faviconService: FaviconService,
   ) {
     this.addIcons();
 
@@ -46,21 +42,25 @@ export class AppComponent implements OnDestroy {
   }
 
   setTheme(theme: Theme) {
-    const hexColor =
-      this.settingsService.settings.AppPrimaryThemeColor || '#BB0000';
-
-    switch (theme) {
-      case Theme.LIGHT:
-        document.body.classList.toggle('darkMode', false);
-        this.themeService.applyLightTheme(hexColor);
-        this.faviconService.updateFavicon(this.themeService.getPrimaryColor(hexColor, false));
-        break;
-      case Theme.DARK:
-        document.body.classList.toggle('darkMode', true);
-        this.themeService.applyDarkTheme(hexColor);
-        this.faviconService.updateFavicon(this.themeService.getPrimaryColor(hexColor, true));
-        break;
+    document.body.classList.toggle('darkMode', theme === Theme.DARK);
+    const primaryColor = this.settingsService.settings?.AppPrimaryThemeColor || '#C41230';
+    if (primaryColor) {
+      document.documentElement.style.setProperty('--mat-sys-primary', primaryColor);
+      document.body.style.setProperty('--mat-sys-primary', primaryColor);
+      this.updateFavicon(primaryColor);
     }
+  }
+
+  private updateFavicon(color: string) {
+    const link = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
+    if (!link) return;
+    fetch(link.href)
+      .then(res => res.text())
+      .then(svg => {
+        const colored = svg.replace(/\.cls-1\{[^}]*\}/, `.cls-1{fill:${color};}`);
+        const blob = new Blob([colored], { type: 'image/svg+xml' });
+        link.href = URL.createObjectURL(blob);
+      });
   }
 
   addIcons() {

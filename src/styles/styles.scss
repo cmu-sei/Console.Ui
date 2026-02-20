@@ -84,6 +84,11 @@ app-root {
   --mat-icon-color-disabled: var(--mat-sys-outline-variant);
 }
 
+// default all icons to the primary theme color
+mat-icon, .mat-icon {
+  --mat-icon-color: var(--mat-sys-primary);
+}
+
 // remove the border around paginator items per page selection
 mat-paginator {
   --mat-form-field-outlined-outline-color: transparent;

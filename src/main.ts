@@ -33,9 +33,6 @@ import { ErrorService } from './app/services/error/error.service';
 import { NotificationService } from './app/services/notification/notification.service';
 import { DialogService } from './app/services/dialog/dialog.service';
 import { SystemMessageService } from './app/services/system-message/system-message.service';
-import { DynamicThemeService } from './app/services/dynamic-theme.service';
-import { FaviconService } from './app/services/favicon.service';
-import { initializeTheme } from './app/services/theme-initializer.factory';
 import { provideRouter } from '@angular/router';
 import { routes } from './app/app-routing/app-routing.module';
 
@@ -68,7 +65,7 @@ if (environment.production) {
 
 bootstrapApplication(AppComponent, {
   providers: [
-    provideZoneChangeDetection(),importProvidersFrom(
+    provideZoneChangeDetection(), importProvidersFrom(
       ComnSettingsModule.forRoot(),
       ComnAuthModule.forRoot(),
       environment.production ? [] : AkitaNgDevtools.forRoot(),
@@ -93,14 +90,6 @@ bootstrapApplication(AppComponent, {
     {
       provide: MAT_TOOLTIP_DEFAULT_OPTIONS,
       useValue: myCustomTooltipDefaults,
-    },
-    DynamicThemeService,
-    FaviconService,
-    {
-      provide: APP_INITIALIZER,
-      useFactory: initializeTheme,
-      deps: [ComnSettingsService, DynamicThemeService],
-      multi: true,
     },
     provideAnimationsAsync(),
     provideHttpClient(withInterceptorsFromDi()),
