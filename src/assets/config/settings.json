@@ -13,7 +13,8 @@
   },
   "UseLocalAuthStorage": false,
   "DebugLogging": false,
-  "AppPrimaryThemeColor": "#3B62A5",
+  "AppTopBarHexColor": "#3B62A5",
+  "AppTopBarHexTextColor": "#FFFFFF",
   "VmResolutionOptions": [
     {
       "width": 2560,

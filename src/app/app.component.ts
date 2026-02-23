@@ -43,11 +43,16 @@ export class AppComponent implements OnDestroy {
 
   setTheme(theme: Theme) {
     document.body.classList.toggle('darkMode', theme === Theme.DARK);
-    const primaryColor = this.settingsService.settings?.AppPrimaryThemeColor || '#C41230';
-    if (primaryColor) {
-      document.documentElement.style.setProperty('--mat-sys-primary', primaryColor);
-      document.body.style.setProperty('--mat-sys-primary', primaryColor);
-      this.updateFavicon(primaryColor);
+    const topBarColor = this.settingsService.settings?.AppTopBarHexColor || '#C41230';
+    const topBarTextColor = this.settingsService.settings?.AppTopBarHexTextColor || '#FFFFFF';
+    if (topBarColor) {
+      document.documentElement.style.setProperty('--mat-sys-primary', topBarColor);
+      document.body.style.setProperty('--mat-sys-primary', topBarColor);
+      this.updateFavicon(topBarColor);
+    }
+    if (topBarTextColor) {
+      document.documentElement.style.setProperty('--mat-sys-on-primary', topBarTextColor);
+      document.body.style.setProperty('--mat-sys-on-primary', topBarTextColor);
     }
   }
 
