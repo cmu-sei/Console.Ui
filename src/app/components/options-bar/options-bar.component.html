@@ -174,54 +174,57 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
               "
               matTooltipPosition="after"
             >
-              <button
-                *ngIf="
-                  (canUploadVmFiles$ | async) || (canDownloadVmFiles$ | async)
-                "
-                mat-menu-item
-                (click)="enableFileUpload('VM Send File Settings')"
-                [disabled]="
-                  uploading ||
-                  vsphereService.model.vmToolsStatus ===
-                    virtualMachineToolsStatus.toolsNotRunning ||
-                  vsphereService.model.vmToolsStatus ===
-                    virtualMachineToolsStatus.toolsNotInstalled
-                "
-                aria-label="warning"
-              >
-                Enter VM Credentials
-              </button>
+              @if (
+                (canUploadVmFiles$ | async) || (canDownloadVmFiles$ | async)
+              ) {
+                <button
+                  mat-menu-item
+                  (click)="enableFileUpload('VM Send File Settings')"
+                  [disabled]="
+                    uploading ||
+                    vsphereService.model.vmToolsStatus ===
+                      virtualMachineToolsStatus.toolsNotRunning ||
+                    vsphereService.model.vmToolsStatus ===
+                      virtualMachineToolsStatus.toolsNotInstalled
+                  "
+                  aria-label="warning"
+                >
+                  Enter VM Credentials
+                </button>
+              }
             </div>
-            <button
-              *ngIf="canUploadVmFiles$ | async"
-              mat-menu-item
-              (click)="file.click()"
-              [disabled]="!uploadEnabled || uploading"
-            >
-              <span
-                [matTooltip]="
-                  uploadEnabled ? '' : 'VM Credentials must be entered'
-                "
-                matTooltipPosition="after"
+            @if (canUploadVmFiles$ | async) {
+              <button
+                mat-menu-item
+                (click)="file.click()"
+                [disabled]="!uploadEnabled || uploading"
               >
-                Send File To VM
-              </span>
-            </button>
-            <button
-              *ngIf="canDownloadVmFiles$ | async"
-              mat-menu-item
-              (click)="downloadFileFromVm()"
-              [disabled]="!uploadEnabled || uploading"
-            >
-              <span
-                [matTooltip]="
-                  uploadEnabled ? '' : 'VM Credentials must be entered'
-                "
-                matTooltipPosition="after"
+                <span
+                  [matTooltip]="
+                    uploadEnabled ? '' : 'VM Credentials must be entered'
+                  "
+                  matTooltipPosition="after"
+                >
+                  Send File To VM
+                </span>
+              </button>
+            }
+            @if (canDownloadVmFiles$ | async) {
+              <button
+                mat-menu-item
+                (click)="downloadFileFromVm()"
+                [disabled]="!uploadEnabled || uploading"
               >
-                Download File From VM
-              </span>
-            </button>
+                <span
+                  [matTooltip]="
+                    uploadEnabled ? '' : 'VM Credentials must be entered'
+                  "
+                  matTooltipPosition="after"
+                >
+                  Download File From VM
+                </span>
+              </button>
+            }
             <!-- mount ISO -->
             <button
               mat-menu-item
@@ -300,7 +303,7 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
   </div>
 
   @if (!readOnly) {
-    <div class="w-50 d-flex justify-content-center">
+    <div class="w-50 d-flex justify-content-center gap-3">
       <button
         mat-stroked-button
         class="action-button"

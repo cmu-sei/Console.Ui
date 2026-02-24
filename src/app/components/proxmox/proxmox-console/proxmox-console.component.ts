@@ -11,12 +11,11 @@ import { AsyncPipe } from '@angular/common';
 import { NovncComponent } from '../../novnc/novnc.component';
 
 @Component({
-  selector: 'app-proxmox-console',
-  templateUrl: './proxmox-console.component.html',
-  styleUrls: ['./proxmox-console.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush,
-  standalone: true,
-  imports: [NovncComponent, AsyncPipe],
+    selector: 'app-proxmox-console',
+    templateUrl: './proxmox-console.component.html',
+    styleUrls: ['./proxmox-console.component.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    imports: [NovncComponent, AsyncPipe]
 })
 export class ProxmoxConsoleComponent {
   @Input() readOnly = false;

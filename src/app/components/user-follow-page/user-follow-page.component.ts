@@ -21,12 +21,11 @@ import { ConsoleComponent } from '../console/console.component';
 import { VmUser } from '../../generated/vm-api';
 
 @Component({
-  selector: 'app-user-follow-page',
-  templateUrl: './user-follow-page.component.html',
-  styleUrls: ['./user-follow-page.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush,
-  standalone: true,
-  imports: [ConsoleComponent, AsyncPipe],
+    selector: 'app-user-follow-page',
+    templateUrl: './user-follow-page.component.html',
+    styleUrls: ['./user-follow-page.component.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    imports: [ConsoleComponent, AsyncPipe]
 })
 export class UserFollowPageComponent implements OnInit, OnDestroy {
   vmId$: Observable<string>;
