@@ -84,9 +84,9 @@ app-root {
   --mat-icon-color-disabled: var(--mat-sys-outline-variant);
 }
 
-// default all icons to the primary theme color
-mat-icon, .mat-icon {
-  --mat-icon-color: var(--mat-sys-primary);
+// support color="warn" on icon buttons
+.mat-mdc-icon-button.mat-warn {
+  --mat-icon-button-icon-color: var(--mat-sys-error);
 }
 
 // remove the border around paginator items per page selection
