@@ -1,0 +1,54 @@
+<!--
+Copyright 2022 Carnegie Mellon University. All Rights Reserved.
+Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
+-->
+
+<div
+  mat-dialog-title
+  class="d-flex align-items-baseline justify-content-center"
+>
+  <label>Snapshots</label>
+</div>
+<div class="snapshot-list-container">
+  <mat-selection-list #snapshotList>
+    @for (snapshot of snapshots; track snapshot.id) {
+      <mat-list-option
+        [selected]="snapshot === selectedSnapshot"
+        (click)="selectThisSnapshot(snapshot)"
+        [style.padding-left.rem]="1 + (snapshot.depth ?? 0) * 1.5"
+      >
+        <div class="snapshot-item">
+          <span class="snapshot-name">
+            {{ snapshot.name }}
+            @if (snapshot.isCurrent) {
+              <span class="current-indicator">(current)</span>
+            }
+          </span>
+          <span class="snapshot-date">{{
+            snapshot.createTime | date: 'short'
+          }}</span>
+        </div>
+        @if (snapshot.description) {
+          <div
+            class="snapshot-description"
+            [matTooltip]="snapshot.description"
+            matTooltipClass="multiline-tooltip"
+          >
+            {{ snapshot.description }}
+          </div>
+        }
+      </mat-list-option>
+    }
+  </mat-selection-list>
+</div>
+<mat-dialog-actions class="justify-content-around">
+  <button mat-stroked-button (click)="close()" tabindex="1">Cancel</button>
+  <button
+    mat-stroked-button
+    (click)="done()"
+    tabindex="2"
+    [disabled]="!selectedSnapshot"
+  >
+    Revert
+  </button>
+</mat-dialog-actions>

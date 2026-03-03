@@ -11,8 +11,10 @@ import {
   BASE_PATH,
   ChangeVsphereVirtualMachineNetwork,
   MountVsphereIso,
+  RevertToVsphereVirtualMachineSnapshot,
   SetVsphereVirtualMachineResolution,
   ValidateVsphereVirtualMachineCredentials,
+  VmSnapshot,
   VsphereService as ApiVsphereService,
   VsphereVirtualMachine,
 } from '../../generated/vm-api';
@@ -398,6 +400,15 @@ export class VsphereService {
 
   public revert(id: string) {
     return this.vsphereService.revertVsphereVirtualMachine(id);
+  }
+
+  public getSnapshots(id: string): Observable<VmSnapshot[]> {
+    return this.vsphereService.getVsphereVirtualMachineSnapshots(id) as Observable<VmSnapshot[]>;
+  }
+
+  public revertToSnapshot(id: string, snapshotId: string) {
+    const data: RevertToVsphereVirtualMachineSnapshot = { snapshotId };
+    return this.vsphereService.revertToVsphereVirtualMachineSnapshot(id, data);
   }
 
   public getUploadConfig(): Observable<any> {

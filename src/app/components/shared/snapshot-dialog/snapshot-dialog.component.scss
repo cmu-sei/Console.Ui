@@ -1,0 +1,38 @@
+// Copyright 2022 Carnegie Mellon University. All Rights Reserved.
+// Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
+
+.snapshot-list-container {
+  overflow: auto;
+  height: 350px;
+}
+
+.snapshot-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.snapshot-name {
+  font-weight: 500;
+}
+
+.snapshot-date {
+  font-size: 0.85em;
+  opacity: 0.7;
+}
+
+.snapshot-description {
+  font-size: 0.85em;
+  opacity: 0.7;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.current-indicator {
+  font-style: italic;
+  font-weight: normal;
+  opacity: 0.8;
+}

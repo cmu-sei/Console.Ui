@@ -144,3 +144,8 @@ a {
 .mat-drawer-inner-container {
   background-color: var(--mat-sys-background) !important;
 }
+
+// Allow matTooltip to display multiline text
+.multiline-tooltip .mdc-tooltip__surface {
+  white-space: pre-line;
+}

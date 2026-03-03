@@ -1,13 +1,10 @@
+@use '@angular/material' as mat;
+
 // Copyright 2023 Carnegie Mellon University. All Rights Reserved.
 // Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
 
-.action-button {
-  font-size: x-small;
-  height: 28px;
-  padding: 3px 6px;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
+:host {
+  @include mat.button-density(-2);
 }
 
 .connected-users {
