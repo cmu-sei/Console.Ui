@@ -1,5 +1,4 @@
 .gitignore
-.openapi-generator-ignore
 README.md
 api.module.ts
 api/api.ts
@@ -39,6 +38,7 @@ model/problemDetails.ts
 model/proxmoxConsole.ts
 model/proxmoxVmInfo.ts
 model/proxmoxVmType.ts
+model/revertToVsphereVirtualMachineSnapshot.ts
 model/setVsphereVirtualMachineResolution.ts
 model/simpleTeam.ts
 model/teamIsoResult.ts
@@ -50,6 +50,7 @@ model/vmMap.ts
 model/vmMapCreateForm.ts
 model/vmMapUpdateForm.ts
 model/vmPermissionResult.ts
+model/vmSnapshot.ts
 model/vmType.ts
 model/vmUpdateForm.ts
 model/vmUsageLoggingSession.ts

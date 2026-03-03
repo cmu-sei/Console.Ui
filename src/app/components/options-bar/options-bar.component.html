@@ -132,23 +132,18 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
 
           <!-- Snapshots -->
           @if (canRevertSnapshots$ | async) {
-            <button mat-menu-item [matMenuTriggerFor]="snapshotMenu">
+            <button
+              mat-menu-item
+              (click)="selectAndRevertSnapshot()"
+              [disabled]="!vsphereService.model.hasSnapshot"
+              [matTooltip]="
+                vsphereService.model.hasSnapshot
+                  ? 'Select a snapshot to revert to'
+                  : 'No snapshots available'
+              "
+            >
               Snapshots
             </button>
-            <mat-menu #snapshotMenu="matMenu">
-              <button
-                mat-menu-item
-                (click)="revert()"
-                [disabled]="!vsphereService.model.hasSnapshot"
-                [matTooltip]="
-                  vsphereService.model.hasSnapshot
-                    ? 'Revert to the current snapshot'
-                    : 'No snapshots available'
-                "
-              >
-                Revert
-              </button>
-            </mat-menu>
           }
           <!-- Files -->
           <input
@@ -306,7 +301,6 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
     <div class="w-50 d-flex justify-content-center gap-3">
       <button
         mat-stroked-button
-        class="action-button"
         title="Copy from Virtual Machine's clipboard"
         (click)="copyVmClipboard()"
       >
@@ -315,7 +309,6 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
       </button>
       <button
         mat-stroked-button
-        class="action-button"
         title="Paste into the Virtual Machine"
         (click)="pasteFromClipboard()"
       >
@@ -324,7 +317,6 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
       </button>
       <button
         mat-stroked-button
-        class="action-button"
         title="Send Ctrl-Alt-Del to the Virtual Machine"
         (click)="cad()"
       >

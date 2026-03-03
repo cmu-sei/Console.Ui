@@ -8,7 +8,9 @@ import { MessageDialogComponent } from '../../components/shared/message-dialog/m
 import { SendTextDialogComponent } from '../../components/shared/send-text-dialog/send-text-dialog.component';
 import { FileUploadInfoDialogComponent } from '../../components/shared/file-upload-info-dialog/file-upload-info-dialog.component';
 import { MountIsoDialogComponent } from '../../components/shared/mount-iso-dialog/mount-iso-dialog.component';
+import { SnapshotDialogComponent } from '../../components/shared/snapshot-dialog/snapshot-dialog.component';
 import { IsoResult, IsoFile } from '../../models/vm/iso-result';
+import { VmSnapshot } from '../../generated/vm-api';
 import {
   ConfirmDialogComponent,
   ConfirmDialogData,
@@ -60,6 +62,20 @@ export class DialogService {
     let dialogRef: MatDialogRef<MountIsoDialogComponent>;
     dialogRef = this.dialog.open(MountIsoDialogComponent, configData || {});
     dialogRef.componentInstance.isoResult = isoResult;
+
+    return dialogRef.afterClosed();
+  }
+
+  public selectSnapshot(
+    snapshots: VmSnapshot[],
+    configData?: any,
+  ): Observable<VmSnapshot> {
+    let dialogRef: MatDialogRef<SnapshotDialogComponent>;
+    dialogRef = this.dialog.open(SnapshotDialogComponent, configData || {
+      width: '600px',
+      height: '500px',
+    });
+    dialogRef.componentInstance.snapshots = snapshots;
 
     return dialogRef.afterClosed();
   }
