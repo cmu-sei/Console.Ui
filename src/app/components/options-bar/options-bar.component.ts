@@ -132,10 +132,13 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
     const all = this.vsphereService.model.networkCards.availableNetworks;
     const current = this.vsphereService.model.networkCards.currentNetworks;
 
-    return Object.entries(current).map(([key, selected]) => ({
-      key,
-      sorted: [selected, ...all.filter((n) => n !== selected)],
-    }));
+    return Object.entries(current).map(([adapterKey, currentRef]) => {
+      const entries = Object.entries(all).map(([ref, name]) => ({ ref, name }));
+      const currentEntry = entries.find((e) => e.ref === currentRef);
+      const others = entries.filter((e) => e.ref !== currentRef);
+      const sorted = currentEntry ? [currentEntry, ...others] : others;
+      return { key: adapterKey, sorted };
+    });
   });
 
   constructor(
@@ -215,9 +218,9 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
     }
   }
 
-  changeNic(adapter, nic) {
+  changeNic(adapter: string, networkRef: string) {
     this.vsphereService
-      .changeNic(this.vmId, adapter, nic)
+      .changeNic(this.vmId, adapter, networkRef)
       .subscribe((model: VmModel) => {
         this.vsphereService.model = model;
         this.refreshNetworks.update((v) => v + 1);
