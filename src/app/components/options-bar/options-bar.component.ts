@@ -131,9 +131,16 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
 
     const all = this.vsphereService.model.networkCards.availableNetworks;
     const current = this.vsphereService.model.networkCards.currentNetworks;
+    const readOnlySet = new Set(
+      this.vsphereService.model.networkCards.readOnlyNetworks || [],
+    );
 
     return Object.entries(current).map(([adapterKey, currentRef]) => {
-      const entries = Object.entries(all).map(([ref, name]) => ({ ref, name }));
+      const entries = Object.entries(all).map(([ref, name]) => ({
+        ref,
+        name,
+        readOnly: readOnlySet.has(ref),
+      }));
       const currentEntry = entries.find((e) => e.ref === currentRef);
       const others = entries.filter((e) => e.ref !== currentRef);
       const sorted = currentEntry ? [currentEntry, ...others] : others;

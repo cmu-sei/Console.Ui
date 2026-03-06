@@ -259,6 +259,8 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
                       <button
                         (click)="changeNic(mainItem.key, subItem.ref)"
                         mat-menu-item
+                        [disabled]="subItem.readOnly"
+                        [matTooltip]="subItem.readOnly ? 'Current network — not in your allowed list' : ''"
                       >
                         @if (
                           subItem.ref ===
