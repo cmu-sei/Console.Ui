@@ -17,7 +17,9 @@ Copyright 2021 Carnegie Mellon University. All Rights Reserved.
 /* tslint:disable:no-unused-variable member-ordering */
 
 import { Inject, Injectable, Optional }                      from '@angular/core';
-import { HttpClient, HttpHeaders, HttpParams, HttpResponse, HttpEvent, HttpParameterCodec, HttpContext }       from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpParams,
+         HttpResponse, HttpEvent, HttpParameterCodec, HttpContext 
+        }       from '@angular/common/http';
 import { CustomHttpParameterCodec }                          from '../encoder';
 import { Observable }                                        from 'rxjs';
 
@@ -98,7 +100,7 @@ export class VmsService {
                 (value as any[]).forEach( elem => httpParams = this.addToHttpParamsRecursive(httpParams, elem, key));
             } else if (value instanceof Date) {
                 if (key != null) {
-                    httpParams = httpParams.append(key, (value as Date).toISOString().substr(0, 10));
+                    httpParams = httpParams.append(key, (value as Date).toISOString().substring(0, 10));
                 } else {
                    throw Error("key may not be null if value is Date");
                 }
@@ -116,7 +118,7 @@ export class VmsService {
 
     /**
      * Adds a Virtual Machine to a Team
-     * Creates a new Virtual Machine with the attributes specified  &lt;para /&gt;  Accessible to a User with management permissions on a team the Virtual Machine will be added to
+     * Creates a new Virtual Machine with the attributes specified &lt;para /&gt; Accessible to a User with management permissions on a team the Virtual Machine will be added to
      * @param vmId The id of the Virtual Machine
      * @param teamId The id of the Team
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
@@ -413,6 +415,82 @@ export class VmsService {
     }
 
     /**
+     * Revert multiple Virtual Machines
+     * @param bulkPowerOperation 
+     * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
+     * @param reportProgress flag to report request and response progress.
+     */
+    public bulkRevert(bulkPowerOperation?: BulkPowerOperation, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'text/plain' | 'application/json' | 'text/json', context?: HttpContext}): Observable<BulkPowerOperationResponse>;
+    public bulkRevert(bulkPowerOperation?: BulkPowerOperation, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'text/plain' | 'application/json' | 'text/json', context?: HttpContext}): Observable<HttpResponse<BulkPowerOperationResponse>>;
+    public bulkRevert(bulkPowerOperation?: BulkPowerOperation, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'text/plain' | 'application/json' | 'text/json', context?: HttpContext}): Observable<HttpEvent<BulkPowerOperationResponse>>;
+    public bulkRevert(bulkPowerOperation?: BulkPowerOperation, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'text/plain' | 'application/json' | 'text/json', context?: HttpContext}): Observable<any> {
+
+        let localVarHeaders = this.defaultHeaders;
+
+        let localVarCredential: string | undefined;
+        // authentication (oauth2) required
+        localVarCredential = this.configuration.lookupCredential('oauth2');
+        if (localVarCredential) {
+            localVarHeaders = localVarHeaders.set('Authorization', 'Bearer ' + localVarCredential);
+        }
+
+        let localVarHttpHeaderAcceptSelected: string | undefined = options && options.httpHeaderAccept;
+        if (localVarHttpHeaderAcceptSelected === undefined) {
+            // to determine the Accept header
+            const httpHeaderAccepts: string[] = [
+                'text/plain',
+                'application/json',
+                'text/json'
+            ];
+            localVarHttpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
+        }
+        if (localVarHttpHeaderAcceptSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Accept', localVarHttpHeaderAcceptSelected);
+        }
+
+        let localVarHttpContext: HttpContext | undefined = options && options.context;
+        if (localVarHttpContext === undefined) {
+            localVarHttpContext = new HttpContext();
+        }
+
+
+        // to determine the Content-Type header
+        const consumes: string[] = [
+            'application/json',
+            'text/json',
+            'application/*+json'
+        ];
+        const httpContentTypeSelected: string | undefined = this.configuration.selectHeaderContentType(consumes);
+        if (httpContentTypeSelected !== undefined) {
+            localVarHeaders = localVarHeaders.set('Content-Type', httpContentTypeSelected);
+        }
+
+        let responseType_: 'text' | 'json' | 'blob' = 'json';
+        if (localVarHttpHeaderAcceptSelected) {
+            if (localVarHttpHeaderAcceptSelected.startsWith('text')) {
+                responseType_ = 'text';
+            } else if (this.configuration.isJsonMime(localVarHttpHeaderAcceptSelected)) {
+                responseType_ = 'json';
+            } else {
+                responseType_ = 'blob';
+            }
+        }
+
+        let localVarPath = `/api/vms/actions/revert`;
+        return this.httpClient.request<BulkPowerOperationResponse>('post', `${this.configuration.basePath}${localVarPath}`,
+            {
+                context: localVarHttpContext,
+                body: bulkPowerOperation,
+                responseType: <any>responseType_,
+                withCredentials: this.configuration.withCredentials,
+                headers: localVarHeaders,
+                observe: observe,
+                reportProgress: reportProgress
+            }
+        );
+    }
+
+    /**
      * Shutdown multiple Virtual Machines
      * @param bulkPowerOperation 
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
@@ -570,7 +648,7 @@ export class VmsService {
 
     /**
      * Creates a new Virtual Machine
-     * Creates a new Virtual Machine with the attributes specified  &lt;para /&gt;  Accessible to a User with management permissions on a team the Virtual Machine will be added to
+     * Creates a new Virtual Machine with the attributes specified &lt;para /&gt; Accessible to a User with management permissions on a team the Virtual Machine will be added to
      * @param vmCreateForm The data to create the Team with
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
@@ -712,7 +790,7 @@ export class VmsService {
 
     /**
      * Deletes a Vm
-     * Deletes a Vm with the specified id  &lt;para /&gt;  Accessible to a User with management permission on a team the Virtual Machine is in
+     * Deletes a Vm with the specified id &lt;para /&gt; Accessible to a User with management permission on a team the Virtual Machine is in
      * @param id The id of the Vm
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
@@ -1477,7 +1555,7 @@ export class VmsService {
 
     /**
      * Removes a Virtual Machine from a Team
-     * Removes the specified Virtual Machine from the specified Team  &lt;para /&gt;  Accessible to a User with management permissions on a team the Virtual Machine will be added to
+     * Removes the specified Virtual Machine from the specified Team &lt;para /&gt; Accessible to a User with management permissions on a team the Virtual Machine will be added to
      * @param vmId The id of the Virtual Machine
      * @param teamId The id of the Team
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
@@ -1627,7 +1705,7 @@ export class VmsService {
 
     /**
      * Updates a Virtual Machine
-     * Updates a Virtual Machine with the attributes specified  &lt;para /&gt;  Accessible to a User with management permissions on a team the Virtual Machine is in
+     * Updates a Virtual Machine with the attributes specified &lt;para /&gt; Accessible to a User with management permissions on a team the Virtual Machine is in
      * @param id 
      * @param vmUpdateForm The data to update the Virtual Machine with
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.

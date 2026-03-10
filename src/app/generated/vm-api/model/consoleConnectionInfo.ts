@@ -30,11 +30,11 @@ export interface ConsoleConnectionInfo {
      */
     protocol?: string | null;
     /**
-     * The optional username to use to connect  If omitted, the user will be prompted on connection  Note: This must be set to connect to a Windows machine using Network Level Authentication
+     * The optional username to use to connect If omitted, the user will be prompted on connection Note: This must be set to connect to a Windows machine using Network Level Authentication
      */
     username?: string | null;
     /**
-     * The optional password to use to connect  If omitted, the user will be prompted on connection  Note: This must be set to connect to a Windows machine using Network Level Authentication
+     * The optional password to use to connect If omitted, the user will be prompted on connection Note: This must be set to connect to a Windows machine using Network Level Authentication
      */
     password?: string | null;
 }

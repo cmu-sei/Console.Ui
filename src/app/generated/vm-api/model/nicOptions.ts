@@ -18,6 +18,6 @@ Copyright 2021 Carnegie Mellon University. All Rights Reserved.
 
 export interface NicOptions { 
     availableNetworks?: Array<string> | null;
-    currentNetworks?: { [key: string]: string; } | null;
+    currentNetworks?: { [key: string]: string | null; } | null;
 }
 

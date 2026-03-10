@@ -18,6 +18,6 @@ Copyright 2021 Carnegie Mellon University. All Rights Reserved.
 
 export interface BulkPowerOperationResponse { 
     accepted?: Array<string> | null;
-    errors?: { [key: string]: string; } | null;
+    errors?: { [key: string]: string | null; } | null;
 }
 

@@ -28,4 +28,7 @@ export interface ProxmoxVmInfo {
     node?: string | null;
     type?: ProxmoxVmType;
 }
+export namespace ProxmoxVmInfo {
+}
+
 

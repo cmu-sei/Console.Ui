@@ -32,4 +32,7 @@ export interface VsphereVirtualMachine {
     vmToolsStatus?: VirtualMachineToolsStatus;
     hasSnapshot?: boolean;
 }
+export namespace VsphereVirtualMachine {
+}
+
 

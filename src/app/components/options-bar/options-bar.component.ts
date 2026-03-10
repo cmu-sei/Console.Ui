@@ -19,7 +19,6 @@ import { Observable, of, Subject } from 'rxjs';
 import {
   catchError,
   filter,
-  map,
   switchMap,
   take,
   takeUntil,
@@ -44,6 +43,7 @@ import { AsyncPipe } from '@angular/common';
 import { MatIcon } from '@angular/material/icon';
 import { MatMenuTrigger, MatMenu, MatMenuItem } from '@angular/material/menu';
 import { MatButton, MatIconButton } from '@angular/material/button';
+import { MatTooltip } from '@angular/material/tooltip';
 import {
   MatSlideToggleChange,
   MatSlideToggleModule,
@@ -80,6 +80,7 @@ export class KeysPipe implements PipeTransform {
     MatMenu,
     MatMenuItem,
     MatSlideToggleModule,
+    MatTooltip,
     AsyncPipe,
   ],
 })
@@ -286,17 +287,17 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
     this.vsphereService.shutdownOS(this.vmId);
   }
 
-  revert() {
-    console.log('revert requested');
-    this.dialogService
-      .confirm({
-        title: 'Revert Vm',
-        message: 'Are you sure you want to revert this Vm?',
-      })
+  selectAndRevertSnapshot() {
+    console.log('select snapshot requested');
+    this.vsphereService
+      .getSnapshots(this.vmId)
       .pipe(
-        filter((confirmed) => confirmed === true),
-        // Switch to the revert service call
-        switchMap(() => this.vsphereService.revert(this.vmId)),
+        take(1),
+        switchMap((snapshots) => this.dialogService.selectSnapshot(snapshots)),
+        filter((selected) => !!selected),
+        switchMap((selected) =>
+          this.vsphereService.revertToSnapshot(this.vmId, selected.id),
+        ),
         tap(() => this.dialogService.message('Revert Vm', 'Revert Successful')),
         catchError((error) => {
           this.dialogService.message('Revert Vm', 'Revert Failed');

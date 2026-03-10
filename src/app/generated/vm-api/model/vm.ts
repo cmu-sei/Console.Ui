@@ -65,5 +65,12 @@ export interface Vm {
      * If false, only allow opening this VM in a new tab
      */
     embeddable?: boolean;
+    /**
+     * True if this VM has at least one snapshot. Currently Supported for Vsphere only.
+     */
+    hasSnapshot?: boolean;
 }
+export namespace Vm {
+}
+
 
