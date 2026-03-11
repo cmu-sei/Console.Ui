@@ -49,3 +49,7 @@ src/assets/config/settings.env.json
 /.vs/config/applicationhost.config
 
 .claude/*
+
+# Claude Code
+CLAUDE.md
+.claude/
