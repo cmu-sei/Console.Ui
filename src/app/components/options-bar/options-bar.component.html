@@ -254,8 +254,13 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
                     {{ mainItem.key }}
                   </button>
 
-                  <mat-menu #sub_menu="matMenu">
-                    @for (subItem of mainItem.sorted; track subItem.ref) {
+                  <mat-menu #sub_menu="matMenu" (closed)="resetNetworkFilter(mainItem.key)">
+                    <div (click)="$event.stopPropagation()" (keydown)="$event.stopPropagation()" class="network-search-container">
+                      <input [formControl]="getNetworkFilterControl(mainItem.key)"
+                             placeholder="Search networks..."
+                             class="network-search-input" />
+                    </div>
+                    @for (subItem of filteredNetworks(mainItem.key, mainItem.sorted); track subItem.ref) {
                       <button
                         (click)="changeNic(mainItem.key, subItem.ref)"
                         mat-menu-item
