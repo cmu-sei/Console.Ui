@@ -48,6 +48,7 @@ import {
   MatSlideToggleChange,
   MatSlideToggleModule,
 } from '@angular/material/slide-toggle';
+import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { VmService } from '../../state/vm/vm.service';
 import { UserPermissionsService } from '../../services/user-permissions/user-permissions.service';
 
@@ -82,6 +83,7 @@ export class KeysPipe implements PipeTransform {
     MatSlideToggleModule,
     MatTooltip,
     AsyncPipe,
+    ReactiveFormsModule,
   ],
 })
 export class OptionsBarComponent implements OnInit, OnDestroy {
@@ -131,11 +133,21 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
 
     const all = this.vsphereService.model.networkCards.availableNetworks;
     const current = this.vsphereService.model.networkCards.currentNetworks;
+    const readOnlySet = new Set(
+      this.vsphereService.model.networkCards.readOnlyNetworks || [],
+    );
 
-    return Object.entries(current).map(([key, selected]) => ({
-      key,
-      sorted: [selected, ...all.filter((n) => n !== selected)],
-    }));
+    return Object.entries(current).map(([adapterKey, currentRef]) => {
+      const entries = Object.entries(all).map(([ref, name]) => ({
+        ref,
+        name,
+        readOnly: readOnlySet.has(ref),
+      }));
+      const currentEntry = entries.find((e) => e.ref === currentRef);
+      const others = entries.filter((e) => e.ref !== currentRef && !e.readOnly);
+      const sorted = currentEntry ? [currentEntry, ...others] : others;
+      return { key: adapterKey, sorted };
+    });
   });
 
   constructor(
@@ -215,13 +227,69 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
     }
   }
 
-  changeNic(adapter, nic) {
-    this.vsphereService
-      .changeNic(this.vmId, adapter, nic)
-      .subscribe((model: VmModel) => {
-        this.vsphereService.model = model;
-        this.refreshNetworks.update((v) => v + 1);
-      });
+  private networkFilterControls = new Map<string, FormControl<string>>();
+
+  getNetworkFilterControl(adapterKey: string): FormControl<string> {
+    if (!this.networkFilterControls.has(adapterKey)) {
+      this.networkFilterControls.set(adapterKey, new FormControl(''));
+    }
+    return this.networkFilterControls.get(adapterKey)!;
+  }
+
+  filteredNetworks(
+    adapterKey: string,
+    networks: { ref: string; name: string; readOnly: boolean }[],
+  ): { ref: string; name: string; readOnly: boolean }[] {
+    const filterValue = (
+      this.getNetworkFilterControl(adapterKey).value || ''
+    ).toLowerCase();
+    if (!filterValue) {
+      return networks;
+    }
+    return networks.filter((n) => n.name.toLowerCase().includes(filterValue));
+  }
+
+  resetNetworkFilter(adapterKey: string) {
+    const ctrl = this.networkFilterControls.get(adapterKey);
+    if (ctrl) {
+      ctrl.setValue('');
+    }
+  }
+
+  changeNic(adapter: string, networkRef: string) {
+    const currentRef =
+      this.vsphereService.model.networkCards.currentNetworks[adapter];
+    const readOnlySet = new Set(
+      this.vsphereService.model.networkCards.readOnlyNetworks || [],
+    );
+
+    const performChange = () => {
+      this.vsphereService
+        .changeNic(this.vmId, adapter, networkRef)
+        .subscribe((model: VmModel) => {
+          this.vsphereService.model = model;
+          this.refreshNetworks.update((v) => v + 1);
+        });
+    };
+
+    if (readOnlySet.has(currentRef)) {
+      const currentName =
+        this.vsphereService.model.networkCards.availableNetworks[currentRef] ??
+        currentRef;
+
+      this.dialogService
+        .confirm({
+          title: 'Confirm Network Change',
+          message: `You are currently on "${currentName}", which is not in your allowed network list. If you switch away, you will not be able to switch back. Do you want to continue?`,
+        })
+        .pipe(
+          take(1),
+          filter((confirmed) => !!confirmed),
+        )
+        .subscribe(() => performChange());
+    } else {
+      performChange();
+    }
   }
 
   cad() {
