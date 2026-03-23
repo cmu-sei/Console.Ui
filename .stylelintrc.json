@@ -1,0 +1,33 @@
+{
+  "extends": "stylelint-config-recommended-scss",
+  "rules": {
+    "declaration-property-value-disallowed-list": [
+      {
+        "position": ["absolute", "fixed"]
+      },
+      {
+        "severity": "warning",
+        "message": "Avoid position: absolute/fixed — use flexbox or grid for layout instead"
+      }
+    ],
+    "selector-pseudo-element-no-unknown": [true, {
+      "ignorePseudoElements": ["ng-deep"]
+    }],
+    "no-descending-specificity": null,
+    "no-invalid-position-at-import-rule": null,
+    "scss/load-partial-extension": null,
+    "scss/no-global-function-names": null,
+    "property-no-deprecated": null,
+    "declaration-property-value-keyword-no-deprecated": null,
+    "declaration-block-no-duplicate-properties": null,
+    "block-no-empty": null,
+    "font-family-no-missing-generic-family-keyword": null,
+    "selector-type-no-unknown": null
+  },
+  "ignoreFiles": [
+    "src/app/generated/**",
+    "src/assets/vmware-wmks/**",
+    "node_modules/**",
+    "dist/**"
+  ]
+}
