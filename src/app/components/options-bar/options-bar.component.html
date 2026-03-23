@@ -242,7 +242,7 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
             <span>
               @if (
                 vsphereService.model.canAccessNicConfiguration &&
-                vsphereService.model.networkCards.availableNetworks.length > 0
+                availableNetworksSorted().length > 0
               ) {
                 <button mat-menu-item [matMenuTriggerFor]="main_menu">
                   Network Cards
@@ -254,21 +254,28 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
                     {{ mainItem.key }}
                   </button>
 
-                  <mat-menu #sub_menu="matMenu">
-                    @for (subItem of mainItem.sorted; track subItem) {
+                  <mat-menu #sub_menu="matMenu" (closed)="resetNetworkFilter(mainItem.key)">
+                    <div (click)="$event.stopPropagation()" (keydown)="$event.stopPropagation()" class="network-search-container">
+                      <input [formControl]="getNetworkFilterControl(mainItem.key)"
+                             placeholder="Search networks..."
+                             class="network-search-input" />
+                    </div>
+                    @for (subItem of filteredNetworks(mainItem.key, mainItem.sorted); track subItem.ref) {
                       <button
-                        (click)="changeNic(mainItem.key, subItem)"
+                        (click)="changeNic(mainItem.key, subItem.ref)"
                         mat-menu-item
+                        [disabled]="subItem.readOnly"
+                        [matTooltip]="subItem.readOnly ? 'Current network — not in your allowed list' : ''"
                       >
                         @if (
-                          subItem ===
+                          subItem.ref ===
                           vsphereService.model.networkCards.currentNetworks[
                             mainItem.key
                           ]
                         ) {
                           <span>&#10004;</span>
                         }
-                        {{ subItem }}
+                        {{ subItem.name }}
                       </button>
                     }
                   </mat-menu>

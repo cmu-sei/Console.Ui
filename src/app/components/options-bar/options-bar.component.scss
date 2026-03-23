@@ -12,3 +12,22 @@
   font-family: open_sansregular;
   margin-right: 5px;
 }
+
+.network-search-container {
+  padding: 0.25em 1em;
+}
+
+.network-search-input {
+  width: 100%;
+  padding: 0.4em 0.5em;
+  border: 1px solid currentColor;
+  border-radius: 0.25em;
+  background: transparent;
+  color: inherit;
+  outline: none;
+  font: inherit;
+
+  &::placeholder {
+    color: currentColor;
+  }
+}
