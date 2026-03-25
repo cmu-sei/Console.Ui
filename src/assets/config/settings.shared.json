@@ -1,0 +1,12 @@
+{
+"HeaderBarSettings" : {
+    "banner_background_color": "#d40000ff",
+    "classification_text": "SECRET",
+    "classification_text_color": "#ffffff",
+    "classification_text_fontsize": "14",
+    "message_text": "Maintenance Message",
+    "message_text_color": "#ffff00",
+    "message_text_fontsize": "14",
+    "enabled": true
+  }
+}
