@@ -60,7 +60,11 @@
             "development": {
               "optimization": false,
               "extractLicenses": false,
-              "sourceMap": true
+              "sourceMap": {
+                "scripts": true,
+                "styles": true,
+                "vendor": true
+              }
             },
             "localNPM": {
               "tsConfig": "tsconfig.local-npm.json"
