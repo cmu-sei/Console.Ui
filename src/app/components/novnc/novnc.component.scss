@@ -1,7 +1,25 @@
 /*
-Copyright 2021 Carnegie Mellon University. All Rights Reserved. 
+Copyright 2021 Carnegie Mellon University. All Rights Reserved.
  Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
 */
+
+:host {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+:host > div {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+
+  &[hidden] {
+    display: none;
+  }
+}
 
 .center {
   position: relative;
@@ -10,7 +28,8 @@ Copyright 2021 Carnegie Mellon University. All Rights Reserved.
   text-align: center;
 }
 
-// novnc element has to have a fixed height when scaleViewport is set
+// novnc element needs a constrained height when scaleViewport is set
 .screen {
-  height: calc(100vh - 48px);  // 100vh minus options bar height
+  flex: 1;
+  min-height: 0;
 }

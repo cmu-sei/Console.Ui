@@ -1,8 +1,15 @@
 // Copyright 2021 Carnegie Mellon University. All Rights Reserved.
 // Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
 
+:host {
+  display: block;
+  height: 100%;
+}
+
 .console-container {
   height: 100%;
   width: 100%;
-  display: block;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
