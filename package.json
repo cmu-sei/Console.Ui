@@ -1,6 +1,6 @@
 {
   "name": "player.vm.console.ui",
-  "version": "3.0.5",
+  "version": "0.0.0",
   "license": "MIT",
   "config": {
     "openapiArgs": "--additional-properties ngVersion=21 --additional-properties modelPropertyNaming=original --type-mappings=DateTime=string",
