@@ -42,6 +42,7 @@ testem.log
 .DS_Store
 Thumbs.db
 src/assets/config/settings.env.json
+src/assets/config/settings.shared.json
 .vscode/
 /.vs/ProjectSettings.json
 /.vs/slnx.sqlite
