@@ -27,14 +27,12 @@
               }
             ],
             "styles": [
-              "node_modules/bootstrap/dist/css/bootstrap.min.css",
+              "node_modules/bootstrap/dist/css/bootstrap-utilities.min.css",
               "src/styles/styles.scss",
               "src/assets/vmware-wmks/css/wmks-all.css"
             ],
             "stylePreprocessorOptions": {
-              "includePaths": [
-                "src/styles"
-              ]
+              "includePaths": ["src/styles"]
             },
             "scripts": [
               "node_modules/jquery/dist/jquery.js",
@@ -62,7 +60,14 @@
             "development": {
               "optimization": false,
               "extractLicenses": false,
-              "sourceMap": true
+              "sourceMap": {
+                "scripts": true,
+                "styles": true,
+                "vendor": true
+              }
+            },
+            "localNPM": {
+              "tsConfig": "tsconfig.local-npm.json"
             }
           },
           "defaultConfiguration": "production"
@@ -78,6 +83,9 @@
             },
             "development": {
               "buildTarget": "player-vm-console-ui:build:development"
+            },
+            "localNPM": {
+              "buildTarget": "player-vm-console-ui:build:development,localNPM"
             }
           },
           "defaultConfiguration": "development"

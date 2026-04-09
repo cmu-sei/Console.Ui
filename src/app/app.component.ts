@@ -3,7 +3,7 @@
 import { Component, OnDestroy } from '@angular/core';
 import { MatIconRegistry } from '@angular/material/icon';
 import { DomSanitizer } from '@angular/platform-browser';
-import { ComnAuthQuery, ComnAuthService, ComnSettingsService, Theme } from '@cmusei/crucible-common';
+import { ComnAuthQuery, ComnAuthService, ComnHeaderBarModule, ComnSettingsService, Theme } from '@cmusei/crucible-common';
 import { RouterQuery } from '@datorama/akita-ng-router-store';
 import { Observable, Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -13,7 +13,7 @@ import { RouterOutlet } from '@angular/router';
     selector: 'app-root',
     templateUrl: './app.component.html',
     styleUrls: ['./app.component.scss'],
-    imports: [RouterOutlet]
+    imports: [RouterOutlet, ComnHeaderBarModule]
 })
 export class AppComponent implements OnDestroy {
   theme$: Observable<Theme> = this.authQuery.userTheme$;

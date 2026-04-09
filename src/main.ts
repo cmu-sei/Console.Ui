@@ -27,6 +27,7 @@ import {
   ComnSettingsModule,
   ComnAuthModule,
   ComnSettingsConfig,
+  ComnHeaderBarModule,
 } from '@cmusei/crucible-common';
 import { BASE_PATH } from './app/generated/vm-api';
 import { ErrorService } from './app/services/error/error.service';
@@ -38,6 +39,7 @@ import { routes } from './app/app-routing/app-routing.module';
 
 export const settings: ComnSettingsConfig = {
   url: 'assets/config/settings.json',
+  sharedUrl: 'assets/config/settings.shared.json',
   envUrl: 'assets/config/settings.env.json',
 };
 
@@ -68,6 +70,7 @@ bootstrapApplication(AppComponent, {
     provideZoneChangeDetection(), importProvidersFrom(
       ComnSettingsModule.forRoot(),
       ComnAuthModule.forRoot(),
+      ComnHeaderBarModule,
       environment.production ? [] : AkitaNgDevtools.forRoot(),
       AkitaNgRouterStoreModule,
     ),

@@ -1,9 +1,23 @@
 // Copyright 2023 Carnegie Mellon University. All Rights Reserved.
 // Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
-@use "@angular/material" as mat;
+@use '@angular/material' as mat;
+
+.app-layout {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.main-content {
+  overflow: auto;
+}
 
 mat-toolbar {
-  @include mat.toolbar-overrides((container-background-color: var(--mat-sys-primary),
+  @include mat.toolbar-overrides(
+    (
+      container-background-color: var(--mat-sys-primary),
       container-text-color: var(--mat-sys-on-primary),
-    ));
+    )
+  );
 }
