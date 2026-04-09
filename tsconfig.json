@@ -13,11 +13,11 @@
       "node_modules/@types"
     ],
     "useDefineForClassFields": false,
-    "lib": ["ES2022", "dom"],
-    "skipLibCheck": true,
-    "paths": {
-      "@cmusei/crucible-common": ["../../libraries/Crucible.Common.Ui/dist/@crucible-common"]
-    }
+    "lib": [
+      "ES2022",
+      "dom"
+    ],
+    "skipLibCheck": true
   },
   "exclude": [
     "../../libraries/**/node_modules"
