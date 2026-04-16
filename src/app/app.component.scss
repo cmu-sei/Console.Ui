@@ -2,7 +2,7 @@
 // Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
 @use '@angular/material' as mat;
 
-.app-layout {
+:host {
   display: grid;
   grid-template-rows: auto 1fr;
   height: 100vh;
