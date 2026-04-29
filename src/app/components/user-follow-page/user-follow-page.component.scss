@@ -3,6 +3,15 @@
  * Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
  */
 
+:host {
+  display: block;
+  height: 100%;
+}
+
+.console-wrapper {
+  height: 100%;
+}
+
 .banner {
   position: absolute;
   left: 45%;

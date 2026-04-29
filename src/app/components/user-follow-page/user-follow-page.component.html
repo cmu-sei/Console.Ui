@@ -5,7 +5,7 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
 
 @if (user$ | async; as user) {
   @if (vmId$ | async; as vmId) {
-    <div>
+    <div class="console-wrapper">
       <h2 class="banner">
         Following {{ user.name }}{{ !(isActive$ | async) ? ' (inactive)' : '' }}
       </h2>
