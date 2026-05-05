@@ -7,8 +7,9 @@ import { Inject, Injectable } from '@angular/core';
 import { ComnAuthService } from '@cmusei/crucible-common';
 import * as signalR from '@microsoft/signalr';
 import { BehaviorSubject, Observable } from 'rxjs';
-import { BASE_PATH, VmUser } from '../../generated/vm-api';
+import { BASE_PATH, Vm, VmUser } from '../../generated/vm-api';
 import { UserService } from '../../state/user/user.service';
+import { VmService } from '../../state/vm/vm.service';
 import { VsphereService } from '../../state/vsphere/vsphere.service';
 
 @Injectable({
@@ -30,6 +31,7 @@ export class SignalRService {
   constructor(
     private authService: ComnAuthService,
     private vmService: VsphereService,
+    private vmStateService: VmService,
     private userService: UserService,
     @Inject(BASE_PATH) basePath: string,
   ) {
@@ -153,6 +155,7 @@ export class SignalRService {
   private addHandlers() {
     this.addUserHandlers();
     this.addCurrentUsersHandlers();
+    this.addVmUpdateHandlers();
   }
 
   private addUserHandlers() {
@@ -168,6 +171,14 @@ export class SignalRService {
         this.currentVmUsers$.next(users);
       },
     );
+  }
+
+  private addVmUpdateHandlers() {
+    this.hubConnection.on('VmUpdated', (vm: Vm) => {
+      console.log('SignalR VmUpdated event received:', vm);
+      // Update the VM in the store when it changes
+      this.vmStateService.update(vm.id, vm);
+    });
   }
 }
 

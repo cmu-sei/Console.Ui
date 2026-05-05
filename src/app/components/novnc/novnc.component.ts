@@ -102,6 +102,7 @@ export class NovncComponent implements OnChanges, AfterViewInit {
 
   async clipboardEvent(e) {
     console.log(e);
-    await navigator.clipboard.writeText(e.detail.text);
+    // Store clipboard text for manual copy
+    this.novncService.storeClipboardText(e.detail.text);
   }
 }

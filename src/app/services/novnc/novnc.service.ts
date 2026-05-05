@@ -31,6 +31,8 @@ export class NoVNCService {
     this.rfb.background = backgroundColor;
     this.rfb.viewOnly = readOnly;
     this.rfb.scaleViewport = true;
+    // Enable receiving clipboard from VM (but not automatic paste)
+    this.rfb.clipboardDown = true;
   }
 
   public setViewOnly(viewOnly: boolean) {
@@ -60,6 +62,24 @@ export class NoVNCService {
   }
 
   public sendClipboardText(text: string) {
-    this.rfb.clipboardPasteFrom(text);
+    console.log('NoVNCService.sendClipboardText - text:', text, 'rfb:', this.rfb);
+    if (this.rfb) {
+      this.rfb.clipboardPasteFrom(text);
+      console.log('Called rfb.clipboardPasteFrom');
+    } else {
+      console.error('RFB not initialized');
+    }
+  }
+
+  public getClipboardText(): string | null {
+    // The clipboard data is received via the clipboard event listener
+    // We need to store the last received clipboard data
+    return this.lastClipboardText;
+  }
+
+  private lastClipboardText: string | null = null;
+
+  public storeClipboardText(text: string) {
+    this.lastClipboardText = text;
   }
 }

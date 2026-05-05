@@ -47,4 +47,20 @@ export class OptionsBar2Component implements OnInit {
   public sendClipboardText() {
     this.vmService.sendClipboardText(this.vm.id);
   }
+
+  public copyClipboardFromVm() {
+    this.vmService.copyClipboardFromVm(this.vm.id);
+  }
+
+  public powerOn() {
+    this.vmService.powerOn(this.vm.id);
+  }
+
+  public powerOff() {
+    this.vmService.powerOff(this.vm.id);
+  }
+
+  public reboot() {
+    this.vmService.reboot(this.vm.id);
+  }
 }

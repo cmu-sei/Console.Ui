@@ -4,6 +4,7 @@
 import { Component, Input } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { Vm, VmType, VsphereVirtualMachine } from '../../generated/vm-api';
+import { VmQuery } from '../../state/vm/vm.query';
 import { VmService } from '../../state/vm/vm.service';
 import { VsphereQuery } from '../../state/vsphere/vsphere.query';
 import { AsyncPipe } from '@angular/common';
@@ -31,7 +32,10 @@ export class ConsoleComponent {
   @Input({ required: true }) set vmId(value: string) {
     this._vmId = value;
     this.vsphereVm$ = this.vsphereQuery.selectEntity(value);
-    this.virtualMachine$ = this.vmService.get(value);
+    // First fetch from API to populate store
+    this.vmService.get(value).subscribe();
+    // Then select from store to get live updates via SignalR
+    this.virtualMachine$ = this.vmQuery.selectEntity(value);
   }
 
   public get vmType(): typeof VmType {
@@ -47,8 +51,14 @@ export class ConsoleComponent {
   vsphereVm$: Observable<VsphereVirtualMachine>;
   virtualMachine$: Observable<Vm>;
 
+  // Expose for template access
+  get vmObservable(): Observable<Vm> {
+    return this.virtualMachine$;
+  }
+
   constructor(
     private vsphereQuery: VsphereQuery,
+    private vmQuery: VmQuery,
     private vmService: VmService,
   ) {}
 }

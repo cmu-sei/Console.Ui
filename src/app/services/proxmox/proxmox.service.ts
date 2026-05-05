@@ -17,6 +17,19 @@ export class ProxmoxService {
   }
 
   public sendClipboardText(text: string) {
+    console.log('ProxmoxService.sendClipboardText:', text);
     this.novncService.sendClipboardText(text);
+  }
+
+  public async copyClipboardFromVm() {
+    console.log('ProxmoxService.copyClipboardFromVm called');
+    const text = this.novncService.getClipboardText();
+    console.log('Got text from VM clipboard:', text);
+    if (text) {
+      await navigator.clipboard.writeText(text);
+      console.log('Wrote to browser clipboard');
+    } else {
+      console.log('No clipboard text available from VM');
+    }
   }
 }

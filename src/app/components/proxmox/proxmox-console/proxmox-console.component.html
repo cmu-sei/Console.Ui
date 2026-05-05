@@ -3,7 +3,18 @@ Copyright 2021 Carnegie Mellon University. All Rights Reserved.
 Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
 -->
 
-@if ({ value: proxmoxConsole$ | async }; as proxmoxConsole) {
+@if (_vm?.powerState === 'Off' || _vm?.powerState === 'Unknown') {
+  <div class="d-flex align-items-center justify-content-center h-100 w-100">
+    <div class="text-center p-4">
+      <mat-icon
+        class="power-icon mb-3"
+        svgIcon="ic_power_settings_new_black_48px"
+        alt="Off"
+      ></mat-icon>
+      <h2>Virtual Machine is Powered Off</h2>
+    </div>
+  </div>
+} @else if ({ value: proxmoxConsole$ | async }; as proxmoxConsole) {
   <app-novnc
     [url]="proxmoxConsole.value?.url"
     [ticket]="proxmoxConsole.value?.ticket"

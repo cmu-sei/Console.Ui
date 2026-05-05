@@ -15,7 +15,7 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
           [readOnly]="readOnly"
         ></app-options-bar2>
         <app-proxmox-console
-          [vm]="virtualMachine.value"
+          [vm$]="virtualMachine$"
           [readOnly]="readOnly"
         ></app-proxmox-console>
       }

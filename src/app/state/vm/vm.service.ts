@@ -52,15 +52,49 @@ export class VmService {
   }
 
   async sendClipboardText(id: string) {
+    console.log('sendClipboardText called for VM:', id);
     const vm = this.vmQuery.getEntity(id);
 
-    const text = await navigator.clipboard.readText();
+    try {
+      const text = await navigator.clipboard.readText();
+      console.log('Read text from clipboard:', text);
 
-    switch (vm.type) {
-      case 'Proxmox':
-        this.proxmoxService.sendClipboardText(text);
-        break;
+      switch (vm.type) {
+        case 'Proxmox':
+          this.proxmoxService.sendClipboardText(text);
+          break;
+      }
+    } catch (error) {
+      console.error('Paste to VM failed:', error);
     }
+  }
+
+  async copyClipboardFromVm(id: string) {
+    console.log('copyClipboardFromVm called for VM:', id);
+    const vm = this.vmQuery.getEntity(id);
+
+    try {
+      switch (vm.type) {
+        case 'Proxmox':
+          await this.proxmoxService.copyClipboardFromVm();
+          console.log('Copy from VM completed');
+          break;
+      }
+    } catch (error) {
+      console.error('Copy from VM failed:', error);
+    }
+  }
+
+  powerOn(id: string) {
+    this.vmsService.bulkPowerOn({ ids: [id] }).subscribe();
+  }
+
+  powerOff(id: string) {
+    this.vmsService.bulkPowerOff({ ids: [id] }).subscribe();
+  }
+
+  reboot(id: string) {
+    this.vmsService.bulkReboot({ ids: [id] }).subscribe();
   }
 
   setReadOnly(value: boolean) {
