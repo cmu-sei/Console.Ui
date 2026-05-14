@@ -20,7 +20,7 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
         ></app-proxmox-console>
       }
       @defer (
-        when virtualMachine.value.type == vmType.Vsphere || virtualMachine.value.type == vmType.Unknown;
+        when virtualMachine.value.type == vmType.Vsphere;
         prefetch on idle
       ) {
         <app-options-bar
@@ -30,6 +30,16 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
           [vmId]="vmId"
         ></app-options-bar>
         <app-wmks [readOnly]="readOnly" [vmId]="vmId"></app-wmks>
+      }
+      @defer (
+        when virtualMachine.value.type == vmType.Unknown;
+        prefetch on idle
+      ) {
+        <div class="console-message">
+          <h2>{{ virtualMachine.value.name }}</h2>
+          <p>Virtual Machine Type: Unknown</p>
+          <p>This virtual machine does not have console access configured.</p>
+        </div>
       }
     }
   }
