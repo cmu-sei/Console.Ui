@@ -3,14 +3,21 @@ Copyright 2021 Carnegie Mellon University. All Rights Reserved.
 Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
 -->
 
-<!-- wait for readOnly http call to evaluate before initializing app-console -->
-@if ({ value: readOnly$ | async }; as readOnly) {
-  @if (readOnly.value != null) {
-    <app-console
-      [readOnly]="userPermissionsService.readOnly$ | async"
-      [allowReadOnlyToggle]="userPermissionsService.readOnlyToggleable$ | async"
-      [vmId]="vmId$ | async"
-    >
-    </app-console>
+@if (vmNotFound) {
+  <div class="d-flex flex-column align-items-center justify-content-center" style="height: 100%; padding: 2rem;">
+    <h2>VM Not Found</h2>
+    <p>The virtual machine you are trying to access no longer exists or you do not have permission to access it.</p>
+  </div>
+} @else {
+  <!-- wait for readOnly http call to evaluate before initializing app-console -->
+  @if ({ value: readOnly$ | async }; as readOnly) {
+    @if (readOnly.value != null) {
+      <app-console
+        [readOnly]="userPermissionsService.readOnly$ | async"
+        [allowReadOnlyToggle]="userPermissionsService.readOnlyToggleable$ | async"
+        [vmId]="vmId$ | async"
+      >
+      </app-console>
+    }
   }
 }
