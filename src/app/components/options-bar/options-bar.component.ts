@@ -14,7 +14,7 @@ import {
 } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ActivatedRoute } from '@angular/router';
-import { ComnSettingsService } from '@cmusei/crucible-common';
+import { ComnAuthQuery, ComnAuthService, ComnSettingsService, Theme } from '@cmusei/crucible-common';
 import { Observable, of, Subject } from 'rxjs';
 import {
   catchError,
@@ -160,7 +160,11 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
     private signalrService: SignalRService,
     private vmService: VmService,
     private userPermissionsService: UserPermissionsService,
+    private authService: ComnAuthService,
+    private authQuery: ComnAuthQuery,
   ) {}
+
+  theme$ = this.authQuery.userTheme$;
 
   ngOnInit() {
     this.vmResolutionsOptions = [
@@ -640,5 +644,10 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
 
   toggleReadOnly(event: MatSlideToggleChange) {
     this.vmService.setReadOnly(event.checked);
+  }
+
+  toggleTheme(event: MatSlideToggleChange) {
+    const theme = event.checked ? Theme.DARK : Theme.LIGHT;
+    this.authService.setUserTheme(theme);
   }
 }

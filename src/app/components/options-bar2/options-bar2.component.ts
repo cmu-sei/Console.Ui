@@ -11,16 +11,19 @@ import {
 } from '@angular/core';
 import { Vm, VmType } from '../../generated/vm-api';
 import { VmService } from '../../state/vm/vm.service';
+import { ComnAuthQuery, ComnAuthService, Theme } from '@cmusei/crucible-common';
 import { MatIcon } from '@angular/material/icon';
 import { MatMenuTrigger, MatMenu, MatMenuItem } from '@angular/material/menu';
 import { MatIconButton } from '@angular/material/button';
+import { MatSlideToggleChange, MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { AsyncPipe } from '@angular/common';
 
 @Component({
     selector: 'app-options-bar2',
     templateUrl: './options-bar2.component.html',
     styleUrls: ['./options-bar2.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [MatIconButton, MatMenuTrigger, MatIcon, MatMenu, MatMenuItem]
+    imports: [MatIconButton, MatMenuTrigger, MatIcon, MatMenu, MatMenuItem, MatSlideToggleModule, AsyncPipe]
 })
 export class OptionsBar2Component implements OnInit {
   // Generic Options Bar - Will eventually replace OptionsBarComponent
@@ -36,7 +39,13 @@ export class OptionsBar2Component implements OnInit {
     }
   }
 
-  constructor(private vmService: VmService) {}
+  constructor(
+    private vmService: VmService,
+    private authService: ComnAuthService,
+    private authQuery: ComnAuthQuery,
+  ) {}
+
+  theme$ = this.authQuery.userTheme$;
 
   ngOnInit(): void {}
 
@@ -46,5 +55,10 @@ export class OptionsBar2Component implements OnInit {
 
   public sendClipboardText() {
     this.vmService.sendClipboardText(this.vm.id);
+  }
+
+  toggleTheme(event: MatSlideToggleChange) {
+    const theme = event.checked ? Theme.DARK : Theme.LIGHT;
+    this.authService.setUserTheme(theme);
   }
 }
