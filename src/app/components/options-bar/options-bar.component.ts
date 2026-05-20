@@ -51,6 +51,7 @@ import {
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { VmService } from '../../state/vm/vm.service';
 import { UserPermissionsService } from '../../services/user-permissions/user-permissions.service';
+import { MatLabel } from '@angular/material/form-field';
 
 declare var WMKS: any; // needed to check values
 const MAX_COPY_RETRIES = 1;
@@ -81,6 +82,7 @@ export class KeysPipe implements PipeTransform {
     MatMenu,
     MatMenuItem,
     MatSlideToggleModule,
+    MatLabel,
     MatTooltip,
     AsyncPipe,
     ReactiveFormsModule,
