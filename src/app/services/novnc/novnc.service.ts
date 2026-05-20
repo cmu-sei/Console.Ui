@@ -62,4 +62,10 @@ export class NoVNCService {
   public sendClipboardText(text: string) {
     this.rfb.clipboardPasteFrom(text);
   }
+
+  public updateBackground(backgroundColor: string) {
+    if (this.rfb) {
+      this.rfb.background = backgroundColor;
+    }
+  }
 }
