@@ -5,6 +5,7 @@
 
 :host {
   @include mat.button-density(-2);
+  background-color: var(--mat-sys-background);
 }
 
 .connected-users {
