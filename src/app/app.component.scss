@@ -11,6 +11,10 @@
 
 .main-content {
   overflow: auto;
+
+  &.embedded {
+    height: 100vh;
+  }
 }
 
 mat-toolbar {

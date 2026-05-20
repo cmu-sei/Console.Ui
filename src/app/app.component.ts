@@ -18,6 +18,7 @@ import { RouterOutlet } from '@angular/router';
 export class AppComponent implements OnDestroy {
   theme$: Observable<Theme> = this.authQuery.userTheme$;
   unsubscribe$ = new Subject();
+  hideTopbar = this.inIframe();
 
   constructor(
     private iconRegistry: MatIconRegistry,
@@ -122,5 +123,13 @@ export class AppComponent implements OnDestroy {
   ngOnDestroy() {
     this.unsubscribe$.next(null);
     this.unsubscribe$.complete();
+  }
+
+  private inIframe(): boolean {
+    try {
+      return window.self !== window.top;
+    } catch (e) {
+      return true;
+    }
   }
 }
