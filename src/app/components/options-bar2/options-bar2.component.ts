@@ -16,6 +16,7 @@ import { MatIcon } from '@angular/material/icon';
 import { MatMenuTrigger, MatMenu, MatMenuItem } from '@angular/material/menu';
 import { MatIconButton } from '@angular/material/button';
 import { MatSlideToggleChange, MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { MatLabel } from '@angular/material/form-field';
 import { AsyncPipe } from '@angular/common';
 
 @Component({
@@ -23,7 +24,7 @@ import { AsyncPipe } from '@angular/common';
     templateUrl: './options-bar2.component.html',
     styleUrls: ['./options-bar2.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [MatIconButton, MatMenuTrigger, MatIcon, MatMenu, MatMenuItem, MatSlideToggleModule, AsyncPipe]
+    imports: [MatIconButton, MatMenuTrigger, MatIcon, MatMenu, MatMenuItem, MatSlideToggleModule, MatLabel, AsyncPipe]
 })
 export class OptionsBar2Component implements OnInit {
   // Generic Options Bar - Will eventually replace OptionsBarComponent
