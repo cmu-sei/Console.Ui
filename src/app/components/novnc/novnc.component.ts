@@ -10,13 +10,16 @@ import {
   EventEmitter,
   Input,
   OnChanges,
+  OnDestroy,
   Output,
   SimpleChanges,
   ViewChild,
 } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 import { NoVNCService } from '../../services/novnc/novnc.service';
 import { AsyncPipe } from '@angular/common';
+import { ComnAuthQuery } from '@cmusei/crucible-common';
 
 @Component({
     selector: 'app-novnc',
@@ -24,7 +27,7 @@ import { AsyncPipe } from '@angular/common';
     styleUrls: ['./novnc.component.scss'],
     imports: [AsyncPipe]
 })
-export class NovncComponent implements OnChanges, AfterViewInit {
+export class NovncComponent implements OnChanges, AfterViewInit, OnDestroy {
   @Input() ticket: string;
   @Input() url: string;
   @Input() readOnly = false;
@@ -39,15 +42,34 @@ export class NovncComponent implements OnChanges, AfterViewInit {
 
   private failedConnectionAttempts = 0;
   private backgroundColor: string;
+  private unsubscribe$ = new Subject();
 
   @ViewChild('screen') screen: ElementRef;
 
-  constructor(private novncService: NoVNCService) {}
+  constructor(
+    private novncService: NoVNCService,
+    private authQuery: ComnAuthQuery,
+  ) {}
 
   ngAfterViewInit() {
     this.backgroundColor = getComputedStyle(
       this.screen.nativeElement,
     ).backgroundColor;
+
+    // Listen for theme changes and update noVNC background
+    this.authQuery.userTheme$
+      .pipe(takeUntil(this.unsubscribe$))
+      .subscribe(() => {
+        this.backgroundColor = getComputedStyle(
+          this.screen.nativeElement,
+        ).backgroundColor;
+        this.novncService.updateBackground(this.backgroundColor);
+      });
+  }
+
+  ngOnDestroy() {
+    this.unsubscribe$.next(null);
+    this.unsubscribe$.complete();
   }
 
   ngOnChanges(changes: SimpleChanges): void {

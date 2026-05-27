@@ -14,7 +14,7 @@ import {
 } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ActivatedRoute } from '@angular/router';
-import { ComnSettingsService } from '@cmusei/crucible-common';
+import { ComnAuthQuery, ComnAuthService, ComnSettingsService, Theme } from '@cmusei/crucible-common';
 import { Observable, of, Subject } from 'rxjs';
 import {
   catchError,
@@ -51,6 +51,7 @@ import {
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { VmService } from '../../state/vm/vm.service';
 import { UserPermissionsService } from '../../services/user-permissions/user-permissions.service';
+import { MatLabel } from '@angular/material/form-field';
 
 declare var WMKS: any; // needed to check values
 const MAX_COPY_RETRIES = 1;
@@ -81,6 +82,7 @@ export class KeysPipe implements PipeTransform {
     MatMenu,
     MatMenuItem,
     MatSlideToggleModule,
+    MatLabel,
     MatTooltip,
     AsyncPipe,
     ReactiveFormsModule,
@@ -160,7 +162,11 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
     private signalrService: SignalRService,
     private vmService: VmService,
     private userPermissionsService: UserPermissionsService,
+    private authService: ComnAuthService,
+    private authQuery: ComnAuthQuery,
   ) {}
+
+  theme$ = this.authQuery.userTheme$;
 
   ngOnInit() {
     this.vmResolutionsOptions = [
@@ -640,5 +646,10 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
 
   toggleReadOnly(event: MatSlideToggleChange) {
     this.vmService.setReadOnly(event.checked);
+  }
+
+  toggleTheme(event: MatSlideToggleChange) {
+    const theme = event.checked ? Theme.DARK : Theme.LIGHT;
+    this.authService.setUserTheme(theme);
   }
 }

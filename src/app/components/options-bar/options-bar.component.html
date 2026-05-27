@@ -35,6 +35,20 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
           </button>
         }
 
+        <button mat-menu-item (click)="$event.stopPropagation()">
+          <mat-slide-toggle
+            labelPosition="before"
+            color="primary"
+            [checked]="(theme$ | async) === 'dark-theme'"
+            (click)="$event.stopPropagation()"
+            (change)="toggleTheme($event)"
+          >
+            <mat-label class="mat-mdc-menu-item-text me-2"
+              >Dark Theme</mat-label
+            >
+          </mat-slide-toggle>
+        </button>
+
         @if (!readOnly) {
           <!-- Resolution -->
           @if (!vsphereService.model.isOwner) {

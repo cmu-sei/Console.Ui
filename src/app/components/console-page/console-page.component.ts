@@ -9,12 +9,13 @@ import {
   ChangeDetectionStrategy,
   HostListener,
   OnDestroy,
+  signal,
 } from '@angular/core';
 import { Title } from '@angular/platform-browser';
 import { ComnAuthService } from '@cmusei/crucible-common';
 import { RouterQuery } from '@datorama/akita-ng-router-store';
-import { Observable, Subject } from 'rxjs';
-import { map, take, takeUntil } from 'rxjs/operators';
+import { Observable, Subject, of, EMPTY } from 'rxjs';
+import { catchError, map, take, takeUntil, switchMap, tap } from 'rxjs/operators';
 import { SignalRService } from '../../services/signalr/signalr.service';
 import { VmQuery } from '../../state/vm/vm.query';
 import { VmService } from '../../state/vm/vm.service';
@@ -33,6 +34,7 @@ export class ConsolePageComponent implements OnInit, OnDestroy {
   readOnly$: Observable<boolean>;
   vmId$: Observable<string> = this.routerQuery.selectParams('id');
   vmId: string;
+  vmNotFound = signal(false);
 
   unsubscribe$ = new Subject();
 
@@ -47,24 +49,36 @@ export class ConsolePageComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.vmId = this.routerQuery.getParams('id');
-    this.userPermissionsService.load(this.vmId).subscribe();
 
-    this.signalrRService.startConnection().then(() => {
-      this.signalrRService.joinVm(this.vmId);
+    // Load VM and check if it exists
+    this.vmService.get(this.vmId).pipe(
+      take(1),
+      catchError((error) => {
+        if (error.status === 404) {
+          this.vmNotFound.set(true);
+        }
+        return EMPTY;
+      }),
+      switchMap(() => this.userPermissionsService.load(this.vmId)),
+      tap(() => {
+        this.signalrRService.startConnection().then(() => {
+          this.signalrRService.joinVm(this.vmId);
 
-      if (document.hasFocus()) {
-        this.signalrRService.setActiveVirtualMachine(this.vmId);
-      }
-    });
+          if (document.hasFocus()) {
+            this.signalrRService.setActiveVirtualMachine(this.vmId);
+          }
+        });
 
-    this.vmQuery
-      .selectEntityNotNull(this.vmId)
-      .pipe(takeUntil(this.unsubscribe$))
-      .subscribe((vm) => {
-        this.titleService.setTitle(vm.name);
-      });
+        this.vmQuery
+          .selectEntityNotNull(this.vmId)
+          .pipe(takeUntil(this.unsubscribe$))
+          .subscribe((vm) => {
+            this.titleService.setTitle(vm.name);
+          });
 
-    this.readOnly$ = this.userPermissionsService.readOnly$;
+        this.readOnly$ = this.userPermissionsService.readOnly$;
+      })
+    ).subscribe();
   }
 
   ngOnDestroy(): void {

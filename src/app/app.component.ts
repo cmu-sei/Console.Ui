@@ -7,7 +7,7 @@ import { ComnAuthQuery, ComnAuthService, ComnHeaderBarModule, ComnSettingsServic
 import { RouterQuery } from '@datorama/akita-ng-router-store';
 import { Observable, Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
-import { RouterOutlet } from '@angular/router';
+import { RouterOutlet, Router } from '@angular/router';
 
 @Component({
     selector: 'app-root',
@@ -18,6 +18,8 @@ import { RouterOutlet } from '@angular/router';
 export class AppComponent implements OnDestroy {
   theme$: Observable<Theme> = this.authQuery.userTheme$;
   unsubscribe$ = new Subject();
+  hideTopbar = this.inIframe();
+  private paramTheme;
 
   constructor(
     private iconRegistry: MatIconRegistry,
@@ -26,10 +28,17 @@ export class AppComponent implements OnDestroy {
     private routerQuery: RouterQuery,
     private authService: ComnAuthService,
     private settingsService: ComnSettingsService,
+    private router: Router,
   ) {
     this.addIcons();
 
     this.theme$.pipe(takeUntil(this.unsubscribe$)).subscribe((theme) => {
+      if (this.paramTheme && this.paramTheme !== theme) {
+        this.router.navigate([], {
+          queryParams: { theme: theme },
+          queryParamsHandling: 'merge',
+        });
+      }
       this.setTheme(theme);
     });
 
@@ -37,7 +46,10 @@ export class AppComponent implements OnDestroy {
       .selectQueryParams('theme')
       .pipe(takeUntil(this.unsubscribe$))
       .subscribe((theme) => {
-        this.authService.setUserTheme(theme);
+        if (theme != null) {
+          this.paramTheme = theme === Theme.DARK ? Theme.DARK : Theme.LIGHT;
+          this.authService.setUserTheme(this.paramTheme);
+        }
       });
   }
 
@@ -122,5 +134,13 @@ export class AppComponent implements OnDestroy {
   ngOnDestroy() {
     this.unsubscribe$.next(null);
     this.unsubscribe$.complete();
+  }
+
+  private inIframe(): boolean {
+    try {
+      return window.self !== window.top;
+    } catch (e) {
+      return true;
+    }
   }
 }
