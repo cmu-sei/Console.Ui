@@ -9,12 +9,13 @@ import {
   ChangeDetectionStrategy,
   HostListener,
   OnDestroy,
+  signal,
 } from '@angular/core';
 import { Title } from '@angular/platform-browser';
 import { ComnAuthService } from '@cmusei/crucible-common';
 import { RouterQuery } from '@datorama/akita-ng-router-store';
-import { Observable, Subject } from 'rxjs';
-import { catchError, map, take, takeUntil } from 'rxjs/operators';
+import { Observable, Subject, of, EMPTY } from 'rxjs';
+import { catchError, map, take, takeUntil, switchMap, tap } from 'rxjs/operators';
 import { SignalRService } from '../../services/signalr/signalr.service';
 import { VmQuery } from '../../state/vm/vm.query';
 import { VmService } from '../../state/vm/vm.service';
@@ -33,7 +34,7 @@ export class ConsolePageComponent implements OnInit, OnDestroy {
   readOnly$: Observable<boolean>;
   vmId$: Observable<string> = this.routerQuery.selectParams('id');
   vmId: string;
-  vmNotFound = false;
+  vmNotFound = signal(false);
 
   unsubscribe$ = new Subject();
 
@@ -54,14 +55,12 @@ export class ConsolePageComponent implements OnInit, OnDestroy {
       take(1),
       catchError((error) => {
         if (error.status === 404) {
-          this.vmNotFound = true;
+          this.vmNotFound.set(true);
         }
-        throw error;
-      })
-    ).subscribe({
-      next: () => {
-        this.userPermissionsService.load(this.vmId).subscribe();
-
+        return EMPTY;
+      }),
+      switchMap(() => this.userPermissionsService.load(this.vmId)),
+      tap(() => {
         this.signalrRService.startConnection().then(() => {
           this.signalrRService.joinVm(this.vmId);
 
@@ -78,11 +77,8 @@ export class ConsolePageComponent implements OnInit, OnDestroy {
           });
 
         this.readOnly$ = this.userPermissionsService.readOnly$;
-      },
-      error: () => {
-        // Error already handled in catchError
-      }
-    });
+      })
+    ).subscribe();
   }
 
   ngOnDestroy(): void {
