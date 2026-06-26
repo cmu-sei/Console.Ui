@@ -50,13 +50,8 @@ export class ConsolePageComponent implements OnInit, OnDestroy {
   ngOnInit() {
     this.vmId = this.routerQuery.getParams('id');
 
-    // Assign synchronously so the template's `readOnly$ | async` binding is
-    // subscribed on the first render. readOnly$ is a stable stream that simply
-    // doesn't emit until load() resolves; the async pipe triggers change
-    // detection on emit. Assigning it later (e.g. inside the tap below) leaves
-    // this OnPush component without a binding until an unrelated event forces
-    // change detection, so the console only appears after the window is
-    // focused/clicked.
+    // Assign synchronously so the OnPush template's `readOnly$ | async` binding
+    // is subscribed on first render (assigning it later won't trigger CD).
     this.readOnly$ = this.userPermissionsService.readOnly$;
 
     // Load VM and check if it exists
