@@ -50,6 +50,10 @@ export class ConsolePageComponent implements OnInit, OnDestroy {
   ngOnInit() {
     this.vmId = this.routerQuery.getParams('id');
 
+    // Assign synchronously so the OnPush template's `readOnly$ | async` binding
+    // is subscribed on first render (assigning it later won't trigger CD).
+    this.readOnly$ = this.userPermissionsService.readOnly$;
+
     // Load VM and check if it exists
     this.vmService.get(this.vmId).pipe(
       take(1),
@@ -75,8 +79,6 @@ export class ConsolePageComponent implements OnInit, OnDestroy {
           .subscribe((vm) => {
             this.titleService.setTitle(vm.name);
           });
-
-        this.readOnly$ = this.userPermissionsService.readOnly$;
       })
     ).subscribe();
   }
