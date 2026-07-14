@@ -183,7 +183,9 @@ export class SignalRService {
 
         this.currentVmUsersByGroup.set(groupId, users ?? []);
         this.currentVmUsers$.next(
-          Array.from(this.currentVmUsersByGroup.values()).flat(),
+          Array.from(
+            new Set(Array.from(this.currentVmUsersByGroup.values()).flat()),
+          ),
         );
       },
     );
