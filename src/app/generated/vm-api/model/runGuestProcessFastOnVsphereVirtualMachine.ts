@@ -11,9 +11,11 @@
  */
 
 
-export interface NicOptions { 
-    availableNetworks?: { [key: string]: string | null; } | null;
-    currentNetworks?: { [key: string]: string | null; } | null;
-    readOnlyNetworks?: Array<string> | null;
+export interface RunGuestProcessFastOnVsphereVirtualMachine { 
+    username?: string | null;
+    password?: string | null;
+    programPath?: string | null;
+    arguments?: string | null;
+    workingDirectory?: string | null;
 }
 

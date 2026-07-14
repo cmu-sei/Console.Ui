@@ -11,9 +11,9 @@
  */
 
 
-export interface NicOptions { 
-    availableNetworks?: { [key: string]: string | null; } | null;
-    currentNetworks?: { [key: string]: string | null; } | null;
-    readOnlyNetworks?: Array<string> | null;
+export interface RunGuestProcessFastOnProxmoxVirtualMachine { 
+    programPath?: string | null;
+    arguments?: string | null;
+    workingDirectory?: string | null;
 }
 

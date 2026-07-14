@@ -1,8 +1,3 @@
-/*
-Copyright 2021 Carnegie Mellon University. All Rights Reserved. 
- Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
-*/
-
 export * from './appSystemPermission';
 export * from './appTeamPermission';
 export * from './appViewPermission';
@@ -12,11 +7,15 @@ export * from './changeVsphereVirtualMachineNetwork';
 export * from './consoleConnectionInfo';
 export * from './coordinate';
 export * from './coordinateCreateForm';
+export * from './createProxmoxVirtualMachineSnapshot';
+export * from './createViewNetworkForm';
 export * from './createVmUsageLoggingSessionCommand';
+export * from './createVsphereVirtualMachineSnapshot';
 export * from './editVmUsageLoggingSessionCommand';
 export * from './eventType';
 export * from './fileVmUrlResponse';
 export * from './getFileUrlVsphereVirtualMachine';
+export * from './guestProcessResult';
 export * from './healthStatus';
 export * from './isoFile';
 export * from './isoResult';
@@ -25,13 +24,22 @@ export * from './nicOptions';
 export * from './powerState';
 export * from './problemDetails';
 export * from './proxmoxConsole';
+export * from './proxmoxSnapshot';
 export * from './proxmoxVmInfo';
 export * from './proxmoxVmType';
+export * from './readGuestFileFromProxmoxVirtualMachine';
+export * from './readGuestFileFromVsphereVirtualMachine';
 export * from './revertToVsphereVirtualMachineSnapshot';
+export * from './runGuestProcessFastOnProxmoxVirtualMachine';
+export * from './runGuestProcessFastOnVsphereVirtualMachine';
+export * from './runGuestProcessOnProxmoxVirtualMachine';
+export * from './runGuestProcessOnVsphereVirtualMachine';
 export * from './setVsphereVirtualMachineResolution';
 export * from './simpleTeam';
 export * from './teamIsoResult';
+export * from './updateViewNetworkForm';
 export * from './validateVsphereVirtualMachineCredentials';
+export * from './viewNetwork';
 export * from './virtualMachineToolsStatus';
 export * from './vm';
 export * from './vmCreateForm';

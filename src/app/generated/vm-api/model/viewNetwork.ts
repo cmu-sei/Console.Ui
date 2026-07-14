@@ -9,11 +9,19 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { VmType } from './vmType';
 
 
-export interface NicOptions { 
-    availableNetworks?: { [key: string]: string | null; } | null;
-    currentNetworks?: { [key: string]: string | null; } | null;
-    readOnlyNetworks?: Array<string> | null;
+export interface ViewNetwork { 
+    id?: string;
+    viewId?: string;
+    providerType?: VmType;
+    providerInstanceId?: string | null;
+    networkId?: string | null;
+    name?: string | null;
+    teamIds?: Array<string> | null;
 }
+export namespace ViewNetwork {
+}
+
 
