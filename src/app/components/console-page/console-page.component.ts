@@ -58,7 +58,7 @@ export class ConsolePageComponent implements OnInit, OnDestroy {
     this.vmService.get(this.vmId).pipe(
       take(1),
       catchError((error) => {
-        if (error.status === 404) {
+        if (error.status === 403 || error.status === 404) {
           this.vmNotFound.set(true);
         }
         return EMPTY;
