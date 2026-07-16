@@ -41,10 +41,6 @@ export interface Vm {
      * Id of the Vm\'s owner if it is a personal Vm
      */
     userId?: string | null;
-    /**
-     * A list of networks that a regular user can access
-     */
-    allowedNetworks?: Array<string> | null;
     powerState?: PowerState;
     /**
      * A list of IP addresses of the Vm

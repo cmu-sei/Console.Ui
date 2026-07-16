@@ -14,24 +14,11 @@ Copyright 2021 Carnegie Mellon University. All Rights Reserved.
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
-import { NicOptions } from './nicOptions';
-import { VirtualMachineToolsStatus } from './virtualMachineToolsStatus';
 
 
-export interface VsphereVirtualMachine { 
-    id?: string;
-    name?: string | null;
-    url?: string | null;
-    userId?: string | null;
-    isOwner?: boolean;
-    ticket?: string | null;
-    state?: string | null;
-    networkCards?: NicOptions;
-    canAccessNicConfiguration?: boolean;
-    vmToolsStatus?: VirtualMachineToolsStatus;
-    hasSnapshot?: boolean;
+export interface CreateVsphereVirtualMachineSnapshot { 
+    snapshotName?: string | null;
+    description?: string | null;
+    includeMemory?: boolean;
 }
-export namespace VsphereVirtualMachine {
-}
-
 

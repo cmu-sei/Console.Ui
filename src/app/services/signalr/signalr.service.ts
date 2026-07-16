@@ -18,6 +18,7 @@ export class SignalRService {
   public currentVmUsers$: BehaviorSubject<string[]>;
   private hubConnection: signalR.HubConnection;
   private connectionPromise: Promise<void>;
+  private currentVmUsersByGroup = new Map<string, string[]>();
 
   private userId: string;
   private viewId: string;
@@ -34,12 +35,11 @@ export class SignalRService {
     @Inject(BASE_PATH) basePath: string,
   ) {
     this.apiUrl = basePath;
+    this.currentVmUsers$ = new BehaviorSubject<string[]>([]);
 
     this.authService.user$.subscribe(() => {
       this.reconnect();
     });
-
-    this.currentVmUsers$ = new BehaviorSubject<string[]>([]);
   }
 
   public startConnection(): Promise<void> {
@@ -58,6 +58,9 @@ export class SignalRService {
     this.hubConnection.onreconnected(() => {
       this.joinGroups();
     });
+    this.hubConnection.onreconnecting(() => {
+      this.clearCurrentVmUsers();
+    });
 
     this.addHandlers();
     this.connectionPromise = this.hubConnection.start();
@@ -68,6 +71,7 @@ export class SignalRService {
 
   private reconnect() {
     if (this.hubConnection != null) {
+      this.clearCurrentVmUsers();
       this.hubConnection.stop().then(() => {
         this.connectionPromise = this.hubConnection.start();
         this.connectionPromise.then(() => this.joinGroups());
@@ -80,12 +84,12 @@ export class SignalRService {
       this.joinUser(this.userId, this.viewId, this.teamId);
     }
 
-    if (this.activeVmId) {
-      this.setActiveVirtualMachine(this.activeVmId);
-    }
-
     if (this.vmId) {
       this.joinVm(this.vmId);
+    }
+
+    if (this.activeVmId) {
+      this.setActiveVirtualMachine(this.activeVmId);
     }
   }
 
@@ -122,6 +126,7 @@ export class SignalRService {
 
   public joinVm(vmId: string) {
     this.vmId = vmId;
+    this.clearCurrentVmUsers();
 
     this.startConnection().then(() => {
       this.hubConnection.invoke('JoinVm', vmId);
@@ -130,6 +135,7 @@ export class SignalRService {
 
   public leaveVm(vmId: string) {
     this.vmId = null;
+    this.clearCurrentVmUsers();
 
     this.startConnection().then(() => {
       this.hubConnection.invoke('LeaveVm', vmId);
@@ -164,10 +170,30 @@ export class SignalRService {
   private addCurrentUsersHandlers() {
     this.hubConnection.on(
       'CurrentVirtualMachineUsers',
-      (vmId: string, users: string[]) => {
-        this.currentVmUsers$.next(users);
+      (vmId: string, users: string[], groupId?: string) => {
+        if (vmId !== this.vmId) {
+          return;
+        }
+
+        if (!groupId) {
+          this.currentVmUsersByGroup.clear();
+          this.currentVmUsers$.next(users ?? []);
+          return;
+        }
+
+        this.currentVmUsersByGroup.set(groupId, users ?? []);
+        this.currentVmUsers$.next(
+          Array.from(
+            new Set(Array.from(this.currentVmUsersByGroup.values()).flat()),
+          ),
+        );
       },
     );
+  }
+
+  private clearCurrentVmUsers() {
+    this.currentVmUsersByGroup.clear();
+    this.currentVmUsers$.next([]);
   }
 }
 

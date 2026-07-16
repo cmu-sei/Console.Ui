@@ -24,7 +24,6 @@ export interface VmCreateForm {
     name: string;
     teamIds: Array<string>;
     userId?: string | null;
-    allowedNetworks?: Array<string> | null;
     consoleConnectionInfo?: ConsoleConnectionInfo;
     proxmoxVmInfo?: ProxmoxVmInfo;
     /**
