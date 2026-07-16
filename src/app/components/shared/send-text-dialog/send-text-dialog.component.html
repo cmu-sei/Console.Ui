@@ -3,66 +3,57 @@ Copyright 2021 Carnegie Mellon University. All Rights Reserved.
 Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
 -->
 
-<form (ngSubmit)="send()" class="form-area">
-  <div class="d-flex flex-column align-items-center">
-    <div matDialogTitle class="d-flex align-items-center">
+<crucible-dialog
+  [dialogTitle]="title"
+  [form]="form"
+  submitLabel="Send"
+  [guardUnsavedWork]="form.dirty"
+  (submit)="send()"
+>
+  <div crucibleDialogContent [formGroup]="form" class="send-text-content">
+    <div class="send-text-toolbar">
       <button
         mat-icon-button
         type="button"
-        class="z-3"
         [matMenuTriggerFor]="advancedTextMenu"
+        aria-label="Paste speed settings"
+        matTooltip="Paste speed settings"
       >
-        <mat-icon svgIcon="gear" alt="Gear"></mat-icon>
+        <mat-icon svgIcon="gear"></mat-icon>
       </button>
-      <h3>{{ title }}</h3>
     </div>
-
     <mat-menu #advancedTextMenu="matMenu">
-      <button
-        type="button"
-        mat-menu-item
-        [matMenuTriggerFor]="pasteMenu"
-        matTooltipPosition="after"
-        aria-label="warning"
-      >
+      <button type="button" mat-menu-item [matMenuTriggerFor]="pasteMenu">
         <span
-          [matTooltip]="
-            'Delay between sending each line. 
-                 Go slower if paste errors are occurring'
-          "
+          matTooltip="Delay between sending each line. Go slower if paste errors are occurring."
           matTooltipPosition="above"
         >
           Paste Speed
         </span>
       </button>
-      <mat-menu #pasteMenu="matMenu">
-        @for (
-          pasteSpeed of settingsService.settings.PasteSpeeds;
-          track pasteSpeed
-        ) {
-          <button
-            type="button"
-            mat-menu-item
-            (click)="setPasteSpeed(pasteSpeed.value)"
-          >
-            {{ pasteSpeed.name }}
-          </button>
-        }
-      </mat-menu>
     </mat-menu>
+    <mat-menu #pasteMenu="matMenu">
+      @for (
+        pasteSpeed of settingsService.settings.PasteSpeeds;
+        track pasteSpeed
+      ) {
+        <button
+          type="button"
+          mat-menu-item
+          (click)="setPasteSpeed(pasteSpeed.value)"
+        >
+          {{ pasteSpeed.name }}
+        </button>
+      }
+    </mat-menu>
+
     <mat-form-field>
       <textarea
         matInput
-        class="text-area"
-        tabIndex="1"
-        name="textToSend"
-        [(ngModel)]="textToSend"
+        formControlName="textToSend"
+        cdkFocusInitial
+        aria-label="Text to send"
       ></textarea>
     </mat-form-field>
-
-    <mat-dialog-actions class="w-100 pb-3 justify-content-evenly">
-      <button mat-stroked-button (click)="close()" tabIndex="2">Cancel</button>
-      <button mat-stroked-button (click)="send()" tabindex="3">Send</button>
-    </mat-dialog-actions>
   </div>
-</form>
+</crucible-dialog>

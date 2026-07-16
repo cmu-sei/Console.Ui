@@ -3,23 +3,36 @@
 
 .snapshot-list-container {
   overflow: auto;
-  height: 350px;
+  max-height: min(350px, 55vh);
+}
+
+mat-list-option {
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .snapshot-item {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
+  gap: 4px 8px;
+  min-width: 0;
   width: 100%;
 }
 
 .snapshot-name {
   font-weight: 500;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .snapshot-date {
   font-size: 0.85em;
+  margin-left: auto;
   opacity: 0.7;
+  text-align: right;
+  white-space: normal;
 }
 
 .snapshot-description {

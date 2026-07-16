@@ -7,6 +7,36 @@
 @use './dark-theme-colors' as dark-theme;
 /* END IMPORTS */
 
+@font-face {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src:
+    url('../assets/fonts/opensans-regular.woff2') format('woff2'),
+    url('../assets/fonts/opensans-regular.woff') format('woff');
+}
+
+@font-face {
+  font-family: 'Open Sans';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src:
+    url('../assets/fonts/opensans-italic.woff2') format('woff2'),
+    url('../assets/fonts/opensans-italic.woff') format('woff');
+}
+
+@font-face {
+  font-family: 'Open Sans';
+  font-style: normal;
+  font-weight: 600 700;
+  font-display: swap;
+  src:
+    url('../assets/fonts/opensans-bold.woff2') format('woff2'),
+    url('../assets/fonts/opensans-bold.woff') format('woff');
+}
+
 /* VENDER INCLUDES */
 @include mat.elevation-classes();
 @include mat.app-background();

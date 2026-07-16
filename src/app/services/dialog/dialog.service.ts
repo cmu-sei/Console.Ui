@@ -1,41 +1,37 @@
 // Copyright 2021 Carnegie Mellon University. All Rights Reserved.
 // Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
 
-import { Observable } from 'rxjs';
-import { MatDialogRef, MatDialog } from '@angular/material/dialog';
 import { Injectable } from '@angular/core';
-import { MessageDialogComponent } from '../../components/shared/message-dialog/message-dialog.component';
-import { SendTextDialogComponent } from '../../components/shared/send-text-dialog/send-text-dialog.component';
-import { FileUploadInfoDialogComponent } from '../../components/shared/file-upload-info-dialog/file-upload-info-dialog.component';
-import { MountIsoDialogComponent } from '../../components/shared/mount-iso-dialog/mount-iso-dialog.component';
-import { SnapshotDialogComponent } from '../../components/shared/snapshot-dialog/snapshot-dialog.component';
-import { IsoResult, IsoFile } from '../../models/vm/iso-result';
-import { VmSnapshot } from '../../generated/vm-api';
+import { MatDialog, MatDialogRef } from '@angular/material/dialog';
+import { Observable } from 'rxjs';
 import {
-  ConfirmDialogComponent,
-  ConfirmDialogData,
-} from '../../components/shared/confirm-dialog/confirm-dialog.component';
+  FileUploadInfoDialogComponent,
+  FileUploadInfoDialogData,
+  FileUploadInfoDialogResult,
+} from '../../components/shared/file-upload-info-dialog/file-upload-info-dialog.component';
+import { FileUploadProgressDialogComponent } from '../../components/shared/file-upload-progress-dialog/file-upload-progress-dialog.component';
+import { MountIsoDialogComponent } from '../../components/shared/mount-iso-dialog/mount-iso-dialog.component';
+import {
+  SendTextDialogComponent,
+  SendTextDialogResult,
+} from '../../components/shared/send-text-dialog/send-text-dialog.component';
+import { SnapshotDialogComponent } from '../../components/shared/snapshot-dialog/snapshot-dialog.component';
+import { VmSnapshot } from '../../generated/vm-api';
+import { IsoFile, IsoResult } from '../../models/vm/iso-result';
 
 @Injectable()
 export class DialogService {
   constructor(private dialog: MatDialog) {}
 
-  public message(
-    title: string,
-    message: string,
-    data?: any,
-  ): Observable<boolean> {
-    let dialogRef: MatDialogRef<MessageDialogComponent>;
-    dialogRef = this.dialog.open(MessageDialogComponent, { data: data || {} });
-    dialogRef.componentInstance.title = title;
-    dialogRef.componentInstance.message = message;
-
-    return dialogRef.afterClosed();
-  }
-
-  public sendText(title: string, configData?: any): Observable<boolean> {
-    let dialogRef: MatDialogRef<SendTextDialogComponent>;
-    dialogRef = this.dialog.open(SendTextDialogComponent, configData || {});
+  public sendText(title: string): Observable<SendTextDialogResult | undefined> {
+    const dialogRef = this.dialog.open<
+      SendTextDialogComponent,
+      void,
+      SendTextDialogResult
+    >(SendTextDialogComponent, {
+      width: '600px',
+      maxWidth: '90vw',
+    });
     dialogRef.componentInstance.title = title;
 
     return dialogRef.afterClosed();
@@ -43,24 +39,30 @@ export class DialogService {
 
   public getFileUploadInfo(
     title: string,
-    configData?: any,
-  ): Observable<boolean> {
-    let dialogRef: MatDialogRef<FileUploadInfoDialogComponent>;
-    dialogRef = this.dialog.open(
+    data?: FileUploadInfoDialogData,
+  ): Observable<FileUploadInfoDialogResult | undefined> {
+    const dialogRef = this.dialog.open<
       FileUploadInfoDialogComponent,
-      configData || {},
-    );
+      FileUploadInfoDialogData,
+      FileUploadInfoDialogResult
+    >(FileUploadInfoDialogComponent, {
+      data: data ?? {},
+      width: '480px',
+      maxWidth: '90vw',
+    });
     dialogRef.componentInstance.title = title;
 
     return dialogRef.afterClosed();
   }
 
-  public mountIso(
-    isoResult: IsoResult[],
-    configData?: any,
-  ): Observable<IsoFile> {
-    let dialogRef: MatDialogRef<MountIsoDialogComponent>;
-    dialogRef = this.dialog.open(MountIsoDialogComponent, configData || {});
+  public mountIso(isoResult: IsoResult[]): Observable<IsoFile | undefined> {
+    const dialogRef = this.dialog.open<MountIsoDialogComponent, void, IsoFile>(
+      MountIsoDialogComponent,
+      {
+        width: '600px',
+        maxWidth: '90vw',
+      },
+    );
     dialogRef.componentInstance.isoResult = isoResult;
 
     return dialogRef.afterClosed();
@@ -68,24 +70,27 @@ export class DialogService {
 
   public selectSnapshot(
     snapshots: VmSnapshot[],
-    configData?: any,
-  ): Observable<VmSnapshot> {
-    let dialogRef: MatDialogRef<SnapshotDialogComponent>;
-    dialogRef = this.dialog.open(SnapshotDialogComponent, configData || {
+  ): Observable<VmSnapshot | undefined> {
+    const dialogRef = this.dialog.open<
+      SnapshotDialogComponent,
+      void,
+      VmSnapshot
+    >(SnapshotDialogComponent, {
       width: '600px',
-      height: '500px',
+      maxWidth: '90vw',
     });
     dialogRef.componentInstance.snapshots = snapshots;
 
     return dialogRef.afterClosed();
   }
 
-  public closeAll() {
-    this.dialog.closeAll();
-  }
-
-  public confirm(data: ConfirmDialogData): Observable<any> {
-    const dialogRef = this.dialog.open(ConfirmDialogComponent, { data: data });
-    return dialogRef.afterClosed();
+  public uploadProgress(): MatDialogRef<
+    FileUploadProgressDialogComponent,
+    void
+  > {
+    return this.dialog.open(FileUploadProgressDialogComponent, {
+      width: '480px',
+      maxWidth: '90vw',
+    });
   }
 }
