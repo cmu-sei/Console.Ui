@@ -380,7 +380,7 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
       .pipe(
         take(1),
         switchMap((snapshots) => this.dialogService.selectSnapshot(snapshots)),
-        filter((selected): selected is VmSnapshot => selected !== undefined),
+        filter((selected): selected is VmSnapshot => !!selected),
         switchMap((selected) =>
           this.vsphereService.revertToSnapshot(this.vmId, selected.id),
         ),
