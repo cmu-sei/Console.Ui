@@ -14,11 +14,18 @@ import {
 } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ActivatedRoute } from '@angular/router';
-import { ComnAuthQuery, ComnAuthService, ComnSettingsService, Theme } from '@cmusei/crucible-common';
+import {
+  ComnAuthQuery,
+  ComnAuthService,
+  ComnSettingsService,
+  CrucibleDialogService,
+  Theme,
+} from '@cmusei/crucible-common';
 import { Observable, of, Subject } from 'rxjs';
 import {
   catchError,
   filter,
+  finalize,
   switchMap,
   take,
   takeUntil,
@@ -27,6 +34,7 @@ import {
 import {
   AppViewPermission,
   VsphereVirtualMachine,
+  VmSnapshot,
 } from '../../generated/vm-api';
 import { NotificationData } from '../../models/notification/notification-model';
 import { IsoResult } from '../../models/vm/iso-result';
@@ -156,6 +164,7 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
     public vsphereService: VsphereService,
     public settingsService: ComnSettingsService,
     private dialogService: DialogService,
+    private crucibleDialogService: CrucibleDialogService,
     private notificationService: NotificationService,
     private route: ActivatedRoute,
     private snackBar: MatSnackBar,
@@ -283,14 +292,17 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
         this.vsphereService.model.networkCards.availableNetworks[currentRef] ??
         currentRef;
 
-      this.dialogService
+      this.crucibleDialogService
         .confirm({
           title: 'Confirm Network Change',
           message: `You are currently on "${currentName}", which is not in your allowed network list. If you switch away, you will not be able to switch back. Do you want to continue?`,
+          confirmText: 'Confirm',
+          cancelText: 'Cancel',
         })
+        .afterClosed()
         .pipe(
           take(1),
-          filter((confirmed) => !!confirmed),
+          filter((confirmed) => confirmed === true),
         )
         .subscribe(() => performChange());
     } else {
@@ -318,8 +330,8 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
   sendInputString() {
     this.dialogService
       .sendText('Enter Text to Send')
-      .subscribe((enteredText: any) => {
-        if (enteredText.textToSend) {
+      .subscribe((enteredText) => {
+        if (enteredText?.textToSend) {
           this.paste(enteredText.textToSend, enteredText.timeout);
         }
       });
@@ -368,13 +380,13 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
       .pipe(
         take(1),
         switchMap((snapshots) => this.dialogService.selectSnapshot(snapshots)),
-        filter((selected) => !!selected),
+        filter((selected): selected is VmSnapshot => !!selected),
         switchMap((selected) =>
           this.vsphereService.revertToSnapshot(this.vmId, selected.id),
         ),
-        tap(() => this.dialogService.message('Revert Vm', 'Revert Successful')),
+        tap(() => this.showMessage('Revert VM', 'Revert Successful')),
         catchError((error) => {
-          this.dialogService.message('Revert Vm', 'Revert Failed');
+          this.showMessage('Revert VM', 'Revert Failed');
           return of(error);
         }),
       )
@@ -391,21 +403,18 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
       this.vsphereService.model.vmToolsStatus !==
         VirtualMachineToolsStatus.toolsOld
     ) {
-      this.dialogService.message(
-        'Alert!',
-        'Action requires VMware Tools to be running!',
-      );
+      this.showMessage('Alert!', 'Action requires VMware Tools to be running!');
       this.uploadEnabled = false;
       return;
     }
     // get new credentials and upload path
     this.dialogService.getFileUploadInfo(title).subscribe((enteredInfo) => {
-      if (!enteredInfo['username']) {
+      if (!enteredInfo?.username) {
         return;
       }
-      this.vsphereService.uploadConfig.username = enteredInfo['username'];
-      this.vsphereService.uploadConfig.password = enteredInfo['password'];
-      this.vsphereService.uploadConfig.filepath = enteredInfo['filepath'];
+      this.vsphereService.uploadConfig.username = enteredInfo.username;
+      this.vsphereService.uploadConfig.password = enteredInfo.password;
+      this.vsphereService.uploadConfig.filepath = enteredInfo.filepath;
       if (
         !this.vsphereService.uploadConfig.filepath.endsWith('\\') &&
         !this.vsphereService.uploadConfig.filepath.endsWith('/')
@@ -422,7 +431,7 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
       this.vsphereService.verifyCredentials(this.vmId).subscribe(
         () => {
           this.uploadEnabled = true;
-          this.dialogService.message('Credentials Verified', '');
+          this.showMessage('Credentials Verified', '');
         },
         (error: HttpErrorResponse) => {
           // error.error.title contains the relevant message
@@ -444,41 +453,43 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
       console.log('file selector did not have a value');
       return;
     }
-    this.dialogService.message('File Upload in Progress', '', {
-      showSpinnner: true,
-    });
+    const progressRef = this.dialogService.uploadProgress();
 
     this.uploading = true;
-    this.vsphereService.sendFileToVm(this.vmId, fileSelector.files).subscribe(
-      (response) => {
-        this.dialogService.closeAll();
-        this.dialogService.message('File Uploaded Successfully', '');
-
-        fileSelector.value = '';
-        this.uploading = false;
-        console.log(response);
-      },
-      (error: HttpErrorResponse) => {
-        this.dialogService.closeAll();
-        this.dialogService.message(
-          'Error Uploading File',
-          'Error: ' + error.error.title,
-        );
-
-        fileSelector.value = '';
-        this.uploading = false;
-        console.log(error);
-      },
-    );
+    this.vsphereService
+      .sendFileToVm(this.vmId, fileSelector.files)
+      .pipe(
+        finalize(() => {
+          progressRef.close();
+          fileSelector.value = '';
+          this.uploading = false;
+        }),
+      )
+      .subscribe({
+        next: (response) => {
+          this.showMessage('File Uploaded Successfully', '');
+          console.log(response);
+        },
+        error: (error: HttpErrorResponse) => {
+          this.showMessage(
+            'Error Uploading File',
+            'Error: ' + error.error.title,
+          );
+          console.log(error);
+        },
+      });
   }
 
   downloadFileFromVm() {
     this.dialogService
       .getFileUploadInfo('Download File Settings', {
-        data: { showCredentials: false },
+        showCredentials: false,
       })
       .subscribe((enteredInfo) => {
-        const filePath = enteredInfo['filepath'];
+        const filePath = enteredInfo?.filepath;
+        if (!filePath) {
+          return;
+        }
         this.vsphereService.getVmFileUrl(this.vmId, filePath).subscribe((x) => {
           const link = document.createElement('a');
           link.href = x.url;
@@ -507,11 +518,7 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
 
   mountIso(isoResult: IsoResult[]) {
     // select the iso
-    const configData = {
-      width: '600px',
-      height: '500px',
-    };
-    this.dialogService.mountIso(isoResult, configData).subscribe((result) => {
+    this.dialogService.mountIso(isoResult).subscribe((result) => {
       if (!result) {
         return;
       }
@@ -556,7 +563,7 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
           verticalPosition: 'top',
         });
       } catch (err) {
-        this.dialogService.message(
+        this.showMessage(
           'Select text and press Ctrl+C to copy to your local clipboard:',
           clipText,
         );
@@ -651,5 +658,14 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
   toggleTheme(event: MatSlideToggleChange) {
     const theme = event.checked ? Theme.DARK : Theme.LIGHT;
     this.authService.setUserTheme(theme);
+  }
+
+  private showMessage(title: string, message: string): void {
+    this.crucibleDialogService.confirm({
+      title,
+      message,
+      confirmText: 'OK',
+      cancelText: '',
+    });
   }
 }

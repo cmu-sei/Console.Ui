@@ -3,68 +3,73 @@ Copyright 2021 Carnegie Mellon University. All Rights Reserved.
 Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
 -->
 
-<div
-  mat-dialog-title
-  class="d-flex align-items-baseline justify-content-center"
+<crucible-dialog
+  dialogTitle="Mount ISO"
+  submitLabel="Mount"
+  [submitDisabled]="!selectedIso"
+  (submit)="done()"
 >
-  <label class="me-2">Select the file to mount</label>
-  <mat-form-field>
-    <mat-label>Search</mat-label>
-    <input name="isoSearch" matInput (keyup)="onSearch($event.target.value)" />
-  </mat-form-field>
-</div>
-<div style="overflow: scroll; height: 350px">
-  <mat-selection-list #selectedIsos>
-    @for (result of isoResults; track result) {
-      <div>
-        <button mat-button (click)="result.hide = !result.hide">
-          <b
-            >{{ result.viewName }} Files ({{ result.isos.length }})
-            {{ result.hide ? '^' : '>' }}</b
-          >
-        </button>
-        @if (!result.hide) {
-          <span>
-            @for (iso of result.display; track iso) {
-              <mat-list-option
-                [selected]="iso === selectedIso"
-                (click)="selectThisIso(iso)"
-                title="{{ iso.filename }}"
-              >
-                {{ iso.filename }}
-              </mat-list-option>
-            }
-          </span>
-        }
-        @for (teamResult of result.teamIsoResults; track teamResult) {
+  <div crucibleDialogContent class="mount-iso-content">
+    <mat-form-field>
+      <mat-label>Search</mat-label>
+      <input
+        #isoSearch
+        matInput
+        cdkFocusInitial
+        (input)="onSearch(isoSearch.value)"
+      />
+    </mat-form-field>
+
+    <div class="iso-list">
+      <mat-selection-list [multiple]="false">
+        @for (result of isoResults; track result.viewId) {
           <div>
-            <button mat-button (click)="teamResult.hide = !teamResult.hide">
+            <button mat-button (click)="result.hide = !result.hide">
               <b
-                >{{ teamResult.teamName }} Files ({{ teamResult.isos.length }})
-                {{ teamResult.hide ? '^' : '>' }}</b
+                >{{ result.viewName }} Files ({{ result.isos.length }})
+                {{ result.hide ? '^' : '>' }}</b
               >
             </button>
-            @if (!teamResult.hide) {
-              <span>
-                @for (iso of teamResult.display; track iso) {
-                  <mat-list-option
-                    [selected]="iso === selectedIso"
-                    (click)="selectThisIso(iso)"
-                    title="{{ iso.filename }}"
-                  >
-                    {{ iso.filename }}
-                  </mat-list-option>
-                }
-              </span>
+            @if (!result.hide) {
+              @for (iso of result.display; track iso) {
+                <mat-list-option
+                  [selected]="iso === selectedIso"
+                  (click)="selectThisIso(iso)"
+                  [title]="iso.filename"
+                >
+                  {{ iso.filename }}
+                </mat-list-option>
+              }
             }
+            @for (
+              teamResult of result.teamIsoResults;
+              track teamResult.teamId
+            ) {
+              <div>
+                <button mat-button (click)="teamResult.hide = !teamResult.hide">
+                  <b
+                    >{{ teamResult.teamName }} Files ({{
+                      teamResult.isos.length
+                    }}) {{ teamResult.hide ? '^' : '>' }}</b
+                  >
+                </button>
+                @if (!teamResult.hide) {
+                  @for (iso of teamResult.display; track iso) {
+                    <mat-list-option
+                      [selected]="iso === selectedIso"
+                      (click)="selectThisIso(iso)"
+                      [title]="iso.filename"
+                    >
+                      {{ iso.filename }}
+                    </mat-list-option>
+                  }
+                }
+              </div>
+            }
+            <mat-divider></mat-divider>
           </div>
         }
-        <mat-divider></mat-divider>
-      </div>
-    }
-  </mat-selection-list>
-</div>
-<mat-dialog-actions class="justify-content-around">
-  <button mat-stroked-button (click)="close()" tabIndex="4">Cancel</button>
-  <button mat-stroked-button (click)="done()" tabindex="5">Mount</button>
-</mat-dialog-actions>
+      </mat-selection-list>
+    </div>
+  </div>
+</crucible-dialog>

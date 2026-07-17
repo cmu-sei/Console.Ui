@@ -1,8 +1,8 @@
 // Copyright 2021 Carnegie Mellon University. All Rights Reserved.
 // Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
 
-.textarea {
-  max-width: 800px;
-  max-height: 600px;
-  overflow: auto;
+.progress-content {
+  display: flex;
+  justify-content: center;
+  padding: 1rem 0;
 }

@@ -1,59 +1,59 @@
 // Copyright 2021 Carnegie Mellon University. All Rights Reserved.
 // Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
 
-import {
-  MAT_DIALOG_DATA,
-  MatDialogRef,
-  MatDialogTitle,
-  MatDialogActions,
-} from '@angular/material/dialog';
+import { A11yModule } from '@angular/cdk/a11y';
 import { Component, Inject } from '@angular/core';
-import { MatButton } from '@angular/material/button';
-import { MatInput } from '@angular/material/input';
+import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { MatFormField, MatLabel } from '@angular/material/form-field';
-import { FormsModule } from '@angular/forms';
+import { MatInput } from '@angular/material/input';
+import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { CRUCIBLE_DIALOG_IMPORTS } from '@cmusei/crucible-common';
 
+export interface FileUploadInfoDialogData {
+  showCredentials?: boolean;
+}
+
+export interface FileUploadInfoDialogResult {
+  username: string;
+  password: string;
+  filepath: string;
+}
 
 @Component({
-    selector: 'file-upload-info-dialog',
-    templateUrl: './file-upload-info-dialog.component.html',
-    imports: [
-    MatDialogTitle,
-    FormsModule,
+  selector: 'file-upload-info-dialog',
+  templateUrl: './file-upload-info-dialog.component.html',
+  styleUrls: ['./file-upload-info-dialog.component.scss'],
+  imports: [
+    ...CRUCIBLE_DIALOG_IMPORTS,
+    A11yModule,
+    ReactiveFormsModule,
     MatFormField,
     MatLabel,
     MatInput,
-    MatDialogActions,
-    MatButton
-]
+  ],
 })
 export class FileUploadInfoDialogComponent {
   public title: string;
-  public username = '';
-  public password = '';
-  public filepath = '';
-
-  public showCredentials = true;
+  public readonly form;
+  public readonly showCredentials: boolean;
 
   constructor(
-    @Inject(MAT_DIALOG_DATA) data,
-    private dialogRef: MatDialogRef<FileUploadInfoDialogComponent>,
+    @Inject(MAT_DIALOG_DATA) data: FileUploadInfoDialogData,
+    private dialogRef: MatDialogRef<
+      FileUploadInfoDialogComponent,
+      FileUploadInfoDialogResult
+    >,
+    formBuilder: FormBuilder,
   ) {
-    if (data?.showCredentials != null) {
-      this.showCredentials = data.showCredentials;
-    }
-    this.dialogRef.disableClose = true;
-  }
-
-  close() {
-    this.dialogRef.close({});
+    this.showCredentials = data.showCredentials ?? true;
+    this.form = formBuilder.nonNullable.group({
+      filepath: '',
+      username: '',
+      password: '',
+    });
   }
 
   done() {
-    this.dialogRef.close({
-      username: this.username,
-      password: this.password,
-      filepath: this.filepath,
-    });
+    this.dialogRef.close(this.form.getRawValue());
   }
 }
