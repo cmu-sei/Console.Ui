@@ -9,3 +9,13 @@ Copyright 2021 Carnegie Mellon University. All Rights Reserved.
   flex: 1;
   min-height: 0;
 }
+
+// Matches the placeholder icon sizing WmksComponent uses for the same power / error states.
+.center {
+  position: relative;
+  display: block;
+  margin: auto;
+  top: 40%;
+  height: 100px;
+  width: 100px;
+}

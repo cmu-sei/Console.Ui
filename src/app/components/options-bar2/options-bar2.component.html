@@ -11,17 +11,28 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
       </button>
       <span class="ms-1">{{ vm?.name }}</span>
       <mat-menu #mainMenu="matMenu">
-        <button mat-menu-item [matMenuTriggerFor]="keyboardMenu">
-          Keyboard
-        </button>
-        <mat-menu #keyboardMenu="matMenu">
-          <button mat-menu-item (click)="ctrlAltDel()">
-            Send Ctrl-Alt-Del
+        @if (!readOnly) {
+          <button mat-menu-item [matMenuTriggerFor]="keyboardMenu">
+            Keyboard
           </button>
-          <button mat-menu-item (click)="sendClipboardText()">
-            Paste to Clipboard
-          </button>
-        </mat-menu>
+          <mat-menu #keyboardMenu="matMenu">
+            <button mat-menu-item (click)="ctrlAltDel()">
+              Send Ctrl-Alt-Del
+            </button>
+            <button mat-menu-item (click)="sendClipboardText()">
+              Paste to Clipboard
+            </button>
+          </mat-menu>
+
+          <!-- Power -->
+          <button mat-menu-item [matMenuTriggerFor]="powerMenu">Power</button>
+          <mat-menu #powerMenu="matMenu">
+            <button mat-menu-item (click)="powerOn()">Power On</button>
+            <button mat-menu-item (click)="powerOff()">Power Off</button>
+            <button mat-menu-item (click)="reboot()">Reboot</button>
+            <button mat-menu-item (click)="shutdown()">Shutdown</button>
+          </mat-menu>
+        }
 
         <button mat-menu-item (click)="$event.stopPropagation()">
           <mat-slide-toggle

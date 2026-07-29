@@ -33,6 +33,13 @@ export class NoVNCService {
     this.rfb.scaleViewport = true;
   }
 
+  public disconnect() {
+    if (this.rfb) {
+      this.rfb.disconnect();
+      this.rfb = null;
+    }
+  }
+
   public setViewOnly(viewOnly: boolean) {
     if (this.rfb) {
       this.rfb.viewOnly = viewOnly;

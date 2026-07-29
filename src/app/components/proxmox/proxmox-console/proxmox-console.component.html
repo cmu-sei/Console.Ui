@@ -3,11 +3,25 @@ Copyright 2021 Carnegie Mellon University. All Rights Reserved.
 Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
 -->
 
-@if ({ value: proxmoxConsole$ | async }; as proxmoxConsole) {
-  <app-novnc
-    [url]="proxmoxConsole.value?.url"
-    [ticket]="proxmoxConsole.value?.ticket"
-    [readOnly]="readOnly"
-    (reconnect)="getConsole($event)"
-  ></app-novnc>
+@if ({ value: consoleState$ | async }; as consoleState) {
+  @if (consoleState.value?.showError) {
+    <mat-icon
+      class="center"
+      svgIcon="ic_error_outline_black_48px"
+      alt="Error"
+    ></mat-icon>
+  } @else if (consoleState.value?.showPower) {
+    <mat-icon
+      class="center"
+      svgIcon="ic_power_settings_new_black_48px"
+      alt="Off"
+    ></mat-icon>
+  } @else {
+    <app-novnc
+      [url]="consoleState.value?.url"
+      [ticket]="consoleState.value?.ticket"
+      [readOnly]="readOnly"
+      (reconnect)="getConsole($event)"
+    ></app-novnc>
+  }
 }

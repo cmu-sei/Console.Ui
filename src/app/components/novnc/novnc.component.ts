@@ -43,6 +43,9 @@ export class NovncComponent implements OnChanges, AfterViewInit, OnDestroy {
   private failedConnectionAttempts = 0;
   private backgroundColor: string;
   private unsubscribe$ = new Subject();
+  private viewInitialized = false;
+  private destroyed = false;
+  private pendingConnection: { url: string; ticket: string };
 
   @ViewChild('screen') screen: ElementRef;
 
@@ -52,9 +55,17 @@ export class NovncComponent implements OnChanges, AfterViewInit, OnDestroy {
   ) {}
 
   ngAfterViewInit() {
+    this.viewInitialized = true;
+
     this.backgroundColor = getComputedStyle(
       this.screen.nativeElement,
     ).backgroundColor;
+
+    if (this.pendingConnection) {
+      const { url, ticket } = this.pendingConnection;
+      this.pendingConnection = null;
+      this.startClient(url, ticket);
+    }
 
     // Listen for theme changes and update noVNC background
     this.authQuery.userTheme$
@@ -70,6 +81,11 @@ export class NovncComponent implements OnChanges, AfterViewInit, OnDestroy {
   ngOnDestroy() {
     this.unsubscribe$.next(null);
     this.unsubscribe$.complete();
+
+    // A parent may swap this component out for a placeholder while it is still connected, so
+    // close the RFB session rather than leaving an orphaned websocket behind.
+    this.destroyed = true;
+    this.novncService.disconnect();
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -83,6 +99,14 @@ export class NovncComponent implements OnChanges, AfterViewInit, OnDestroy {
   }
 
   startClient(url: string, ticket: string) {
+    if (!this.viewInitialized) {
+      // The screen element does not exist yet. This happens when the parent only renders this
+      // component once it already has a url and ticket, so the first ngOnChanges runs before
+      // ngAfterViewInit. Hold the connection until the view is ready.
+      this.pendingConnection = { url, ticket };
+      return;
+    }
+
     this.novncService.startClient(
       url,
       ticket,
@@ -107,6 +131,13 @@ export class NovncComponent implements OnChanges, AfterViewInit, OnDestroy {
   // This function is called when we are disconnected
   disconnected(e) {
     this.isConnected = false;
+
+    if (this.destroyed) {
+      // We closed the session ourselves on teardown. Asking the parent to reconnect a console
+      // it has already replaced would restart its retry cycle for no reason.
+      return;
+    }
+
     this.failedConnectionAttempts++;
     this.reconnect.emit(this.failedConnectionAttempts);
 
