@@ -10,7 +10,7 @@ Copyright 2021 Carnegie Mellon University. All Rights Reserved.
   min-height: 0;
 }
 
-:host > div {
+.screen-container {
   display: flex;
   flex-direction: column;
   flex: 1;
@@ -21,10 +21,12 @@ Copyright 2021 Carnegie Mellon University. All Rights Reserved.
   }
 }
 
+// Placeholder text is a plain flex item so `margin: auto` can absorb the free
+// space on both axes and center it. It must not get the `flex: 1` above, which
+// would stretch it to the full host height and leave nothing for auto margins.
 .center {
   position: relative;
   margin: auto;
-  top: 40%;
   text-align: center;
 }
 

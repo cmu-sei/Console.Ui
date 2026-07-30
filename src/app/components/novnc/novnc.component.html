@@ -4,16 +4,13 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
 -->
 
 @if ({ value: isConnected$ | async }; as isConnected) {
-  <div [hidden]="!isConnected.value === true">
+  <div class="screen-container" [hidden]="!isConnected.value === true">
     <div #screen id="screen" class="background screen">
       <!-- This is where the remote screen will appear -->
     </div>
   </div>
   @if (isConnected.value === false) {
-    <div
-      class="align-items-center center align-content-center"
-      style="width: 70%"
-    >
+    <div class="center" style="width: 70%">
       <h1>Connecting...</h1>
     </div>
   }
