@@ -5,10 +5,11 @@ Copyright 2021 Carnegie Mellon University. All Rights Reserved.
 
 import {
   Component,
-  OnInit,
   ChangeDetectionStrategy,
   Input,
   ChangeDetectorRef,
+  computed,
+  signal,
 } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import {
@@ -40,10 +41,20 @@ import { ProxmoxService } from '../../services/proxmox/proxmox.service';
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [MatIconButton, MatMenuTrigger, MatIcon, MatMenu, MatMenuItem, MatSlideToggleModule, MatLabel, AsyncPipe, MatTooltip]
 })
-export class OptionsBar2Component implements OnInit {
+export class OptionsBar2Component {
   // Generic Options Bar - Will eventually replace OptionsBarComponent
 
-  @Input() vm: Vm | ProxmoxVirtualMachine;
+  private readonly vmState = signal<Vm | ProxmoxVirtualMachine | null>(null);
+
+  @Input()
+  set vm(value: Vm | ProxmoxVirtualMachine | null | undefined) {
+    this.vmState.set(value ?? null);
+  }
+
+  get vm(): Vm | ProxmoxVirtualMachine {
+    return this.vmState()!;
+  }
+
   @Input() readOnly = false;
 
   constructor(
@@ -58,8 +69,6 @@ export class OptionsBar2Component implements OnInit {
 
   theme$ = this.authQuery.userTheme$;
 
-  ngOnInit(): void {}
-
   public get networkCards(): NicOptions | undefined {
     return (this.vm as ProxmoxVirtualMachine)?.networkCards;
   }
@@ -68,7 +77,7 @@ export class OptionsBar2Component implements OnInit {
     return (this.vm as ProxmoxVirtualMachine)?.canAccessNicConfiguration === true;
   }
 
-  public networkMenuItems() {
+  public readonly networkMenuItems = computed(() => {
     const cards = this.networkCards;
     if (!cards?.currentNetworks || !cards.availableNetworks) {
       return [];
@@ -93,7 +102,7 @@ export class OptionsBar2Component implements OnInit {
         networks: current ? [current, ...others] : others,
       };
     });
-  }
+  });
 
   public changeNic(adapter: string, network: string) {
     const cards = this.networkCards;
