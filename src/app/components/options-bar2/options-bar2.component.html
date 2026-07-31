@@ -33,7 +33,7 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
             <button mat-menu-item (click)="shutdown()">Shutdown</button>
           </mat-menu>
 
-          @if (canAccessNicConfiguration && networkMenuItems().length > 0) {
+          @if (canAccessNicConfiguration() && networkMenuItems().length > 0) {
             <button mat-menu-item [matMenuTriggerFor]="networkMenu">
               Network Cards
             </button>
@@ -43,12 +43,35 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
               <button mat-menu-item [matMenuTriggerFor]="adapterMenu">
                 {{ adapter.key }}
               </button>
-              <mat-menu #adapterMenu="matMenu">
+              <mat-menu
+                #adapterMenu="matMenu"
+                (closed)="clearNetworkSearch(adapter.key)"
+              >
+                <div
+                  class="network-search-container"
+                  (click)="$event.stopPropagation()"
+                  (keydown)="$event.stopPropagation()"
+                >
+                  <input
+                    type="search"
+                    class="network-search-input"
+                    placeholder="Search networks..."
+                    aria-label="Search networks"
+                    [value]="networkSearch()[adapter.key] || ''"
+                    (input)="setNetworkSearch(adapter.key, $event)"
+                  />
+                </div>
                 @for (network of adapter.networks; track network.ref) {
                   <button
                     mat-menu-item
-                    [disabled]="network.readOnly || network.ref === adapter.currentRef"
-                    [matTooltip]="network.readOnly ? 'Current network — not in your allowed list' : ''"
+                    [disabled]="
+                      network.readOnly || network.ref === adapter.currentRef
+                    "
+                    [matTooltip]="
+                      network.readOnly
+                        ? 'Current network — not in your allowed list'
+                        : ''
+                    "
                     (click)="changeNic(adapter.key, network.ref)"
                   >
                     @if (network.ref === adapter.currentRef) {
