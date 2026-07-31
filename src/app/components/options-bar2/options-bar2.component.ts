@@ -133,12 +133,6 @@ export class OptionsBar2Component {
             this.proxmoxVm = model;
             this.changeDetectorRef.markForCheck();
           },
-          error: (error) =>
-            this.snackBar.open(
-              `Network change failed: ${error.message}`,
-              'Close',
-              { duration: 10000, verticalPosition: 'top' },
-            ),
         });
     };
 
