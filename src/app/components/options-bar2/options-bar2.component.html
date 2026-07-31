@@ -47,7 +47,7 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
                 @for (network of adapter.networks; track network.ref) {
                   <button
                     mat-menu-item
-                    [disabled]="network.readOnly"
+                    [disabled]="network.readOnly || network.ref === adapter.currentRef"
                     [matTooltip]="network.readOnly ? 'Current network — not in your allowed list' : ''"
                     (click)="changeNic(adapter.key, network.ref)"
                   >

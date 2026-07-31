@@ -44,15 +44,21 @@ import { ProxmoxService } from '../../services/proxmox/proxmox.service';
 export class OptionsBar2Component {
   // Generic Options Bar - Will eventually replace OptionsBarComponent
 
-  private readonly vmState = signal<Vm | ProxmoxVirtualMachine | null>(null);
+  private readonly vmState = signal<Vm | null>(null);
+  private readonly proxmoxVmState = signal<ProxmoxVirtualMachine | null>(null);
 
   @Input()
-  set vm(value: Vm | ProxmoxVirtualMachine | null | undefined) {
+  set vm(value: Vm | null | undefined) {
     this.vmState.set(value ?? null);
   }
 
-  get vm(): Vm | ProxmoxVirtualMachine {
-    return this.vmState()!;
+  @Input()
+  set proxmoxVm(value: ProxmoxVirtualMachine | null | undefined) {
+    this.proxmoxVmState.set(value ?? null);
+  }
+
+  get vm(): Vm | null {
+    return this.vmState();
   }
 
   @Input() readOnly = false;
@@ -70,11 +76,11 @@ export class OptionsBar2Component {
   theme$ = this.authQuery.userTheme$;
 
   public get networkCards(): NicOptions | undefined {
-    return (this.vm as ProxmoxVirtualMachine)?.networkCards;
+    return this.proxmoxVmState()?.networkCards;
   }
 
   public get canAccessNicConfiguration(): boolean {
-    return (this.vm as ProxmoxVirtualMachine)?.canAccessNicConfiguration === true;
+    return this.proxmoxVmState()?.canAccessNicConfiguration === true;
   }
 
   public readonly networkMenuItems = computed(() => {
@@ -109,13 +115,22 @@ export class OptionsBar2Component {
     const currentRef = cards?.currentNetworks?.[adapter];
     const readOnly = new Set(cards?.readOnlyNetworks || []);
 
+    if (!cards || network === currentRef) {
+      return;
+    }
+
+    const vm = this.vm;
+    if (!vm) {
+      return;
+    }
+
     const performChange = () => {
       this.proxmoxService
-        .changeNic(this.vm.id, adapter, network)
+        .changeNic(vm.id, adapter, network)
         .pipe(take(1))
         .subscribe({
           next: (model) => {
-            this.vm = model;
+            this.proxmoxVm = model;
             this.changeDetectorRef.markForCheck();
           },
           error: (error) =>
@@ -128,7 +143,7 @@ export class OptionsBar2Component {
     };
 
     if (readOnly.has(currentRef)) {
-      const currentName = cards.availableNetworks[currentRef] || currentRef;
+      const currentName = cards.availableNetworks?.[currentRef] || currentRef;
 
       this.crucibleDialogService
         .confirm({
