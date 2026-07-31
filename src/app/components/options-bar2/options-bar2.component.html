@@ -32,6 +32,34 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
             <button mat-menu-item (click)="reboot()">Reboot</button>
             <button mat-menu-item (click)="shutdown()">Shutdown</button>
           </mat-menu>
+
+          @if (canAccessNicConfiguration && networkMenuItems().length > 0) {
+            <button mat-menu-item [matMenuTriggerFor]="networkMenu">
+              Network Cards
+            </button>
+          }
+          <mat-menu #networkMenu="matMenu">
+            @for (adapter of networkMenuItems(); track adapter.key) {
+              <button mat-menu-item [matMenuTriggerFor]="adapterMenu">
+                {{ adapter.key }}
+              </button>
+              <mat-menu #adapterMenu="matMenu">
+                @for (network of adapter.networks; track network.ref) {
+                  <button
+                    mat-menu-item
+                    [disabled]="network.readOnly"
+                    [matTooltip]="network.readOnly ? 'Current network — not in your allowed list' : ''"
+                    (click)="changeNic(adapter.key, network.ref)"
+                  >
+                    @if (network.ref === adapter.currentRef) {
+                      <span>&#10004;</span>
+                    }
+                    {{ network.name }}
+                  </button>
+                }
+              </mat-menu>
+            }
+          </mat-menu>
         }
 
         <button mat-menu-item (click)="$event.stopPropagation()">

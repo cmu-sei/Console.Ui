@@ -2,8 +2,14 @@
 // Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
 
 import { Component, Input } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
-import { Vm, VmType, VsphereVirtualMachine } from '../../generated/vm-api';
+import { Observable, of } from 'rxjs';
+import { catchError, filter, shareReplay, switchMap } from 'rxjs/operators';
+import {
+  ProxmoxVirtualMachine,
+  Vm,
+  VmType,
+  VsphereVirtualMachine,
+} from '../../generated/vm-api';
 import { VmService } from '../../state/vm/vm.service';
 import { VsphereQuery } from '../../state/vsphere/vsphere.query';
 import { AsyncPipe } from '@angular/common';
@@ -11,6 +17,7 @@ import { WmksComponent } from '../wmks/wmks.component';
 import { OptionsBarComponent } from '../options-bar/options-bar.component';
 import { ProxmoxConsoleComponent } from '../proxmox/proxmox-console/proxmox-console.component';
 import { OptionsBar2Component } from '../options-bar2/options-bar2.component';
+import { ProxmoxService } from '../../services/proxmox/proxmox.service';
 
 @Component({
     selector: 'app-console',
@@ -31,7 +38,14 @@ export class ConsoleComponent {
   @Input({ required: true }) set vmId(value: string) {
     this._vmId = value;
     this.vsphereVm$ = this.vsphereQuery.selectEntity(value);
-    this.virtualMachine$ = this.vmService.get(value);
+    this.virtualMachine$ = this.vmService.get(value).pipe(
+      shareReplay({ bufferSize: 1, refCount: true }),
+    );
+    this.proxmoxVm$ = this.virtualMachine$.pipe(
+      filter((vm): vm is Vm => vm?.type === VmType.Proxmox),
+      switchMap((vm) => this.proxmoxService.getVm(vm.id)),
+      catchError(() => of(null)),
+    );
   }
 
   public get vmType(): typeof VmType {
@@ -45,10 +59,12 @@ export class ConsoleComponent {
   _vmId: string;
 
   vsphereVm$: Observable<VsphereVirtualMachine>;
+  proxmoxVm$: Observable<ProxmoxVirtualMachine>;
   virtualMachine$: Observable<Vm>;
 
   constructor(
     private vsphereQuery: VsphereQuery,
     private vmService: VmService,
+    private proxmoxService: ProxmoxService,
   ) {}
 }

@@ -11,9 +11,8 @@
  */
 
 
-export interface IsoUploadResult { 
-    message?: string | null;
-    failedHostCount?: number;
-    totalHostCount?: number;
+export interface ChangeProxmoxVirtualMachineNetwork { 
+    adapter?: string | null;
+    network?: string | null;
 }
 

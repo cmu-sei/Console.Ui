@@ -8,9 +8,14 @@ import {
   OnInit,
   ChangeDetectionStrategy,
   Input,
+  ChangeDetectorRef,
 } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { Vm } from '../../generated/vm-api';
+import {
+  NicOptions,
+  ProxmoxVirtualMachine,
+  Vm,
+} from '../../generated/vm-api';
 import { PowerAction, VmService } from '../../state/vm/vm.service';
 import {
   ComnAuthQuery,
@@ -25,18 +30,20 @@ import { MatIconButton } from '@angular/material/button';
 import { MatSlideToggleChange, MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatLabel } from '@angular/material/form-field';
 import { AsyncPipe } from '@angular/common';
+import { MatTooltip } from '@angular/material/tooltip';
+import { ProxmoxService } from '../../services/proxmox/proxmox.service';
 
 @Component({
     selector: 'app-options-bar2',
     templateUrl: './options-bar2.component.html',
     styleUrls: ['./options-bar2.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [MatIconButton, MatMenuTrigger, MatIcon, MatMenu, MatMenuItem, MatSlideToggleModule, MatLabel, AsyncPipe]
+    imports: [MatIconButton, MatMenuTrigger, MatIcon, MatMenu, MatMenuItem, MatSlideToggleModule, MatLabel, AsyncPipe, MatTooltip]
 })
 export class OptionsBar2Component implements OnInit {
   // Generic Options Bar - Will eventually replace OptionsBarComponent
 
-  @Input() vm: Vm;
+  @Input() vm: Vm | ProxmoxVirtualMachine;
   @Input() readOnly = false;
 
   constructor(
@@ -45,11 +52,92 @@ export class OptionsBar2Component implements OnInit {
     private authQuery: ComnAuthQuery,
     private crucibleDialogService: CrucibleDialogService,
     private snackBar: MatSnackBar,
+    private proxmoxService: ProxmoxService,
+    private changeDetectorRef: ChangeDetectorRef,
   ) {}
 
   theme$ = this.authQuery.userTheme$;
 
   ngOnInit(): void {}
+
+  public get networkCards(): NicOptions | undefined {
+    return (this.vm as ProxmoxVirtualMachine)?.networkCards;
+  }
+
+  public get canAccessNicConfiguration(): boolean {
+    return (this.vm as ProxmoxVirtualMachine)?.canAccessNicConfiguration === true;
+  }
+
+  public networkMenuItems() {
+    const cards = this.networkCards;
+    if (!cards?.currentNetworks || !cards.availableNetworks) {
+      return [];
+    }
+
+    const readOnly = new Set(cards.readOnlyNetworks || []);
+    const networks = Object.entries(cards.availableNetworks).map(([ref, name]) => ({
+      ref,
+      name: name || ref,
+      readOnly: readOnly.has(ref),
+    }));
+
+    return Object.entries(cards.currentNetworks).map(([key, currentRef]) => {
+      const current = networks.find((network) => network.ref === currentRef);
+      const others = networks.filter(
+        (network) => network.ref !== currentRef && !network.readOnly,
+      );
+
+      return {
+        key,
+        currentRef,
+        networks: current ? [current, ...others] : others,
+      };
+    });
+  }
+
+  public changeNic(adapter: string, network: string) {
+    const cards = this.networkCards;
+    const currentRef = cards?.currentNetworks?.[adapter];
+    const readOnly = new Set(cards?.readOnlyNetworks || []);
+
+    const performChange = () => {
+      this.proxmoxService
+        .changeNic(this.vm.id, adapter, network)
+        .pipe(take(1))
+        .subscribe({
+          next: (model) => {
+            this.vm = model;
+            this.changeDetectorRef.markForCheck();
+          },
+          error: (error) =>
+            this.snackBar.open(
+              `Network change failed: ${error.message}`,
+              'Close',
+              { duration: 10000, verticalPosition: 'top' },
+            ),
+        });
+    };
+
+    if (readOnly.has(currentRef)) {
+      const currentName = cards.availableNetworks[currentRef] || currentRef;
+
+      this.crucibleDialogService
+        .confirm({
+          title: 'Confirm Network Change',
+          message: `You are currently on "${currentName}", which is not in your allowed network list. If you switch away, you will not be able to switch back. Do you want to continue?`,
+          confirmText: 'Confirm',
+          cancelText: 'Cancel',
+        })
+        .afterClosed()
+        .pipe(
+          take(1),
+          filter((confirmed) => confirmed === true),
+        )
+        .subscribe(() => performChange());
+    } else {
+      performChange();
+    }
+  }
 
   public ctrlAltDel() {
     this.vmService.sendCtrlAltDel(this.vm.id);

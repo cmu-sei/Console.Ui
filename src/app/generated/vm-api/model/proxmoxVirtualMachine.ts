@@ -9,11 +9,15 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { NicOptions } from './nicOptions';
 
 
-export interface IsoUploadResult { 
-    message?: string | null;
-    failedHostCount?: number;
-    totalHostCount?: number;
+export interface ProxmoxVirtualMachine { 
+    id?: string;
+    name?: string | null;
+    userId?: string | null;
+    isOwner?: boolean;
+    networkCards?: NicOptions;
+    canAccessNicConfiguration?: boolean;
 }
 

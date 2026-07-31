@@ -1,13 +1,9 @@
-/*
-Copyright 2021 Carnegie Mellon University. All Rights Reserved. 
- Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
-*/
-
 export * from './appSystemPermission';
 export * from './appTeamPermission';
 export * from './appViewPermission';
 export * from './bulkPowerOperation';
 export * from './bulkPowerOperationResponse';
+export * from './changeProxmoxVirtualMachineNetwork';
 export * from './changeVsphereVirtualMachineNetwork';
 export * from './consoleConnectionInfo';
 export * from './coordinate';
@@ -31,6 +27,7 @@ export * from './powerState';
 export * from './problemDetails';
 export * from './proxmoxConsole';
 export * from './proxmoxSnapshot';
+export * from './proxmoxVirtualMachine';
 export * from './proxmoxVmInfo';
 export * from './proxmoxVmType';
 export * from './readGuestFileFromProxmoxVirtualMachine';

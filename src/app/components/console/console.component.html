@@ -11,7 +11,7 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
         prefetch on idle
       ) {
         <app-options-bar2
-          [vm]="virtualMachine.value"
+          [vm]="proxmoxVm$ | async"
           [readOnly]="readOnly"
         ></app-options-bar2>
         <app-proxmox-console
