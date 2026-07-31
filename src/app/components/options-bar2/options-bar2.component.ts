@@ -60,41 +60,31 @@ export class OptionsBar2Component implements OnInit {
   }
 
   public powerOn() {
-    this.submitPowerAction('powerOn');
+    this.submitPowerAction(PowerAction.PowerOn);
   }
 
   public powerOff() {
     this.confirmPowerAction(
-      'powerOff',
-      'Confirm Power Off',
+      PowerAction.PowerOff,
       `Power off "${this.vm?.name}"? The guest OS will not be shut down cleanly.`,
     );
   }
 
   public reboot() {
-    this.confirmPowerAction(
-      'reboot',
-      'Confirm Reboot',
-      `Reboot "${this.vm?.name}"?`,
-    );
+    this.confirmPowerAction(PowerAction.Reboot, `Reboot "${this.vm?.name}"?`);
   }
 
   public shutdown() {
     this.confirmPowerAction(
-      'shutdown',
-      'Confirm Shutdown',
+      PowerAction.Shutdown,
       `Shut down the guest OS on "${this.vm?.name}"?`,
     );
   }
 
-  private confirmPowerAction(
-    action: PowerAction,
-    title: string,
-    message: string,
-  ) {
+  private confirmPowerAction(action: PowerAction, message: string) {
     this.crucibleDialogService
       .confirm({
-        title,
+        title: `Confirm ${action}`,
         message,
         confirmText: 'Confirm',
         cancelText: 'Cancel',
@@ -114,27 +104,10 @@ export class OptionsBar2Component implements OnInit {
       .powerAction(this.vm.id, action)
       .pipe(take(1))
       .subscribe({
-        next: () =>
-          this.showMessage(`${this.actionName(action)} submitted`),
+        next: () => this.showMessage(`${action} submitted`),
         error: (error) =>
-          this.showMessage(
-            `${this.actionName(action)} failed: ${error.message}`,
-            10000,
-          ),
+          this.showMessage(`${action} failed: ${error.message}`, 10000),
       });
-  }
-
-  private actionName(action: PowerAction): string {
-    switch (action) {
-      case 'powerOn':
-        return 'Power On';
-      case 'powerOff':
-        return 'Power Off';
-      case 'reboot':
-        return 'Reboot';
-      case 'shutdown':
-        return 'Shutdown';
-    }
   }
 
   private showMessage(message: string, duration = 5000) {

@@ -10,11 +10,8 @@ Copyright 2021 Carnegie Mellon University. All Rights Reserved.
   min-height: 0;
 }
 
-// Flex `margin: auto` centers the placeholder on both axes within the column-flex host.
-// Note: WmksComponent uses `top: 40%` for the same icons because its container is a
-// block box, where auto vertical margins resolve to 0 - do not copy that offset here.
+// margin: auto centers the placeholder icon within the column flex host
 .center {
-  position: relative;
   display: block;
   margin: auto;
   height: 100px;

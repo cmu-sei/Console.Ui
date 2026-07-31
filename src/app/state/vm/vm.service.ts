@@ -18,7 +18,13 @@ import { VmQuery } from './vm.query';
 import { VmStore } from './vm.store';
 import { Params, Router } from '@angular/router';
 
-export type PowerAction = 'powerOn' | 'powerOff' | 'reboot' | 'shutdown';
+// Values are display labels, not API values - each action maps to its own endpoint below.
+export enum PowerAction {
+  PowerOn = 'Power On',
+  PowerOff = 'Power Off',
+  Reboot = 'Reboot',
+  Shutdown = 'Shutdown',
+}
 
 @Injectable({ providedIn: 'root' })
 export class VmService {
@@ -101,13 +107,13 @@ export class VmService {
     action: PowerAction,
   ): Observable<string> {
     switch (action) {
-      case 'powerOn':
+      case PowerAction.PowerOn:
         return this.apiProxmoxService.powerOnProxmoxVirtualMachine(id);
-      case 'powerOff':
+      case PowerAction.PowerOff:
         return this.apiProxmoxService.powerOffProxmoxVirtualMachine(id);
-      case 'reboot':
+      case PowerAction.Reboot:
         return this.apiProxmoxService.rebootProxmoxVirtualMachine(id);
-      case 'shutdown':
+      case PowerAction.Shutdown:
         return this.apiProxmoxService.shutdownProxmoxVirtualMachine(id);
     }
   }
@@ -117,13 +123,13 @@ export class VmService {
     action: PowerAction,
   ): Observable<string> {
     switch (action) {
-      case 'powerOn':
+      case PowerAction.PowerOn:
         return this.apiVsphereService.powerOnVsphereVirtualMachine(id);
-      case 'powerOff':
+      case PowerAction.PowerOff:
         return this.apiVsphereService.powerOffVsphereVirtualMachine(id);
-      case 'reboot':
+      case PowerAction.Reboot:
         return this.apiVsphereService.rebootVsphereVirtualMachine(id);
-      case 'shutdown':
+      case PowerAction.Shutdown:
         return this.apiVsphereService.shutdownVsphereVirtualMachine(id);
     }
   }

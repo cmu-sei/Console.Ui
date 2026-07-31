@@ -45,7 +45,6 @@ export class NovncComponent implements OnChanges, AfterViewInit, OnDestroy {
   private unsubscribe$ = new Subject();
   private viewInitialized = false;
   private destroyed = false;
-  private pendingConnection: { url: string; ticket: string };
 
   @ViewChild('screen') screen: ElementRef;
 
@@ -61,10 +60,10 @@ export class NovncComponent implements OnChanges, AfterViewInit, OnDestroy {
       this.screen.nativeElement,
     ).backgroundColor;
 
-    if (this.pendingConnection) {
-      const { url, ticket } = this.pendingConnection;
-      this.pendingConnection = null;
-      this.startClient(url, ticket);
+    // The parent may render this component with a url and ticket already set, so the first
+    // ngOnChanges runs before the #screen element exists. Connect here instead.
+    if (this.url && this.ticket) {
+      this.startClient(this.url, this.ticket);
     }
 
     // Listen for theme changes and update noVNC background
@@ -89,7 +88,12 @@ export class NovncComponent implements OnChanges, AfterViewInit, OnDestroy {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (this.url && this.ticket && (changes['url'] || changes['ticket'])) {
+    if (
+      this.viewInitialized &&
+      this.url &&
+      this.ticket &&
+      (changes['url'] || changes['ticket'])
+    ) {
       this.startClient(this.url, this.ticket);
     }
 
@@ -99,14 +103,6 @@ export class NovncComponent implements OnChanges, AfterViewInit, OnDestroy {
   }
 
   startClient(url: string, ticket: string) {
-    if (!this.viewInitialized) {
-      // The screen element does not exist yet. This happens when the parent only renders this
-      // component once it already has a url and ticket, so the first ngOnChanges runs before
-      // ngAfterViewInit. Hold the connection until the view is ready.
-      this.pendingConnection = { url, ticket };
-      return;
-    }
-
     this.novncService.startClient(
       url,
       ticket,
