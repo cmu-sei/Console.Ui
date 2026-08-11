@@ -19,6 +19,15 @@ export interface TeamIsoResult {
 }
 
 export interface IsoFile {
-  path: string;
+  // The hypervisor folder this file sits in. vSphere only - Proxmox ISO storage is flat, so a
+  // Proxmox row leaves it unset. Superseded by mountValue; kept for older callers.
+  path?: string;
   filename: string;
+  // The exact token this file's hypervisor wants in its mount call, computed by the API so the
+  // client never assembles one. Always prefer it over path + filename.
+  mountValue?: string;
+  providerType?: string;
+  // Hypervisors that are missing this file. Only ever populated on the management listing in vm.ui,
+  // never on the per-Vm listing a mount picker uses, but declared here since it's the same shape.
+  missingProviders?: string[];
 }

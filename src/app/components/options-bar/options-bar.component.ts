@@ -109,8 +109,6 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
   uploadEnabled = false;
   uploading = false;
   retrievingIsos = false;
-  publicIsos: any;
-  teamIsos: any;
   tasksInProgress: NotificationData[] = [];
   inFrame: boolean;
   clipBoardText: string;
@@ -509,8 +507,6 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
       },
       (error) => {
         console.log(error);
-        this.publicIsos = [];
-        this.teamIsos = [];
         this.retrievingIsos = false;
       },
     );
@@ -524,32 +520,15 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
       }
       // mount the iso
       this.vsphereService
-        .mountIso(this.vmId, result.path + result.filename)
+        // mountValue is the API-computed token; the concatenation is only a fallback for a response
+        // from a vm.api old enough not to send one.
+        .mountIso(this.vmId, result.mountValue ?? result.path + result.filename)
         .subscribe(
           // refresh the vm model
           (model: VmModel) => {
             this.vsphereService.model = model;
           },
         );
-    });
-  }
-
-  splitIsoList(isoList: any) {
-    const viewId = this.route.snapshot.queryParams['viewId'];
-    this.teamIsos = [];
-    this.publicIsos = [];
-    isoList.forEach((isoName) => {
-      const start = isoName.lastIndexOf('/') + 1;
-      const filename = isoName.substring(start);
-      const isoObject = {
-        filename: filename,
-        path: isoName,
-      };
-      if (isoName.indexOf('/' + viewId + '/' + viewId + '/') > -1) {
-        this.publicIsos.push(isoObject);
-      } else {
-        this.teamIsos.push(isoObject);
-      }
     });
   }
 

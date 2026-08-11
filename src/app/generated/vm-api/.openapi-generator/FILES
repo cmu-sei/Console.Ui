@@ -38,6 +38,7 @@ model/isoFile.ts
 model/isoResult.ts
 model/isoUploadResult.ts
 model/models.ts
+model/mountProxmoxVirtualMachineIso.ts
 model/mountVsphereIso.ts
 model/nicOptions.ts
 model/powerState.ts

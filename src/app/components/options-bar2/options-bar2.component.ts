@@ -38,6 +38,8 @@ import { MatLabel } from '@angular/material/form-field';
 import { AsyncPipe } from '@angular/common';
 import { MatTooltip } from '@angular/material/tooltip';
 import { ProxmoxService } from '../../services/proxmox/proxmox.service';
+import { DialogService } from '../../services/dialog/dialog.service';
+import { IsoFile, IsoResult } from '../../models/vm/iso-result';
 import { VsphereService } from '../../state/vsphere/vsphere.service';
 import { EMPTY, Observable, of } from 'rxjs';
 
@@ -103,6 +105,7 @@ export class OptionsBar2Component {
     private snackBar: MatSnackBar,
     private proxmoxService: ProxmoxService,
     private vsphereService: VsphereService,
+    private dialogService: DialogService,
   ) {}
 
   theme$ = this.authQuery.userTheme$;
@@ -114,6 +117,16 @@ export class OptionsBar2Component {
   public readonly canAccessNicConfiguration = computed(
     () => this.networkVmState()?.canAccessNicConfiguration === true,
   );
+
+  // Set by the API only where the Vm can actually take an ISO: a QEMU guest on an install that has
+  // Proxmox ISO storage configured. Absent on a vSphere response, which keeps its Mount ISO control
+  // in the original options bar.
+  public readonly canMountIso = computed(
+    () =>
+      (this.networkVmState() as ProxmoxVirtualMachine)?.canMountIso === true,
+  );
+
+  public readonly retrievingIsos = signal(false);
 
   public readonly networkMenuItems = computed(() => {
     const cards = this.networkCards();
@@ -233,6 +246,58 @@ export class OptionsBar2Component {
       ...search,
       [adapter]: '',
     }));
+  }
+
+  // Fetch the mountable ISOs for this Vm, let the user pick one, then mount it. The listing is
+  // deliberately re-fetched on every open rather than cached: the volume ids it returns are what the
+  // mount call is validated against, and another team member may have uploaded or deleted a file
+  // since the console was opened.
+  public startIsoMount() {
+    const vm = this.vmState();
+    if (!vm?.id || this.retrievingIsos()) {
+      return;
+    }
+
+    this.retrievingIsos.set(true);
+
+    this.proxmoxService
+      .getIsos(vm.id)
+      .pipe(take(1))
+      .subscribe({
+        next: (isoResults) => {
+          this.retrievingIsos.set(false);
+          this.pickAndMountIso(vm.id, isoResults);
+        },
+        error: (error) => {
+          this.retrievingIsos.set(false);
+          this.showMessage(`Could not load ISOs: ${error.message}`, 10000);
+        },
+      });
+  }
+
+  private pickAndMountIso(id: string, isoResults: IsoResult[]) {
+    this.dialogService
+      .mountIso(isoResults)
+      .pipe(
+        take(1),
+        filter((iso): iso is IsoFile => !!iso?.mountValue),
+      )
+      .subscribe((iso) => {
+        this.proxmoxService
+          .mountIso(id, iso.mountValue)
+          .pipe(take(1))
+          .subscribe({
+            next: (model) => {
+              // Guard against the console having switched Vms while the mount was in flight.
+              if (this.vmState()?.id === id) {
+                this.networkVmState.set(model);
+              }
+              this.showMessage(`Mounted ${iso.filename}`);
+            },
+            error: (error) =>
+              this.showMessage(`Mount failed: ${error.message}`, 10000),
+          });
+      });
   }
 
   public ctrlAltDel() {

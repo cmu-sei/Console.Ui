@@ -38,6 +38,16 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
               Network Cards
             </button>
           }
+          @if (canMountIso()) {
+            <button
+              mat-menu-item
+              [disabled]="retrievingIsos()"
+              (click)="startIsoMount()"
+            >
+              {{ retrievingIsos() ? 'Loading ISOs...' : 'Mount ISO' }}
+            </button>
+          }
+
           <mat-menu #networkMenu="matMenu">
             @for (adapter of networkMenuItems(); track adapter.key) {
               <button mat-menu-item [matMenuTriggerFor]="adapterMenu">

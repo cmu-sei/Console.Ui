@@ -21,6 +21,7 @@ export * from './healthStatus';
 export * from './isoFile';
 export * from './isoResult';
 export * from './isoUploadResult';
+export * from './mountProxmoxVirtualMachineIso';
 export * from './mountVsphereIso';
 export * from './nicOptions';
 export * from './powerState';

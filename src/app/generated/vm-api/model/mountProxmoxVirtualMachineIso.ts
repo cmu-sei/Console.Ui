@@ -9,15 +9,12 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
-import { NicOptions } from './nicOptions';
 
 
-export interface ProxmoxVirtualMachine { 
-    id?: string;
-    name?: string | null;
-    userId?: string | null;
-    networkCards?: NicOptions;
-    canAccessNicConfiguration?: boolean;
-    canMountIso?: boolean;
+export interface MountProxmoxVirtualMachineIso { 
+    /**
+     * The Proxmox volume id of the ISO to mount, as returned in the MountValue of GET vms/proxmox/{id}/isos. Only values from that listing are accepted.
+     */
+    iso?: string | null;
 }
 
