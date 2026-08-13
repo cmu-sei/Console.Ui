@@ -12,6 +12,9 @@
 
 
 export interface MountVsphereIso { 
+    /**
+     * The datastore path of the ISO to mount, as returned in the MountValue of GET vms/vsphere/{id}/isos. Only paths within an ISO folder belonging to a View and team of this Vm are accepted.
+     */
     iso?: string | null;
 }
 

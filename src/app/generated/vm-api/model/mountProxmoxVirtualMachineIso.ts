@@ -13,7 +13,7 @@
 
 export interface MountProxmoxVirtualMachineIso { 
     /**
-     * The Proxmox volume id of the ISO to mount, as returned in the MountValue of GET vms/proxmox/{id}/isos. Only values from that listing are accepted.
+     * The Proxmox volume id of the ISO to mount, as returned in the MountValue of GET vms/proxmox/{id}/isos. Only volumes on the configured ISO storage whose name encodes a View and team of this Vm are accepted.
      */
     iso?: string | null;
 }
