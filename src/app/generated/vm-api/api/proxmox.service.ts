@@ -25,9 +25,9 @@ import { CreateProxmoxVirtualMachineSnapshot } from '../model/createProxmoxVirtu
 // @ts-ignore
 import { GuestProcessResult } from '../model/guestProcessResult';
 // @ts-ignore
-import { IsoResult } from '../model/isoResult';
-// @ts-ignore
 import { MountProxmoxVirtualMachineIso } from '../model/mountProxmoxVirtualMachineIso';
+// @ts-ignore
+import { MountableIsoResult } from '../model/mountableIsoResult';
 // @ts-ignore
 import { ProblemDetails } from '../model/problemDetails';
 // @ts-ignore
@@ -497,9 +497,9 @@ export class ProxmoxService {
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public getProxmoxVirtualMachineIsos(id: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'text/plain' | 'application/json' | 'text/json', context?: HttpContext}): Observable<Array<IsoResult>>;
-    public getProxmoxVirtualMachineIsos(id: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'text/plain' | 'application/json' | 'text/json', context?: HttpContext}): Observable<HttpResponse<Array<IsoResult>>>;
-    public getProxmoxVirtualMachineIsos(id: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'text/plain' | 'application/json' | 'text/json', context?: HttpContext}): Observable<HttpEvent<Array<IsoResult>>>;
+    public getProxmoxVirtualMachineIsos(id: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'text/plain' | 'application/json' | 'text/json', context?: HttpContext}): Observable<Array<MountableIsoResult>>;
+    public getProxmoxVirtualMachineIsos(id: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'text/plain' | 'application/json' | 'text/json', context?: HttpContext}): Observable<HttpResponse<Array<MountableIsoResult>>>;
+    public getProxmoxVirtualMachineIsos(id: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'text/plain' | 'application/json' | 'text/json', context?: HttpContext}): Observable<HttpEvent<Array<MountableIsoResult>>>;
     public getProxmoxVirtualMachineIsos(id: string, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'text/plain' | 'application/json' | 'text/json', context?: HttpContext}): Observable<any> {
         if (id === null || id === undefined) {
             throw new Error('Required parameter id was null or undefined when calling getProxmoxVirtualMachineIsos.');
@@ -546,7 +546,7 @@ export class ProxmoxService {
         }
 
         let localVarPath = `/api/vms/proxmox/${this.configuration.encodeParam({name: "id", value: id, in: "path", style: "simple", explode: false, dataType: "string", dataFormat: "uuid"})}/isos`;
-        return this.httpClient.request<Array<IsoResult>>('get', `${this.configuration.basePath}${localVarPath}`,
+        return this.httpClient.request<Array<MountableIsoResult>>('get', `${this.configuration.basePath}${localVarPath}`,
             {
                 context: localVarHttpContext,
                 responseType: <any>responseType_,

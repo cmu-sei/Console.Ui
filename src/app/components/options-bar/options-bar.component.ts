@@ -519,16 +519,12 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
         return;
       }
       // mount the iso
-      this.vsphereService
-        // mountValue is the API-computed token; the concatenation is only a fallback for a response
-        // from a vm.api old enough not to send one.
-        .mountIso(this.vmId, result.mountValue ?? result.path + result.filename)
-        .subscribe(
-          // refresh the vm model
-          (model: VmModel) => {
-            this.vsphereService.model = model;
-          },
-        );
+      this.vsphereService.mountIso(this.vmId, result.mountValue).subscribe(
+        // refresh the vm model
+        (model: VmModel) => {
+          this.vsphereService.model = model;
+        },
+      );
     });
   }
 

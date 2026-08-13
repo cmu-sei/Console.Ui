@@ -9,13 +9,14 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
-import { VmType } from './vmType';
+import { MountableIsoFile } from './mountableIsoFile';
+import { MountableTeamIsoResult } from './mountableTeamIsoResult';
 
 
-export interface IsoFile { 
-    path?: string | null;
-    filename?: string | null;
-    mountValue?: string | null;
-    missingProviders?: Array<VmType> | null;
+export interface MountableIsoResult { 
+    viewId?: string;
+    viewName?: string | null;
+    isos?: Array<MountableIsoFile> | null;
+    teamIsoResults?: Array<MountableTeamIsoResult> | null;
 }
 

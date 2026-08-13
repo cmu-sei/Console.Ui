@@ -9,14 +9,12 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
-import { IsoFile } from './isoFile';
-import { TeamIsoResult } from './teamIsoResult';
+import { ManagedIsoFile } from './managedIsoFile';
 
 
-export interface IsoResult { 
-    viewId?: string;
-    viewName?: string | null;
-    isos?: Array<IsoFile> | null;
-    teamIsoResults?: Array<TeamIsoResult> | null;
+export interface ManagedTeamIsoResult { 
+    teamId?: string;
+    teamName?: string | null;
+    isos?: Array<ManagedIsoFile> | null;
 }
 

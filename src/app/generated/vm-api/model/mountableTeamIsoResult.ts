@@ -9,12 +9,12 @@
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
-import { IsoFile } from './isoFile';
+import { MountableIsoFile } from './mountableIsoFile';
 
 
-export interface TeamIsoResult { 
+export interface MountableTeamIsoResult { 
     teamId?: string;
     teamName?: string | null;
-    isos?: Array<IsoFile> | null;
+    isos?: Array<MountableIsoFile> | null;
 }
 
