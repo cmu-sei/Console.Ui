@@ -4,12 +4,27 @@ Copyright 2021 Carnegie Mellon University. All Rights Reserved.
 */
 
 import { Injectable } from '@angular/core';
+import { Observable, throwError } from 'rxjs';
 import { tap } from 'rxjs/operators';
-import { Vm, VmsService } from '../../generated/vm-api';
+import {
+  ProxmoxService as ApiProxmoxService,
+  Vm,
+  VmsService,
+  VmType,
+  VsphereService as ApiVsphereService,
+} from '../../generated/vm-api';
 import { ProxmoxService } from '../../services/proxmox/proxmox.service';
 import { VmQuery } from './vm.query';
 import { VmStore } from './vm.store';
 import { Params, Router } from '@angular/router';
+
+// Values are display labels, not API values - each action maps to its own endpoint below.
+export enum PowerAction {
+  PowerOn = 'Power On',
+  PowerOff = 'Power Off',
+  Reboot = 'Reboot',
+  Shutdown = 'Shutdown',
+}
 
 @Injectable({ providedIn: 'root' })
 export class VmService {
@@ -18,6 +33,8 @@ export class VmService {
     private vmsService: VmsService,
     private vmQuery: VmQuery,
     private proxmoxService: ProxmoxService,
+    private apiProxmoxService: ApiProxmoxService,
+    private apiVsphereService: ApiVsphereService,
     private router: Router,
   ) {}
 
@@ -45,7 +62,7 @@ export class VmService {
     const vm = this.vmQuery.getEntity(id);
 
     switch (vm.type) {
-      case 'Proxmox':
+      case VmType.Proxmox:
         this.proxmoxService.sendCtrlAltDel();
         break;
     }
@@ -57,9 +74,63 @@ export class VmService {
     const text = await navigator.clipboard.readText();
 
     switch (vm.type) {
-      case 'Proxmox':
+      case VmType.Proxmox:
         this.proxmoxService.sendClipboardText(text);
         break;
+    }
+  }
+
+  /**
+   * Dispatches a power action to the API for whichever provider backs this vm. The per-vm endpoints
+   * are used rather than the bulk ones since the console only ever acts on a single vm.
+   */
+  powerAction(id: string, action: PowerAction): Observable<string> {
+    const vm = this.vmQuery.getEntity(id);
+
+    switch (vm?.type) {
+      case VmType.Proxmox:
+        return this.proxmoxPowerAction(id, action);
+      case VmType.Vsphere:
+        return this.vspherePowerAction(id, action);
+      default:
+        return throwError(
+          () =>
+            new Error(
+              `Power operations are not supported for this virtual machine.`,
+            ),
+        );
+    }
+  }
+
+  private proxmoxPowerAction(
+    id: string,
+    action: PowerAction,
+  ): Observable<string> {
+    switch (action) {
+      case PowerAction.PowerOn:
+        return this.apiProxmoxService.powerOnProxmoxVirtualMachine(id);
+      case PowerAction.PowerOff:
+        return this.apiProxmoxService.powerOffProxmoxVirtualMachine(id);
+      case PowerAction.Reboot:
+        return this.apiProxmoxService.rebootProxmoxVirtualMachine(id);
+      case PowerAction.Shutdown:
+        return this.apiProxmoxService.shutdownProxmoxVirtualMachine(id);
+    }
+  }
+
+  private vspherePowerAction(
+    id: string,
+    action: PowerAction,
+  ): Observable<string> {
+    switch (action) {
+      case PowerAction.PowerOn:
+        return this.apiVsphereService.powerOnVsphereVirtualMachine(id);
+      case PowerAction.PowerOff:
+        return this.apiVsphereService.powerOffVsphereVirtualMachine(id);
+      case PowerAction.Reboot:
+        return this.apiVsphereService.rebootVsphereVirtualMachine(id);
+      case PowerAction.Shutdown:
+        return this.apiVsphereService.shutdownVsphereVirtualMachine(id);
     }
   }
 

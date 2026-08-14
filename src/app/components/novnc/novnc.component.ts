@@ -43,6 +43,8 @@ export class NovncComponent implements OnChanges, AfterViewInit, OnDestroy {
   private failedConnectionAttempts = 0;
   private backgroundColor: string;
   private unsubscribe$ = new Subject();
+  private viewInitialized = false;
+  private destroyed = false;
 
   @ViewChild('screen') screen: ElementRef;
 
@@ -52,9 +54,17 @@ export class NovncComponent implements OnChanges, AfterViewInit, OnDestroy {
   ) {}
 
   ngAfterViewInit() {
+    this.viewInitialized = true;
+
     this.backgroundColor = getComputedStyle(
       this.screen.nativeElement,
     ).backgroundColor;
+
+    // The parent may render this component with a url and ticket already set, so the first
+    // ngOnChanges runs before the #screen element exists. Connect here instead.
+    if (this.url && this.ticket) {
+      this.startClient(this.url, this.ticket);
+    }
 
     // Listen for theme changes and update noVNC background
     this.authQuery.userTheme$
@@ -70,10 +80,20 @@ export class NovncComponent implements OnChanges, AfterViewInit, OnDestroy {
   ngOnDestroy() {
     this.unsubscribe$.next(null);
     this.unsubscribe$.complete();
+
+    // A parent may swap this component out for a placeholder while it is still connected, so
+    // close the RFB session rather than leaving an orphaned websocket behind.
+    this.destroyed = true;
+    this.novncService.disconnect();
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (this.url && this.ticket && (changes['url'] || changes['ticket'])) {
+    if (
+      this.viewInitialized &&
+      this.url &&
+      this.ticket &&
+      (changes['url'] || changes['ticket'])
+    ) {
       this.startClient(this.url, this.ticket);
     }
 
@@ -107,6 +127,13 @@ export class NovncComponent implements OnChanges, AfterViewInit, OnDestroy {
   // This function is called when we are disconnected
   disconnected(e) {
     this.isConnected = false;
+
+    if (this.destroyed) {
+      // We closed the session ourselves on teardown. Asking the parent to reconnect a console
+      // it has already replaced would restart its retry cycle for no reason.
+      return;
+    }
+
     this.failedConnectionAttempts++;
     this.reconnect.emit(this.failedConnectionAttempts);
 

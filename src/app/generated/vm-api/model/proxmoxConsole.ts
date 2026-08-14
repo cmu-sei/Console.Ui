@@ -14,10 +14,15 @@ Copyright 2021 Carnegie Mellon University. All Rights Reserved.
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { PowerState } from './powerState';
 
 
 export interface ProxmoxConsole { 
     url?: string | null;
     ticket?: string | null;
+    powerState?: PowerState;
 }
+export namespace ProxmoxConsole {
+}
+
 

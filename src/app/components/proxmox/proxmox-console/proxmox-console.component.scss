@@ -9,3 +9,11 @@ Copyright 2021 Carnegie Mellon University. All Rights Reserved.
   flex: 1;
   min-height: 0;
 }
+
+// margin: auto centers the placeholder icon within the column flex host
+.center {
+  display: block;
+  margin: auto;
+  height: 100px;
+  width: 100px;
+}

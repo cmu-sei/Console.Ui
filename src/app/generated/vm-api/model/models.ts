@@ -24,6 +24,7 @@ export * from './guestProcessResult';
 export * from './healthStatus';
 export * from './isoFile';
 export * from './isoResult';
+export * from './isoUploadResult';
 export * from './mountVsphereIso';
 export * from './nicOptions';
 export * from './powerState';

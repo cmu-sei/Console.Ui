@@ -16,14 +16,9 @@ Copyright 2021 Carnegie Mellon University. All Rights Reserved.
  */
 
 
-export type AppSystemPermission = 'ViewViews' | 'ManageViews' | 'EditViews' | 'ViewNetworks' | 'ManageNetworks' | 'DeleteIsos';
-
-export const AppSystemPermission = {
-    ViewViews: 'ViewViews' as AppSystemPermission,
-    ManageViews: 'ManageViews' as AppSystemPermission,
-    EditViews: 'EditViews' as AppSystemPermission,
-    ViewNetworks: 'ViewNetworks' as AppSystemPermission,
-    ManageNetworks: 'ManageNetworks' as AppSystemPermission,
-    DeleteIsos: 'DeleteIsos' as AppSystemPermission
-};
+export interface IsoUploadResult { 
+    message?: string | null;
+    failedHostCount?: number;
+    totalHostCount?: number;
+}
 
