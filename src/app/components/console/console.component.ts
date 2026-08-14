@@ -2,7 +2,8 @@
 // Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
 
 import { Component, Input } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { Observable } from 'rxjs';
+import { shareReplay } from 'rxjs/operators';
 import { Vm, VmType, VsphereVirtualMachine } from '../../generated/vm-api';
 import { VmService } from '../../state/vm/vm.service';
 import { VsphereQuery } from '../../state/vsphere/vsphere.query';
@@ -13,16 +14,16 @@ import { ProxmoxConsoleComponent } from '../proxmox/proxmox-console/proxmox-cons
 import { OptionsBar2Component } from '../options-bar2/options-bar2.component';
 
 @Component({
-    selector: 'app-console',
-    templateUrl: './console.component.html',
-    styleUrls: ['./console.component.scss'],
-    imports: [
-        OptionsBar2Component,
-        ProxmoxConsoleComponent,
-        OptionsBarComponent,
-        WmksComponent,
-        AsyncPipe,
-    ]
+  selector: 'app-console',
+  templateUrl: './console.component.html',
+  styleUrls: ['./console.component.scss'],
+  imports: [
+    OptionsBar2Component,
+    ProxmoxConsoleComponent,
+    OptionsBarComponent,
+    WmksComponent,
+    AsyncPipe,
+  ],
 })
 export class ConsoleComponent {
   @Input({ required: true }) readOnly;
@@ -31,7 +32,9 @@ export class ConsoleComponent {
   @Input({ required: true }) set vmId(value: string) {
     this._vmId = value;
     this.vsphereVm$ = this.vsphereQuery.selectEntity(value);
-    this.virtualMachine$ = this.vmService.get(value);
+    this.virtualMachine$ = this.vmService
+      .get(value)
+      .pipe(shareReplay({ bufferSize: 1, refCount: true }));
   }
 
   public get vmType(): typeof VmType {

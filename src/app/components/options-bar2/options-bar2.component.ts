@@ -5,12 +5,20 @@ Copyright 2021 Carnegie Mellon University. All Rights Reserved.
 
 import {
   Component,
-  OnInit,
   ChangeDetectionStrategy,
   Input,
+  computed,
+  linkedSignal,
+  signal,
 } from '@angular/core';
+import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { Vm } from '../../generated/vm-api';
+import {
+  ProxmoxVirtualMachine,
+  Vm,
+  VmType,
+  VsphereVirtualMachine,
+} from '../../generated/vm-api';
 import { PowerAction, VmService } from '../../state/vm/vm.service';
 import {
   ComnAuthQuery,
@@ -18,25 +26,73 @@ import {
   CrucibleDialogService,
   Theme,
 } from '@cmusei/crucible-common';
-import { filter, take } from 'rxjs/operators';
+import { catchError, filter, startWith, switchMap, take } from 'rxjs/operators';
 import { MatIcon } from '@angular/material/icon';
 import { MatMenuTrigger, MatMenu, MatMenuItem } from '@angular/material/menu';
 import { MatIconButton } from '@angular/material/button';
-import { MatSlideToggleChange, MatSlideToggleModule } from '@angular/material/slide-toggle';
+import {
+  MatSlideToggleChange,
+  MatSlideToggleModule,
+} from '@angular/material/slide-toggle';
 import { MatLabel } from '@angular/material/form-field';
 import { AsyncPipe } from '@angular/common';
+import { MatTooltip } from '@angular/material/tooltip';
+import { ProxmoxService } from '../../services/proxmox/proxmox.service';
+import { VsphereService } from '../../state/vsphere/vsphere.service';
+import { EMPTY, Observable, of } from 'rxjs';
+
+type NetworkVirtualMachine = ProxmoxVirtualMachine | VsphereVirtualMachine;
 
 @Component({
-    selector: 'app-options-bar2',
-    templateUrl: './options-bar2.component.html',
-    styleUrls: ['./options-bar2.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [MatIconButton, MatMenuTrigger, MatIcon, MatMenu, MatMenuItem, MatSlideToggleModule, MatLabel, AsyncPipe]
+  selector: 'app-options-bar2',
+  templateUrl: './options-bar2.component.html',
+  styleUrls: ['./options-bar2.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [
+    MatIconButton,
+    MatMenuTrigger,
+    MatIcon,
+    MatMenu,
+    MatMenuItem,
+    MatSlideToggleModule,
+    MatLabel,
+    AsyncPipe,
+    MatTooltip,
+  ],
 })
-export class OptionsBar2Component implements OnInit {
+export class OptionsBar2Component {
   // Generic Options Bar - Will eventually replace OptionsBarComponent
 
-  @Input() vm: Vm;
+  private readonly vmState = signal<Vm | null>(null);
+  private readonly loadedNetworkVmState = toSignal(
+    toObservable(this.vmState).pipe(
+      switchMap((vm) => {
+        if (!vm?.id) {
+          return of(null);
+        }
+
+        return this.getNetworkVm(vm, vm.id).pipe(
+          startWith(null),
+          catchError(() => of(null)),
+        );
+      }),
+    ),
+    { initialValue: null },
+  );
+  private readonly networkVmState = linkedSignal(() =>
+    this.loadedNetworkVmState(),
+  );
+  public readonly networkSearch = signal<Record<string, string>>({});
+
+  @Input()
+  set vm(value: Vm | null | undefined) {
+    this.vmState.set(value ?? null);
+  }
+
+  get vm(): Vm | null {
+    return this.vmState();
+  }
+
   @Input() readOnly = false;
 
   constructor(
@@ -45,11 +101,139 @@ export class OptionsBar2Component implements OnInit {
     private authQuery: ComnAuthQuery,
     private crucibleDialogService: CrucibleDialogService,
     private snackBar: MatSnackBar,
+    private proxmoxService: ProxmoxService,
+    private vsphereService: VsphereService,
   ) {}
 
   theme$ = this.authQuery.userTheme$;
 
-  ngOnInit(): void {}
+  public readonly networkCards = computed(
+    () => this.networkVmState()?.networkCards,
+  );
+
+  public readonly canAccessNicConfiguration = computed(
+    () => this.networkVmState()?.canAccessNicConfiguration === true,
+  );
+
+  public readonly networkMenuItems = computed(() => {
+    const cards = this.networkCards();
+    if (!cards?.currentNetworks || !cards.availableNetworks) {
+      return [];
+    }
+
+    const readOnly = new Set(cards.readOnlyNetworks || []);
+    const networks = Object.entries(cards.availableNetworks).map(
+      ([ref, name]) => ({
+        ref,
+        name: name || ref,
+        readOnly: readOnly.has(ref),
+      }),
+    );
+
+    return Object.entries(cards.currentNetworks).map(([key, currentRef]) => {
+      const current = networks.find((network) => network.ref === currentRef);
+      const others = networks.filter(
+        (network) => network.ref !== currentRef && !network.readOnly,
+      );
+      const ordered = current ? [current, ...others] : others;
+      const search = (this.networkSearch()[key] || '').trim().toLowerCase();
+
+      return {
+        key,
+        currentRef,
+        networks: search
+          ? ordered.filter((network) =>
+              network.name.toLowerCase().includes(search),
+            )
+          : ordered,
+      };
+    });
+  });
+
+  public changeNic(adapter: string, network: string) {
+    const cards = this.networkCards();
+    const currentRef = cards?.currentNetworks?.[adapter];
+    const readOnly = new Set(cards?.readOnlyNetworks || []);
+
+    const vm = this.vmState();
+    if (!cards || !vm?.id || network === currentRef) {
+      return;
+    }
+
+    const performChange = () => {
+      this.changeNetwork(vm, vm.id, adapter, network)
+        .pipe(take(1))
+        .subscribe((model) => {
+          if (this.vmState()?.id === vm.id) {
+            this.networkVmState.set(model);
+          }
+        });
+    };
+
+    if (currentRef && readOnly.has(currentRef)) {
+      const currentName = cards.availableNetworks?.[currentRef] || currentRef;
+
+      this.crucibleDialogService
+        .confirm({
+          title: 'Confirm Network Change',
+          message: `You are currently on "${currentName}", which is not in your allowed network list. If you switch away, you will not be able to switch back. Do you want to continue?`,
+          confirmText: 'Confirm',
+          cancelText: 'Cancel',
+        })
+        .afterClosed()
+        .pipe(
+          take(1),
+          filter((confirmed) => confirmed === true),
+        )
+        .subscribe(() => performChange());
+    } else {
+      performChange();
+    }
+  }
+
+  private getNetworkVm(vm: Vm, id: string): Observable<NetworkVirtualMachine> {
+    if (vm.type === VmType.Proxmox) {
+      return this.proxmoxService.getVm(id);
+    }
+
+    if (vm.type === VmType.Vsphere) {
+      return this.vsphereService.getVm(id);
+    }
+
+    return EMPTY;
+  }
+
+  private changeNetwork(
+    vm: Vm,
+    id: string,
+    adapter: string,
+    network: string,
+  ): Observable<NetworkVirtualMachine> {
+    if (vm.type === VmType.Proxmox) {
+      return this.proxmoxService.changeNic(id, adapter, network);
+    }
+
+    if (vm.type === VmType.Vsphere) {
+      return this.vsphereService.changeNic(id, adapter, network);
+    }
+
+    return EMPTY;
+  }
+
+  public setNetworkSearch(adapter: string, event: Event) {
+    const value = (event.target as HTMLInputElement).value;
+    this.networkSearch.update((search) => ({
+      ...search,
+      [adapter]: value,
+    }));
+  }
+
+  public clearNetworkSearch(adapter: string) {
+    this.networkSearch.update((search) => ({
+      ...search,
+      [adapter]: '',
+    }));
+  }
 
   public ctrlAltDel() {
     this.vmService.sendCtrlAltDel(this.vm.id);
