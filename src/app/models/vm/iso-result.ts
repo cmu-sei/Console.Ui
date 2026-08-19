@@ -19,6 +19,9 @@ export interface TeamIsoResult {
 }
 
 export interface IsoFile {
-  path: string;
   filename: string;
+  // The exact token this file's hypervisor wants in its mount call, computed by the API so the
+  // client never assembles one. Always present: this is the per-Vm listing, whose whole purpose is
+  // to be mountable.
+  mountValue: string;
 }

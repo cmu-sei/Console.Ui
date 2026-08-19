@@ -14,15 +14,14 @@ Copyright 2021 Carnegie Mellon University. All Rights Reserved.
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { ManagedIsoFile } from './managedIsoFile';
+import { ManagedTeamIsoResult } from './managedTeamIsoResult';
 
 
-export interface VmSnapshot { 
-    id?: string | null;
-    name?: string | null;
-    description?: string | null;
-    createTime?: string;
-    state?: string | null;
-    isCurrent?: boolean;
-    depth?: number;
+export interface ManagedIsoResult { 
+    viewId?: string;
+    viewName?: string | null;
+    isos?: Array<ManagedIsoFile> | null;
+    teamIsoResults?: Array<ManagedTeamIsoResult> | null;
 }
 

@@ -16,13 +16,10 @@ Copyright 2021 Carnegie Mellon University. All Rights Reserved.
  */
 
 
-export interface VmSnapshot { 
-    id?: string | null;
-    name?: string | null;
-    description?: string | null;
-    createTime?: string;
-    state?: string | null;
-    isCurrent?: boolean;
-    depth?: number;
+export interface MountProxmoxVirtualMachineIso { 
+    /**
+     * The Proxmox volume id of the ISO to mount, as returned in the MountValue of GET vms/proxmox/{id}/isos. Only volumes on the configured ISO storage whose name encodes a View and team of this Vm are accepted.
+     */
+    iso?: string | null;
 }
 

@@ -1,4 +1,5 @@
 .gitignore
+.openapi-generator-ignore
 README.md
 api.module.ts
 api/api.ts
@@ -34,11 +35,16 @@ model/fileVmUrlResponse.ts
 model/getFileUrlVsphereVirtualMachine.ts
 model/guestProcessResult.ts
 model/healthStatus.ts
-model/isoFile.ts
-model/isoResult.ts
 model/isoUploadResult.ts
+model/managedIsoFile.ts
+model/managedIsoResult.ts
+model/managedTeamIsoResult.ts
 model/models.ts
+model/mountProxmoxVirtualMachineIso.ts
 model/mountVsphereIso.ts
+model/mountableIsoFile.ts
+model/mountableIsoResult.ts
+model/mountableTeamIsoResult.ts
 model/nicOptions.ts
 model/powerState.ts
 model/problemDetails.ts
@@ -56,7 +62,6 @@ model/runGuestProcessOnProxmoxVirtualMachine.ts
 model/runGuestProcessOnVsphereVirtualMachine.ts
 model/setVsphereVirtualMachineResolution.ts
 model/simpleTeam.ts
-model/teamIsoResult.ts
 model/updateViewNetworkForm.ts
 model/validateVsphereVirtualMachineCredentials.ts
 model/viewNetwork.ts

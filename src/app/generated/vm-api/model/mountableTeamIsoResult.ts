@@ -14,15 +14,12 @@ Copyright 2021 Carnegie Mellon University. All Rights Reserved.
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { MountableIsoFile } from './mountableIsoFile';
 
 
-export interface VmSnapshot { 
-    id?: string | null;
-    name?: string | null;
-    description?: string | null;
-    createTime?: string;
-    state?: string | null;
-    isCurrent?: boolean;
-    depth?: number;
+export interface MountableTeamIsoResult { 
+    teamId?: string;
+    teamName?: string | null;
+    isos?: Array<MountableIsoFile> | null;
 }
 
