@@ -14,11 +14,13 @@ Copyright 2021 Carnegie Mellon University. All Rights Reserved.
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
+import { AppSystemPermission } from './appSystemPermission';
 import { AppViewPermission } from './appViewPermission';
 import { AppTeamPermission } from './appTeamPermission';
 
 
 export interface VmPermissionResult { 
+    systemPermissions?: Array<AppSystemPermission> | null;
     viewPermissions?: Array<AppViewPermission> | null;
     teamPermissions?: Array<AppTeamPermission> | null;
 }

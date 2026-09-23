@@ -5,6 +5,7 @@ import { Injectable } from '@angular/core';
 import { BehaviorSubject, combineLatest, Observable, ReplaySubject } from 'rxjs';
 import { map, tap } from 'rxjs/operators';
 import {
+  AppSystemPermission,
   AppTeamPermission,
   AppViewPermission,
   VmPermissionResult,
@@ -17,6 +18,7 @@ import { ActivatedRoute, ParamMap } from '@angular/router';
 })
 export class UserPermissionsService {
   private permissionsSubject = new BehaviorSubject<VmPermissionResult>({
+    systemPermissions: [],
     teamPermissions: [],
     viewPermissions: [],
   });
@@ -52,8 +54,9 @@ export class UserPermissionsService {
       tap((x) => this.permissionsSubject.next(x)),
       tap((x) => {
         if (
-          !x.teamPermissions.includes(AppTeamPermission.EditTeam) &&
-          !x.viewPermissions.includes(AppViewPermission.EditView)
+          !x.systemPermissions.includes(AppSystemPermission.ControlVms) &&
+          !x.teamPermissions.includes(AppTeamPermission.ControlTeamVms) &&
+          !x.viewPermissions.includes(AppViewPermission.ControlViewVms)
         ) {
           this.readOnlyToggleableSubject.next(false);
         } else {

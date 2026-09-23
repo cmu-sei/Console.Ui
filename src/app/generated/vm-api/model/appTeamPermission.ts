@@ -16,13 +16,16 @@ Copyright 2021 Carnegie Mellon University. All Rights Reserved.
  */
 
 
-export type AppTeamPermission = 'ViewTeam' | 'ManageTeam' | 'EditTeam' | 'UploadTeamIsos' | 'DeleteTeamIsos';
+export type AppTeamPermission = 'ViewTeam' | 'ManageTeam' | 'UploadTeamIsos' | 'DeleteTeamIsos' | 'ViewTeamVms' | 'ControlTeamVms' | 'ViewTeamMaps' | 'ManageTeamMaps';
 
 export const AppTeamPermission = {
     ViewTeam: 'ViewTeam' as AppTeamPermission,
     ManageTeam: 'ManageTeam' as AppTeamPermission,
-    EditTeam: 'EditTeam' as AppTeamPermission,
     UploadTeamIsos: 'UploadTeamIsos' as AppTeamPermission,
-    DeleteTeamIsos: 'DeleteTeamIsos' as AppTeamPermission
+    DeleteTeamIsos: 'DeleteTeamIsos' as AppTeamPermission,
+    ViewTeamVms: 'ViewTeamVms' as AppTeamPermission,
+    ControlTeamVms: 'ControlTeamVms' as AppTeamPermission,
+    ViewTeamMaps: 'ViewTeamMaps' as AppTeamPermission,
+    ManageTeamMaps: 'ManageTeamMaps' as AppTeamPermission
 };
 
