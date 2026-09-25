@@ -27,6 +27,7 @@ import { VmStore } from './vsphere.store';
 import { ComnSettingsService } from '@cmusei/crucible-common';
 import { VmService } from '../vm/vm.service';
 import { UserPermissionsService } from '../../services/user-permissions/user-permissions.service';
+import { patchWmksLockKeys } from '../../shims/vmware-wmks.shim';
 
 declare var WMKS: any; // needed to check values
 
@@ -296,6 +297,24 @@ export class VsphereService {
           this.showLock = false;
           this.model.vmToolsStatus = VirtualMachineToolsStatus.toolsNotRunning;
           this.connectedSubject.next(true);
+
+          // SDK 2.2.0 never forwards Caps Lock / Num Lock / Scroll Lock keypresses to the guest. The
+          // keyboard manager doesn't exist until the client has connected, so patch it here.
+          switch (patchWmksLockKeys(this.wmks)) {
+            case 'applied':
+              console.log('Applied the WMKS lock-key workaround.');
+              break;
+            case 'not-needed':
+              console.log(
+                "This WMKS build doesn't need the lock-key workaround.",
+              );
+              break;
+            case 'failed':
+              console.warn(
+                "Couldn't apply the WMKS lock-key workaround; the guest won't see Caps/Num/Scroll Lock keypresses.",
+              );
+              break;
+          }
 
           interval(10000)
             .pipe(
