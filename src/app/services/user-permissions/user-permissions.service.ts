@@ -5,6 +5,7 @@ import { Injectable } from '@angular/core';
 import { BehaviorSubject, combineLatest, Observable, ReplaySubject } from 'rxjs';
 import { map, tap } from 'rxjs/operators';
 import {
+  AppSystemPermission,
   AppTeamPermission,
   AppViewPermission,
   VmPermissionResult,
@@ -53,6 +54,7 @@ export class UserPermissionsService {
       tap((x) => this.permissionsSubject.next(x)),
       tap((x) => {
         if (
+          !x.systemPermissions.includes(AppSystemPermission.ControlVms) &&
           !x.teamPermissions.includes(AppTeamPermission.ControlTeamVms) &&
           !x.viewPermissions.includes(AppViewPermission.ControlViewVms)
         ) {
