@@ -16,18 +16,21 @@ Copyright 2021 Carnegie Mellon University. All Rights Reserved.
  */
 
 
-export type AppViewPermission = 'ViewView' | 'ManageView' | 'EditView' | 'UploadViewIsos' | 'DeleteViewIsos' | 'DownloadVmFiles' | 'UploadVmFiles' | 'RevertVms' | 'ViewNetworks' | 'ManageNetworks';
+export type AppViewPermission = 'ViewView' | 'ManageView' | 'UploadViewIsos' | 'DeleteViewIsos' | 'DownloadVmFiles' | 'UploadVmFiles' | 'RevertVms' | 'ViewNetworks' | 'ManageNetworks' | 'ViewViewVms' | 'ControlViewVms' | 'ViewViewMaps' | 'ManageViewMaps';
 
 export const AppViewPermission = {
     ViewView: 'ViewView' as AppViewPermission,
     ManageView: 'ManageView' as AppViewPermission,
-    EditView: 'EditView' as AppViewPermission,
     UploadViewIsos: 'UploadViewIsos' as AppViewPermission,
     DeleteViewIsos: 'DeleteViewIsos' as AppViewPermission,
     DownloadVmFiles: 'DownloadVmFiles' as AppViewPermission,
     UploadVmFiles: 'UploadVmFiles' as AppViewPermission,
     RevertVms: 'RevertVms' as AppViewPermission,
     ViewNetworks: 'ViewNetworks' as AppViewPermission,
-    ManageNetworks: 'ManageNetworks' as AppViewPermission
+    ManageNetworks: 'ManageNetworks' as AppViewPermission,
+    ViewViewVms: 'ViewViewVms' as AppViewPermission,
+    ControlViewVms: 'ControlViewVms' as AppViewPermission,
+    ViewViewMaps: 'ViewViewMaps' as AppViewPermission,
+    ManageViewMaps: 'ManageViewMaps' as AppViewPermission
 };
 
