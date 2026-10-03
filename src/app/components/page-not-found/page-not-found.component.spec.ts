@@ -1,27 +1,20 @@
-// Copyright 2021 Carnegie Mellon University. All Rights Reserved.
+// Copyright 2026 Carnegie Mellon University. All Rights Reserved.
 // Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
 
-import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
-
+import { describe, it, expect } from 'vitest';
+import { screen } from '@testing-library/angular';
 import { PageNotFoundComponent } from './page-not-found.component';
+import { renderComponent } from '../../test-utils/render-component';
 
 describe('PageNotFoundComponent', () => {
-  let component: PageNotFoundComponent;
-  let fixture: ComponentFixture<PageNotFoundComponent>;
-
-  beforeEach(waitForAsync(() => {
-    TestBed.configureTestingModule({
-      imports: [PageNotFoundComponent],
-    }).compileComponents();
-  }));
-
-  beforeEach(() => {
-    fixture = TestBed.createComponent(PageNotFoundComponent);
-    component = fixture.componentInstance;
-    fixture.detectChanges();
-  });
-
-  it('should create', () => {
-    expect(component).toBeTruthy();
+  /**
+   * Verifies: unknown routes show the not-found message.
+   * Interacts with: the component template.
+   * Data: default render.
+   */
+  it('explains that the Vm was not found', async () => {
+    await renderComponent(PageNotFoundComponent);
+    expect(screen.getByRole('heading', { name: 'VM Not Found' })).toBeInTheDocument();
+    expect(screen.getByText(/no longer exists or you do not have permission/)).toBeInTheDocument();
   });
 });
