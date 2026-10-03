@@ -20,7 +20,22 @@ Run `ng build` to build the project. The build artifacts will be stored in the `
 
 ## Running unit tests
 
-Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
+Unit tests run under Angular's `@angular/build:unit-test` builder with **Vitest** (jsdom, zone.js change
+detection, like the app) and `@testing-library/angular`. The setup is the shared Crucible UI test setup that
+every Crucible Angular UI uses.
+
+```bash
+npm test               # Run all tests once (ng test --watch=false)
+npm run test:watch     # Run tests in watch mode
+npm run test:coverage  # Run once with v8 coverage and the thresholds in angular.json (what CI runs)
+```
+
+Shared test helpers live in [`src/app/test-utils/`](src/app/test-utils/): `renderComponent`, the default
+providers (`default-test-providers.ts`), `permissionDataProviders` for permission gates, typed API stubs
+(`ApiStub`), the SignalR fake (`mockHubConnectionBuilder`), and console.ui's own WebMKS and clipboard fakes.
+`src/test-setup.ts` fails any test that logs `console.error`. `vitest.config.ts` applies `patches/` with
+`patch-package` when it loads, because Akita and `@material/material-color-utilities` ship ESM that Node
+cannot load unpatched.
 
 ## Running end-to-end tests
 
