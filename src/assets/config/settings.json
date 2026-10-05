@@ -15,6 +15,10 @@
   "DebugLogging": false,
   "AppTopBarHexColor": "#3B62A5",
   "AppTopBarHexTextColor": "#FFFFFF",
+  "AppLightModePrimaryHexColor": "#3B62A5",
+  "AppLightModePrimaryHexTextColor": "#FFFFFF",
+  "AppDarkModePrimaryHexColor": "#6A8DCA",
+  "AppDarkModePrimaryHexTextColor": "#000000",
   "VmResolutionOptions": [
     {
       "width": 2560,

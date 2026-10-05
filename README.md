@@ -34,8 +34,8 @@ Shared test helpers live in [`src/app/test-utils/`](src/app/test-utils/): `rende
 providers (`default-test-providers.ts`), `permissionDataProviders` for permission gates, typed API stubs
 (`ApiStub`), the SignalR fake (`mockHubConnectionBuilder`), and console.ui's own WebMKS and clipboard fakes.
 `src/test-setup.ts` fails any test that logs `console.error`. `vitest.config.ts` applies `patches/` with
-`patch-package` when it loads, because Akita and `@material/material-color-utilities` ship ESM that Node
-cannot load unpatched.
+`patch-package` when it loads, because Akita ships ESM that Node cannot load
+unpatched.
 
 ## Running end-to-end tests
 
