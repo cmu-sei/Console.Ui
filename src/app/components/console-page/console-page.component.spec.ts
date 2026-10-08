@@ -30,6 +30,7 @@ import {
   flush,
 } from '../../test-utils/unhandled-rx-errors';
 import { activatedRouteStub } from '../../test-utils/activated-route';
+import { permissionResult } from '../../test-utils/mock-permission-data.service';
 
 @Component({ selector: 'app-console', template: '' })
 class ConsoleStubComponent {
@@ -47,17 +48,6 @@ type SignalRStub = Pick<
   | 'unsetActiveVirtualMachine'
 >;
 
-function permissions(
-  overrides: Partial<VmPermissionResult> = {},
-): VmPermissionResult {
-  return {
-    systemPermissions: [],
-    teamPermissions: [],
-    viewPermissions: [],
-    ...overrides,
-  };
-}
-
 async function renderConsolePage(
   overrides: {
     vm?: Observable<Vm>;
@@ -71,7 +61,7 @@ async function renderConsolePage(
     getVm: vi.fn(
       () => overrides.vm ?? of({ id: 'vm-1', name: 'Alpha', type: VmType.Vsphere }),
     ),
-    getVmPermissions: vi.fn(() => overrides.permissions ?? of(permissions())),
+    getVmPermissions: vi.fn(() => overrides.permissions ?? of(permissionResult())),
   } satisfies ApiStub<VmsService>;
   const signalr: SignalRStub = {
     startConnection: overrides.startConnection ?? vi.fn(() => Promise.resolve()),
@@ -125,7 +115,7 @@ describe('ConsolePageComponent', () => {
       });
       expect(consoleStub()).toBeUndefined();
 
-      permissions$.next(permissions());
+      permissions$.next(permissionResult());
       fixture.detectChanges();
 
       expect(consoleStub()).toBeDefined();
@@ -139,15 +129,29 @@ describe('ConsolePageComponent', () => {
     it('renders read-only without the toggle for a user who cannot control the Vm', async () => {
       const { consoleStub } = await renderConsolePage({
         permissions: of(
-          permissions({
-            systemPermissions: [AppSystemPermission.ViewVms, AppSystemPermission.ManageViews],
-            teamPermissions: [AppTeamPermission.ViewTeamVms, AppTeamPermission.ManageTeam],
-            viewPermissions: [AppViewPermission.ViewViewVms, AppViewPermission.ManageView],
+          permissionResult({
+            system: [AppSystemPermission.ViewVms, AppSystemPermission.ManageViews],
+            team: [AppTeamPermission.ViewTeamVms, AppTeamPermission.ManageTeam],
+            view: [AppViewPermission.ViewViewVms, AppViewPermission.ManageView],
           }),
         ),
       });
       expect(consoleStub()?.readOnly).toBe(true);
       expect(consoleStub()?.allowReadOnlyToggle).toBe(false);
+      expect(consoleStub()?.vmId).toBe('vm-1');
+    });
+
+    /**
+     * Verifies: a user whose only grant is the view-scoped ControlViewVms gets an interactive console and the toggle.
+     * Interacts with: real UserPermissionsService gate (view tier); app-console stub inputs.
+     * Data: view ControlViewVms alone, no system or team permissions; no readOnly query param.
+     */
+    it('renders interactive with the toggle for a view Vm controller', async () => {
+      const { consoleStub } = await renderConsolePage({
+        permissions: of(permissionResult({ view: [AppViewPermission.ControlViewVms] })),
+      });
+      expect(consoleStub()?.readOnly).toBe(false);
+      expect(consoleStub()?.allowReadOnlyToggle).toBe(true);
       expect(consoleStub()?.vmId).toBe('vm-1');
     });
 
@@ -159,7 +163,7 @@ describe('ConsolePageComponent', () => {
     it('renders interactive with the toggle for a team Vm controller', async () => {
       const { consoleStub } = await renderConsolePage({
         permissions: of(
-          permissions({ teamPermissions: [AppTeamPermission.ControlTeamVms] }),
+          permissionResult({ team: [AppTeamPermission.ControlTeamVms] }),
         ),
       });
       expect(consoleStub()?.readOnly).toBe(false);
@@ -175,7 +179,7 @@ describe('ConsolePageComponent', () => {
       const { consoleStub } = await renderConsolePage({
         readOnlyParam: 'true',
         permissions: of(
-          permissions({ systemPermissions: [AppSystemPermission.ControlVms] }),
+          permissionResult({ system: [AppSystemPermission.ControlVms] }),
         ),
       });
       expect(consoleStub()?.readOnly).toBe(true);
