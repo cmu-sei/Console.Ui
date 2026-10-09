@@ -3,7 +3,13 @@
 import { Component, OnDestroy } from '@angular/core';
 import { MatIconRegistry } from '@angular/material/icon';
 import { DomSanitizer } from '@angular/platform-browser';
-import { ComnAuthQuery, ComnAuthService, ComnHeaderBarModule, ComnSettingsService, Theme } from '@cmusei/crucible-common';
+import {
+  ComnAuthQuery,
+  ComnAuthService,
+  ComnHeaderBarModule,
+  CrucibleThemeService,
+  Theme,
+} from '@cmusei/crucible-common';
 import { RouterQuery } from '@datorama/akita-ng-router-store';
 import { Observable, Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -27,7 +33,7 @@ export class AppComponent implements OnDestroy {
     private authQuery: ComnAuthQuery,
     private routerQuery: RouterQuery,
     private authService: ComnAuthService,
-    private settingsService: ComnSettingsService,
+    private themeService: CrucibleThemeService,
     private router: Router,
   ) {
     this.addIcons();
@@ -54,30 +60,7 @@ export class AppComponent implements OnDestroy {
   }
 
   setTheme(theme: Theme) {
-    document.body.classList.toggle('darkMode', theme === Theme.DARK);
-    const topBarColor = this.settingsService.settings?.AppTopBarHexColor || '#C41230';
-    const topBarTextColor = this.settingsService.settings?.AppTopBarHexTextColor || '#FFFFFF';
-    if (topBarColor) {
-      document.documentElement.style.setProperty('--mat-sys-primary', topBarColor);
-      document.body.style.setProperty('--mat-sys-primary', topBarColor);
-      this.updateFavicon(topBarColor);
-    }
-    if (topBarTextColor) {
-      document.documentElement.style.setProperty('--mat-sys-on-primary', topBarTextColor);
-      document.body.style.setProperty('--mat-sys-on-primary', topBarTextColor);
-    }
-  }
-
-  private updateFavicon(color: string) {
-    const link = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
-    if (!link) return;
-    fetch(link.href)
-      .then(res => res.text())
-      .then(svg => {
-        const colored = svg.replace(/\.cls-1\{[^}]*\}/, `.cls-1{fill:${color};}`);
-        const blob = new Blob([colored], { type: 'image/svg+xml' });
-        link.href = URL.createObjectURL(blob);
-      });
+    this.themeService.applyTheme(theme);
   }
 
   addIcons() {
@@ -88,9 +71,9 @@ export class AppComponent implements OnDestroy {
       ),
     );
     this.iconRegistry.addSvgIcon(
-      'ic_lock_outine_black_48px',
+      'ic_lock_outline_black_48px',
       this.sanitizer.bypassSecurityTrustResourceUrl(
-        'assets/svg-icons/ic_lock_outine_black_48px.svg',
+        'assets/svg-icons/ic_lock_outline_black_48px.svg',
       ),
     );
     this.iconRegistry.addSvgIcon(

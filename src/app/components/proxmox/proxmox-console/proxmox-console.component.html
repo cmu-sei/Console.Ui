@@ -8,13 +8,15 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
     <mat-icon
       class="center"
       svgIcon="ic_error_outline_black_48px"
-      alt="Error"
+      aria-hidden="false"
+      aria-label="Error"
     ></mat-icon>
   } @else if (consoleState.value?.showPower) {
     <mat-icon
       class="center"
       svgIcon="ic_power_settings_new_black_48px"
-      alt="Off"
+      aria-hidden="false"
+      aria-label="Off"
     ></mat-icon>
   } @else {
     <app-novnc

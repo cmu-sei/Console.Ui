@@ -35,19 +35,19 @@ describe('SystemMessageComponent', () => {
     expect(screen.getByRole('heading', { name: 'VM API Error' })).toBeInTheDocument();
     expect(screen.getByText('The VM Console API could not be reached.')).toBeInTheDocument();
 
-    // The close button is the sheet's only button; its missing name is pinned below.
+    // The close button is the sheet's only button.
     await userEvent.setup().click(screen.getByRole('button'));
     expect(dismiss).toHaveBeenCalledOnce();
   });
 
   /**
-   * Verifies: the icon-only close button has no accessible name.
-   * Interacts with: the rendered close button and its mat-icon.
+   * Verifies: the icon-only close button is named "Close" for assistive technology.
+   * Interacts with: the rendered close button's aria-label.
    * Data: default message.
    */
-  it('leaves the close button without an accessible name', async () => {
+  it('gives the close button an accessible name', async () => {
     await renderSystemMessage();
 
-    expect(screen.getByRole('button')).toHaveAccessibleName('');
+    expect(screen.getByRole('button', { name: 'Close' })).toBeInTheDocument();
   });
 });
