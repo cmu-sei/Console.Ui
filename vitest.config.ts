@@ -18,11 +18,20 @@ import { defineConfig } from 'vitest/config';
 // `patches/` would break the image build.
 execFileSync('npx', ['patch-package'], { stdio: 'inherit' });
 
-// `angular.json` owns the test configuration. The mock lifecycle options live
-// here because the builder does not surface them.
+// `angular.json` owns the test configuration. The mock lifecycle options and
+// the timeout live here because the builder does not surface them.
+//
+// `testTimeout` is 15 s instead of Vitest's 5 s: a large Material page renders
+// in 1 to 3 s alone under coverage, and several suites running on one host
+// (parallel agents, a loaded CI runner) pushed such tests past 5 s with no
+// change to the code. A timed-out test keeps running into the next one
+// (`isolate: false`), so a short timeout also produced misleading failures.
+// A test that needs more than a few seconds alone is still too slow; scope its
+// queries (README, "Testing Library with Material in jsdom").
 export default defineConfig({
   test: {
     clearMocks: true,
     restoreMocks: true,
+    testTimeout: 15_000,
   },
 });
