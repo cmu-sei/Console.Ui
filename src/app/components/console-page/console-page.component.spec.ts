@@ -171,6 +171,22 @@ describe('ConsolePageComponent', () => {
     });
 
     /**
+     * Verifies: a user whose only grant is the system-wide ControlVms gets an interactive console and the toggle.
+     * Interacts with: real UserPermissionsService gate (system tier); app-console stub inputs.
+     * Data: system ControlVms alone, no team or view permissions; no readOnly query param.
+     */
+    it('renders interactive with the toggle for a system Vm controller', async () => {
+      const { consoleStub } = await renderConsolePage({
+        permissions: of(
+          permissionResult({ system: [AppSystemPermission.ControlVms] }),
+        ),
+      });
+      expect(consoleStub()?.readOnly).toBe(false);
+      expect(consoleStub()?.allowReadOnlyToggle).toBe(true);
+      expect(consoleStub()?.vmId).toBe('vm-1');
+    });
+
+    /**
      * Verifies: a controller who chose read-only (readOnly=true in the URL) keeps the toggle but starts read-only.
      * Interacts with: real UserPermissionsService gate reading ActivatedRoute.queryParamMap; app-console stub inputs.
      * Data: system ControlVms; ?readOnly=true.
