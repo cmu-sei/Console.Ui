@@ -32,6 +32,7 @@ import {
   tap,
 } from 'rxjs/operators';
 import {
+  AppSystemPermission,
   AppViewPermission,
   VsphereVirtualMachine,
   VmSnapshot,
@@ -124,14 +125,17 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
   canDownloadVmFiles$ = this.userPermissionsService.can(
     null,
     AppViewPermission.DownloadVmFiles,
+    AppSystemPermission.DownloadVmFiles,
   );
   canUploadVmFiles$ = this.userPermissionsService.can(
     null,
     AppViewPermission.UploadVmFiles,
+    AppSystemPermission.UploadVmFiles,
   );
   canRevertSnapshots$ = this.userPermissionsService.can(
     null,
     AppViewPermission.RevertVms,
+    AppSystemPermission.RevertVms,
   );
 
   private refreshNetworks = signal(0); // remove after refactoring to signals everywhere

@@ -66,12 +66,17 @@ export class UserPermissionsService {
     );
   }
 
-  can(teamPermission?: AppTeamPermission, viewPermission?: AppViewPermission) {
+  can(
+    teamPermission?: AppTeamPermission,
+    viewPermission?: AppViewPermission,
+    systemPermission?: AppSystemPermission,
+  ) {
     return this.permissions$.pipe(
       map((x) => {
         return (
           x.teamPermissions.includes(teamPermission) ||
-          x.viewPermissions.includes(viewPermission)
+          x.viewPermissions.includes(viewPermission) ||
+          x.systemPermissions.includes(systemPermission)
         );
       }),
     );
