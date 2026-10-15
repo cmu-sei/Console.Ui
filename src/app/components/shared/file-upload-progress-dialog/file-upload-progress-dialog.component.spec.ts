@@ -1,66 +1,68 @@
-// Copyright 2021 Carnegie Mellon University. All Rights Reserved.
+// Copyright 2026 Carnegie Mellon University. All Rights Reserved.
 // Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
 
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { describe, it, expect } from 'vitest';
 import { MatDialogRef } from '@angular/material/dialog';
-import { NoopAnimationsModule } from '@angular/platform-browser/animations';
-import { Subject } from 'rxjs';
+import { screen } from '@testing-library/angular';
+import userEvent from '@testing-library/user-event';
 import { FileUploadProgressDialogComponent } from './file-upload-progress-dialog.component';
+import { renderComponent } from '../../../test-utils/render-component';
+import { dialogRefStub } from '../../../test-utils/dialog-refs';
+
+// crucible-dialog listens to keydownEvents() for Escape; the stub's keydown
+// subject feeds it. afterClosed() stays silent: nothing here waits on it.
+async function renderProgressDialog() {
+  const { dialogRef, close, keydown } =
+    dialogRefStub<FileUploadProgressDialogComponent>();
+  const rendered = await renderComponent(FileUploadProgressDialogComponent, {
+    providers: [{ provide: MatDialogRef, useValue: dialogRef }],
+  });
+  return { ...rendered, dialogRef, close, keydown };
+}
 
 describe('FileUploadProgressDialogComponent', () => {
-  let fixture: ComponentFixture<FileUploadProgressDialogComponent>;
-  let keydownEvents: Subject<KeyboardEvent>;
-  let dialogRef: jasmine.SpyObj<MatDialogRef<unknown>>;
+  /**
+   * Verifies: the dialog shows a labelled mat-progress-spinner inside the progress content and a single Close action in the dialog actions region that is in the tab order and marked cdkFocusInitial (jsdom does not run the focus trap, so focus itself is not asserted).
+   * Interacts with: the rendered crucible-dialog content and custom actions.
+   * Data: default render.
+   */
+  it('renders centered progress with one keyboard-reachable close action', async () => {
+    await renderProgressDialog();
 
-  beforeEach(async () => {
-    keydownEvents = new Subject<KeyboardEvent>();
-    dialogRef = jasmine.createSpyObj<MatDialogRef<unknown>>(
-      'MatDialogRef',
-      ['close', 'keydownEvents'],
-      { disableClose: false },
-    );
-    dialogRef.keydownEvents.and.returnValue(keydownEvents);
-
-    await TestBed.configureTestingModule({
-      imports: [FileUploadProgressDialogComponent, NoopAnimationsModule],
-      providers: [{ provide: MatDialogRef, useValue: dialogRef }],
-    }).compileComponents();
-
-    fixture = TestBed.createComponent(FileUploadProgressDialogComponent);
-    await fixture.whenStable();
+    const spinner = screen.getByRole('progressbar', { name: 'Uploading file' });
+    expect(spinner.tagName).toBe('MAT-PROGRESS-SPINNER');
+    expect(spinner.closest('.progress-content')).not.toBeNull();
+    const buttons = screen.getAllByRole('button');
+    expect(buttons).toHaveLength(1);
+    expect(buttons[0]).toHaveTextContent('Close');
+    expect(buttons[0].closest('mat-dialog-actions')).not.toBeNull();
+    expect(buttons[0]).toBeEnabled();
+    expect(buttons[0].tabIndex).toBe(0);
+    expect(buttons[0]).not.toHaveAttribute('tabindex', '-1');
+    expect(buttons[0]).toHaveAttribute('cdkFocusInitial');
   });
 
-  it('renders centered progress with one keyboard-reachable close action', () => {
-    expect(
-      fixture.nativeElement.querySelector('.progress-content'),
-    ).toBeTruthy();
-    expect(
-      fixture.nativeElement.querySelector('mat-progress-spinner'),
-    ).toBeTruthy();
-    const actions = fixture.nativeElement.querySelectorAll(
-      'mat-dialog-actions button',
-    );
-    expect(actions.length).toBe(1);
-    expect(actions[0].textContent.trim()).toBe('Close');
-    expect(actions[0].disabled).toBeFalse();
-    expect(actions[0].tabIndex).toBe(0);
-    expect(actions[0].hasAttribute('cdkFocusInitial')).toBeTrue();
+  /**
+   * Verifies: Close dismisses the dialog exactly once, even while the upload is running, with the empty-string result a bare mat-dialog-close attribute binds.
+   * Interacts with: user-event click; MatDialogRef.close spy (via mat-dialog-close).
+   * Data: default render; the template's Close button carries mat-dialog-close with no value.
+   */
+  it('closes from the explicit action while loading', async () => {
+    const { close } = await renderProgressDialog();
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Close' }));
+    expect(close).toHaveBeenCalledOnce();
+    expect(close).toHaveBeenCalledWith('');
   });
 
-  it('closes from the explicit action while loading', () => {
-    const closeButton: HTMLButtonElement = fixture.nativeElement.querySelector(
-      'mat-dialog-actions button',
-    );
-
-    closeButton.click();
-
-    expect(dialogRef.close).toHaveBeenCalledOnceWith(undefined);
-  });
-
-  it('does not dismiss on Escape while loading', () => {
-    keydownEvents.next(new KeyboardEvent('keydown', { key: 'Escape' }));
-
-    expect(dialogRef.disableClose).toBeTrue();
-    expect(dialogRef.close).not.toHaveBeenCalled();
+  /**
+   * Verifies: Escape and backdrop clicks can't dismiss the dialog while loading.
+   * Interacts with: dialogRefStub's keydown subject (keydownEvents()); disableClose; MatDialogRef.close spy.
+   * Data: an Escape keydown.
+   */
+  it('does not dismiss on Escape while loading', async () => {
+    const { dialogRef, close, keydown } = await renderProgressDialog();
+    keydown.next(new KeyboardEvent('keydown', { key: 'Escape' }));
+    expect(dialogRef.disableClose).toBe(true);
+    expect(close).not.toHaveBeenCalled();
   });
 });

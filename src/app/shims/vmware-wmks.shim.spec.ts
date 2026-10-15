@@ -1,8 +1,7 @@
-/**
- * Copyright 2026 Carnegie Mellon University. All Rights Reserved.
- * Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
- */
+// Copyright 2026 Carnegie Mellon University. All Rights Reserved.
+// Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
 
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import {
   patchWmksLockKeys,
   WmksClient,
@@ -75,6 +74,11 @@ describe('patchWmksLockKeys', () => {
     delete (window as unknown as { WMKS?: unknown }).WMKS;
   });
 
+  /**
+   * Verifies: once patched, Caps Lock presses reach the guest as real keystrokes instead of being swallowed.
+   * Interacts with: patchWmksLockKeys over a fake KeyboardManager2; the fake _vncDecoder.onKeyVScan recorder.
+   * Data: SDK version 2.2.0; Caps Lock down then up.
+   */
   it('forwards lock keys to the guest, which SDK 2.2.0 does not', () => {
     expect(patchWmksLockKeys(harness.client)).toBe('applied');
 
@@ -89,6 +93,11 @@ describe('patchWmksLockKeys', () => {
     expect(harness.originalSendCalls).toEqual([]);
   });
 
+  /**
+   * Verifies: the SDK's LED bookkeeping runs on lock-key keydown and not on keyup.
+   * Interacts with: the patched sendVScanKey; the fake _onLedKeyChanged recorder.
+   * Data: Num Lock down then up.
+   */
   it('runs LED bookkeeping on keydown only', () => {
     patchWmksLockKeys(harness.client);
 
@@ -98,6 +107,11 @@ describe('patchWmksLockKeys', () => {
     expect(harness.ledKeyChangedCalls).toEqual([VSCAN_NUMLOCK]);
   });
 
+  /**
+   * Verifies: ordinary keys and modifiers still go to the guest, and modifier state is still tracked.
+   * Interacts with: the patched sendVScanKey; _vncDecoder recorder; _serverModifierStatus.
+   * Data: 'A' down and Left Shift down.
+   */
   it('leaves non-lock keys and modifier bookkeeping intact', () => {
     patchWmksLockKeys(harness.client);
 
@@ -109,10 +123,15 @@ describe('patchWmksLockKeys', () => {
       { vScanCode: VSCAN_LSHIFT, isDown: true },
     ]);
     expect(harness.ledKeyChangedCalls).toEqual([]);
-    expect(harness.manager._serverModifierStatus[VSCAN_LSHIFT]).toBeTrue();
+    expect(harness.manager._serverModifierStatus[VSCAN_LSHIFT]).toBe(true);
     expect(harness.manager._serverModifierStatus[VSCAN_A]).toBeUndefined();
   });
 
+  /**
+   * Verifies: patching an already patched client is a no-op that still reports 'applied'.
+   * Interacts with: patchWmksLockKeys called twice on the same keyboard manager.
+   * Data: one Caps Lock press after the second patch.
+   */
   it('is idempotent, so reconnecting cannot stack wrappers', () => {
     expect(patchWmksLockKeys(harness.client)).toBe('applied');
     const afterFirst = harness.manager.sendVScanKey;
@@ -126,6 +145,11 @@ describe('patchWmksLockKeys', () => {
     expect(harness.ledKeyChangedCalls).toEqual([VSCAN_CAPSLOCK]);
   });
 
+  /**
+   * Verifies: the patched function acts on whichever manager it is called on, not the one it was installed on.
+   * Interacts with: the patched sendVScanKey moved onto a second fake manager.
+   * Data: two harnesses; Caps Lock down via the second.
+   */
   it('preserves the calling context rather than a captured manager', () => {
     patchWmksLockKeys(harness.client);
 
@@ -140,6 +164,11 @@ describe('patchWmksLockKeys', () => {
     expect(harness.vScanCalls).toEqual([]);
   });
 
+  /**
+   * Verifies: a client without the keyboard manager, or an SDK without KB2 constants, yields 'failed' rather than an exception.
+   * Interacts with: patchWmksLockKeys; the global WMKS object.
+   * Data: a bare client; then a WMKS global with no CONST.
+   */
   it('reports failure when the SDK internals are missing instead of throwing', () => {
     const bare = { wmksData: {} } as WmksClient;
     expect(patchWmksLockKeys(bare)).toBe('failed');
@@ -152,11 +181,21 @@ describe('patchWmksLockKeys', () => {
     expect(patchWmksLockKeys(noConsts.client)).toBe('failed');
   });
 
+  /**
+   * Verifies: with no global WMKS at all the patch reports 'failed'.
+   * Interacts with: patchWmksLockKeys; window.WMKS removed.
+   * Data: the default harness.
+   */
   it('reports failure when the SDK is not loaded instead of throwing', () => {
     delete (window as unknown as { WMKS?: unknown }).WMKS;
     expect(patchWmksLockKeys(harness.client)).toBe('failed');
   });
 
+  /**
+   * Verifies: an SDK reporting a version other than 2.2.0 is left alone and reported as 'not-needed'.
+   * Interacts with: patchWmksLockKeys version gate; the original sendVScanKey recorder.
+   * Data: WMKS version '99.0.0' with the full KB2 constants.
+   */
   it('skips the patch on an SDK version which does not need it', () => {
     // same SDK surface as the beforeEach, but reporting a version which isn't in the defect list. CONST is
     // present so a 'not-needed' result can only come from the version gate, not from unresolvable internals.
@@ -179,6 +218,11 @@ describe('patchWmksLockKeys', () => {
     expect(harness.vScanCalls).toEqual([]);
   });
 
+  /**
+   * Verifies: repeated lock-key downs without a keyup are all forwarded, so the key can't latch.
+   * Interacts with: the patched sendVScanKey; _vncDecoder and _onLedKeyChanged recorders.
+   * Data: Num Lock down twice (as ChromeOS sends it).
+   */
   it('forwards repeated lock-key downs, which some platforms send without a matching up', () => {
     patchWmksLockKeys(harness.client);
 

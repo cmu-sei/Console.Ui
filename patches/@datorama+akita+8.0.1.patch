@@ -1,0 +1,869 @@
+diff --git a/node_modules/@datorama/akita/src/__tests__/setup.js b/node_modules/@datorama/akita/src/__tests__/setup.js
+index d2e4ba9..9aad9cb 100644
+--- a/node_modules/@datorama/akita/src/__tests__/setup.js
++++ b/node_modules/@datorama/akita/src/__tests__/setup.js
+@@ -1,8 +1,8 @@
+ import { __decorate, __metadata } from "tslib";
+ import 'jest-localstorage-mock';
+-import { EntityStore } from '../lib/entityStore';
+-import { StoreConfig } from '../lib/storeConfig';
+-import { QueryEntity } from '../lib/queryEntity';
++import { EntityStore } from '../lib/entityStore.js';
++import { StoreConfig } from '../lib/storeConfig.js';
++import { QueryEntity } from '../lib/queryEntity.js';
+ export class Todo {
+     constructor(params) {
+         this.completed = false;
+diff --git a/node_modules/@datorama/akita/src/index.js b/node_modules/@datorama/akita/src/index.js
+index c2dd36d..6be7947 100644
+--- a/node_modules/@datorama/akita/src/index.js
++++ b/node_modules/@datorama/akita/src/index.js
+@@ -1,2 +1,2 @@
+-export * from './lib/index';
++export * from './lib/index.js';
+ //# sourceMappingURL=index.js.map
+\ No newline at end of file
+diff --git a/node_modules/@datorama/akita/src/lib/activeState.js b/node_modules/@datorama/akita/src/lib/activeState.js
+index 24e8ca6..dc0e6be 100644
+--- a/node_modules/@datorama/akita/src/lib/activeState.js
++++ b/node_modules/@datorama/akita/src/lib/activeState.js
+@@ -1,5 +1,5 @@
+-import { hasEntity } from './hasEntity';
+-import { isArray } from './isArray';
++import { hasEntity } from './hasEntity.js';
++import { isArray } from './isArray.js';
+ // @internal
+ export function hasActiveState(state) {
+     return state.hasOwnProperty('active');
+diff --git a/node_modules/@datorama/akita/src/lib/addEntities.js b/node_modules/@datorama/akita/src/lib/addEntities.js
+index 0c8b365..9e4a21c 100644
+--- a/node_modules/@datorama/akita/src/lib/addEntities.js
++++ b/node_modules/@datorama/akita/src/lib/addEntities.js
+@@ -1,4 +1,4 @@
+-import { hasEntity } from './hasEntity';
++import { hasEntity } from './hasEntity.js';
+ // @internal
+ export function addEntities({ state, entities, idKey, options = {}, preAddEntity }) {
+     let newEntities = {};
+diff --git a/node_modules/@datorama/akita/src/lib/arrayAdd.js b/node_modules/@datorama/akita/src/lib/arrayAdd.js
+index ed02004..8d032f7 100644
+--- a/node_modules/@datorama/akita/src/lib/arrayAdd.js
++++ b/node_modules/@datorama/akita/src/lib/arrayAdd.js
+@@ -1,4 +1,4 @@
+-import { coerceArray } from './coerceArray';
++import { coerceArray } from './coerceArray.js';
+ /**
+  * Add item to a collection
+  *
+diff --git a/node_modules/@datorama/akita/src/lib/arrayFind.js b/node_modules/@datorama/akita/src/lib/arrayFind.js
+index 099f2f9..57498d3 100644
+--- a/node_modules/@datorama/akita/src/lib/arrayFind.js
++++ b/node_modules/@datorama/akita/src/lib/arrayFind.js
+@@ -1,9 +1,9 @@
+ import { distinctUntilChanged, map } from 'rxjs';
+-import { coerceArray } from './coerceArray';
+-import { DEFAULT_ID_KEY } from './defaultIDKey';
+-import { isArray } from './isArray';
+-import { isEmpty } from './isEmpty';
+-import { isFunction } from './isFunction';
++import { coerceArray } from './coerceArray.js';
++import { DEFAULT_ID_KEY } from './defaultIDKey.js';
++import { isArray } from './isArray.js';
++import { isEmpty } from './isEmpty.js';
++import { isFunction } from './isFunction.js';
+ // @internal
+ export function find(collection, idsOrPredicate, idKey) {
+     const result = [];
+diff --git a/node_modules/@datorama/akita/src/lib/arrayRemove.js b/node_modules/@datorama/akita/src/lib/arrayRemove.js
+index a1d9e48..ea8af1c 100644
+--- a/node_modules/@datorama/akita/src/lib/arrayRemove.js
++++ b/node_modules/@datorama/akita/src/lib/arrayRemove.js
+@@ -1,8 +1,8 @@
+-import { DEFAULT_ID_KEY } from './defaultIDKey';
+-import { coerceArray } from './coerceArray';
+-import { isObject } from './isObject';
+-import { isFunction } from './isFunction';
+-import { not } from './not';
++import { DEFAULT_ID_KEY } from './defaultIDKey.js';
++import { coerceArray } from './coerceArray.js';
++import { isObject } from './isObject.js';
++import { isFunction } from './isFunction.js';
++import { not } from './not.js';
+ /**
+  * Remove item from collection
+  *
+diff --git a/node_modules/@datorama/akita/src/lib/arrayUpdate.js b/node_modules/@datorama/akita/src/lib/arrayUpdate.js
+index ee9bb6e..0c14121 100644
+--- a/node_modules/@datorama/akita/src/lib/arrayUpdate.js
++++ b/node_modules/@datorama/akita/src/lib/arrayUpdate.js
+@@ -1,7 +1,7 @@
+-import { coerceArray } from './coerceArray';
+-import { DEFAULT_ID_KEY } from './defaultIDKey';
+-import { isFunction } from './isFunction';
+-import { isObject } from './isObject';
++import { coerceArray } from './coerceArray.js';
++import { DEFAULT_ID_KEY } from './defaultIDKey.js';
++import { isFunction } from './isFunction.js';
++import { isObject } from './isObject.js';
+ /**
+  * Update item in a collection
+  *
+diff --git a/node_modules/@datorama/akita/src/lib/arrayUpsert.js b/node_modules/@datorama/akita/src/lib/arrayUpsert.js
+index 4992682..a8c2c1b 100644
+--- a/node_modules/@datorama/akita/src/lib/arrayUpsert.js
++++ b/node_modules/@datorama/akita/src/lib/arrayUpsert.js
+@@ -1,7 +1,7 @@
+-import { DEFAULT_ID_KEY } from './defaultIDKey';
+-import { arrayAdd } from './arrayAdd';
+-import { arrayUpdate } from './arrayUpdate';
+-import { isObject } from './isObject';
++import { DEFAULT_ID_KEY } from './defaultIDKey.js';
++import { arrayAdd } from './arrayAdd.js';
++import { arrayUpdate } from './arrayUpdate.js';
++import { isObject } from './isObject.js';
+ /**
+  * Upsert item in a collection
+  *
+diff --git a/node_modules/@datorama/akita/src/lib/coerceArray.js b/node_modules/@datorama/akita/src/lib/coerceArray.js
+index b49471e..d61d32d 100644
+--- a/node_modules/@datorama/akita/src/lib/coerceArray.js
++++ b/node_modules/@datorama/akita/src/lib/coerceArray.js
+@@ -1,4 +1,4 @@
+-import { isNil } from './isNil';
++import { isNil } from './isNil.js';
+ // @internal
+ export function coerceArray(value) {
+     if (isNil(value)) {
+diff --git a/node_modules/@datorama/akita/src/lib/compareKeys.js b/node_modules/@datorama/akita/src/lib/compareKeys.js
+index 09b68da..6b29af0 100644
+--- a/node_modules/@datorama/akita/src/lib/compareKeys.js
++++ b/node_modules/@datorama/akita/src/lib/compareKeys.js
+@@ -1,4 +1,4 @@
+-import { isFunction } from './isFunction';
++import { isFunction } from './isFunction.js';
+ export function compareKeys(keysOrFuncs) {
+     return function (prevState, currState) {
+         const isFns = isFunction(keysOrFuncs[0]);
+diff --git a/node_modules/@datorama/akita/src/lib/devtools.js b/node_modules/@datorama/akita/src/lib/devtools.js
+index f5c817d..a8add1f 100644
+--- a/node_modules/@datorama/akita/src/lib/devtools.js
++++ b/node_modules/@datorama/akita/src/lib/devtools.js
+@@ -1,9 +1,9 @@
+-import { setSkipAction } from './actions';
+-import { isDefined } from './isDefined';
+-import { $$addStore, $$deleteStore, $$updateStore } from './dispatchers';
+-import { __stores__ } from './stores';
+-import { capitalize } from './capitalize';
+-import { isNotBrowser } from './root';
++import { setSkipAction } from './actions.js';
++import { isDefined } from './isDefined.js';
++import { $$addStore, $$deleteStore, $$updateStore } from './dispatchers.js';
++import { __stores__ } from './stores.js';
++import { capitalize } from './capitalize.js';
++import { isNotBrowser } from './root.js';
+ let subs = [];
+ export function akitaDevtools(ngZoneOrOptions, options = {}) {
+     if (isNotBrowser)
+diff --git a/node_modules/@datorama/akita/src/lib/entitiesToArray.js b/node_modules/@datorama/akita/src/lib/entitiesToArray.js
+index c9ca478..b5e22ba 100644
+--- a/node_modules/@datorama/akita/src/lib/entitiesToArray.js
++++ b/node_modules/@datorama/akita/src/lib/entitiesToArray.js
+@@ -1,6 +1,6 @@
+-import { isFunction } from './isFunction';
+-import { compareValues } from './sort';
+-import { coerceArray } from './coerceArray';
++import { isFunction } from './isFunction.js';
++import { compareValues } from './sort.js';
++import { coerceArray } from './coerceArray.js';
+ // @internal
+ export function entitiesToArray(state, options) {
+     let arr = [];
+diff --git a/node_modules/@datorama/akita/src/lib/entitiesToMap.js b/node_modules/@datorama/akita/src/lib/entitiesToMap.js
+index ce26c6f..c3d102f 100644
+--- a/node_modules/@datorama/akita/src/lib/entitiesToMap.js
++++ b/node_modules/@datorama/akita/src/lib/entitiesToMap.js
+@@ -1,5 +1,5 @@
+-import { isNil } from './isNil';
+-import { coerceArray } from './coerceArray';
++import { isNil } from './isNil.js';
++import { coerceArray } from './coerceArray.js';
+ // @internal
+ export function entitiesToMap(state, options) {
+     const map = {};
+diff --git a/node_modules/@datorama/akita/src/lib/entityStore.js b/node_modules/@datorama/akita/src/lib/entityStore.js
+index 471d0b4..c8013b8 100644
+--- a/node_modules/@datorama/akita/src/lib/entityStore.js
++++ b/node_modules/@datorama/akita/src/lib/entityStore.js
+@@ -1,25 +1,25 @@
+ var _a, _b;
+ import { __decorate, __metadata } from "tslib";
+ import { Subject } from 'rxjs';
+-import { logAction, setAction } from './actions';
+-import { addEntities } from './addEntities';
+-import { coerceArray } from './coerceArray';
+-import { DEFAULT_ID_KEY } from './defaultIDKey';
+-import { EntityActions } from './entityActions';
+-import { isDev } from './env';
+-import { getActiveEntities } from './getActiveEntities';
+-import { getInitialEntitiesState } from './getInitialEntitiesState';
+-import { hasEntity } from './hasEntity';
+-import { isDefined } from './isDefined';
+-import { isEmpty } from './isEmpty';
+-import { isFunction } from './isFunction';
+-import { isNil } from './isNil';
+-import { isUndefined } from './isUndefined';
+-import { removeEntities } from './removeEntities';
+-import { setEntities } from './setEntities';
+-import { Store } from './store';
+-import { transaction } from './transaction';
+-import { updateEntities } from './updateEntities';
++import { logAction, setAction } from './actions.js';
++import { addEntities } from './addEntities.js';
++import { coerceArray } from './coerceArray.js';
++import { DEFAULT_ID_KEY } from './defaultIDKey.js';
++import { EntityActions } from './entityActions.js';
++import { isDev } from './env.js';
++import { getActiveEntities } from './getActiveEntities.js';
++import { getInitialEntitiesState } from './getInitialEntitiesState.js';
++import { hasEntity } from './hasEntity.js';
++import { isDefined } from './isDefined.js';
++import { isEmpty } from './isEmpty.js';
++import { isFunction } from './isFunction.js';
++import { isNil } from './isNil.js';
++import { isUndefined } from './isUndefined.js';
++import { removeEntities } from './removeEntities.js';
++import { setEntities } from './setEntities.js';
++import { Store } from './store.js';
++import { transaction } from './transaction.js';
++import { updateEntities } from './updateEntities.js';
+ /**
+  *
+  * Store for managing a collection of entities
+diff --git a/node_modules/@datorama/akita/src/lib/env.js b/node_modules/@datorama/akita/src/lib/env.js
+index 6039bc7..6c4fcba 100644
+--- a/node_modules/@datorama/akita/src/lib/env.js
++++ b/node_modules/@datorama/akita/src/lib/env.js
+@@ -1,4 +1,4 @@
+-import { isBrowser } from './root';
++import { isBrowser } from './root.js';
+ export let __DEV__ = true;
+ export function enableAkitaProdMode() {
+     __DEV__ = false;
+diff --git a/node_modules/@datorama/akita/src/lib/fp.js b/node_modules/@datorama/akita/src/lib/fp.js
+index e8d2fa2..9142579 100644
+--- a/node_modules/@datorama/akita/src/lib/fp.js
++++ b/node_modules/@datorama/akita/src/lib/fp.js
+@@ -1,7 +1,7 @@
+-import { Store } from './store';
+-import { Query } from './query';
+-import { EntityStore } from './entityStore';
+-import { QueryEntity } from './queryEntity';
++import { Store } from './store.js';
++import { Query } from './query.js';
++import { EntityStore } from './entityStore.js';
++import { QueryEntity } from './queryEntity.js';
+ export function createStore(initialState, options) {
+     return new Store(initialState, options);
+ }
+diff --git a/node_modules/@datorama/akita/src/lib/getActiveEntities.js b/node_modules/@datorama/akita/src/lib/getActiveEntities.js
+index 511a7cb..8bc76b4 100644
+--- a/node_modules/@datorama/akita/src/lib/getActiveEntities.js
++++ b/node_modules/@datorama/akita/src/lib/getActiveEntities.js
+@@ -1,6 +1,6 @@
+-import { isNil } from './isNil';
+-import { isObject } from './isObject';
+-import { isArray } from './isArray';
++import { isNil } from './isNil.js';
++import { isObject } from './isObject.js';
++import { isArray } from './isArray.js';
+ // @internal
+ export function getActiveEntities(idOrOptions, ids, currentActive) {
+     let result;
+diff --git a/node_modules/@datorama/akita/src/lib/getEntity.js b/node_modules/@datorama/akita/src/lib/getEntity.js
+index a186388..233bbd4 100644
+--- a/node_modules/@datorama/akita/src/lib/getEntity.js
++++ b/node_modules/@datorama/akita/src/lib/getEntity.js
+@@ -1,5 +1,5 @@
+-import { isUndefined } from './isUndefined';
+-import { isString } from './isString';
++import { isUndefined } from './isUndefined.js';
++import { isString } from './isString.js';
+ // @internal
+ export function findEntityByPredicate(predicate, entities) {
+     for (const entityId of Object.keys(entities)) {
+diff --git a/node_modules/@datorama/akita/src/lib/index.js b/node_modules/@datorama/akita/src/lib/index.js
+index ba91a53..bc5adb3 100644
+--- a/node_modules/@datorama/akita/src/lib/index.js
++++ b/node_modules/@datorama/akita/src/lib/index.js
+@@ -1,73 +1,73 @@
+-export { action, currentAction, logAction, resetCustomAction, setAction, setSkipAction } from './actions';
+-export { getExitingActives, hasActiveState, isMultiActiveState, resolveActiveEntity } from './activeState';
+-export { addEntities } from './addEntities';
+-export { arrayAdd } from './arrayAdd';
+-export { arrayFind, distinctUntilArrayItemChanged, find } from './arrayFind';
+-export { arrayRemove } from './arrayRemove';
+-export { arrayToggle, byId, byKey } from './arrayToggle';
+-export { arrayUpdate } from './arrayUpdate';
+-export { arrayUpsert } from './arrayUpsert';
+-export { cacheable } from './cacheable';
+-export { coerceArray } from './coerceArray';
+-export { combineQueries } from './combineQueries';
+-export { akitaConfig, getAkitaConfig } from './config';
+-export { DEFAULT_ID_KEY } from './defaultIDKey';
+-export { akitaDevtools } from './devtools';
+-export * from './dispatchers';
+-export { entitiesToArray } from './entitiesToArray';
+-export { entitiesToMap } from './entitiesToMap';
+-export * from './entityActions';
+-export { EntityService } from './entityService';
+-export { EntityStore, EntityUIStore } from './entityStore';
+-export { enableAkitaProdMode, isDev, __DEV__ } from './env';
+-export { filterNil, filterNilValue } from './filterNil';
+-export { createEntityQuery, createEntityStore, createQuery, createStore } from './fp';
+-export { getActiveEntities } from './getActiveEntities';
+-export { getInitialEntitiesState } from './getInitialEntitiesState';
+-export { getValue } from './getValueByString';
+-export { guid } from './guid';
+-export { hasEntity } from './hasEntity';
+-export { isArray } from './isArray';
+-export { isDefined } from './isDefined';
+-export { isEmpty } from './isEmpty';
+-export { isFunction } from './isFunction';
+-export { isNil } from './isNil';
+-export { isNumber } from './isNumber';
+-export { isObject } from './isObject';
+-export { isPlainObject } from './isPlainObject';
+-export { isString } from './isString';
+-export { isUndefined } from './isUndefined';
+-export { persistState, selectPersistStateInit } from './persistState';
+-export { dirtyCheckDefaultParams, DirtyCheckPlugin, getNestedPath } from './plugins/dirtyCheck/dirtyCheckPlugin';
+-export { EntityDirtyCheckPlugin } from './plugins/dirtyCheck/entityDirtyCheckPlugin';
+-export { EntityCollectionPlugin } from './plugins/entityCollectionPlugin';
+-export { Paginator, PaginatorPlugin } from './plugins/paginator/paginatorPlugin';
+-export { PersistNgFormPlugin } from './plugins/persistForm/persistNgFormPlugin';
+-export { AkitaPlugin } from './plugins/plugin';
+-export { EntityStateHistoryPlugin } from './plugins/stateHistory/entityStateHistoryPlugin';
+-export { StateHistoryPlugin } from './plugins/stateHistory/stateHistoryPlugin';
+-export { Query } from './query';
+-export { QueryConfig, queryConfigKey } from './queryConfig';
+-export { EntityUIQuery, QueryEntity } from './queryEntity';
+-export { removeAllEntities, removeEntities } from './removeEntities';
+-export { resetStores } from './resetStores';
+-export { isNotBrowser } from './root';
+-export { EntityStoreAction, getEntityStore, getEntityStoreByName, getStore, getStoreByName, runEntityStoreAction, runStoreAction, StoreAction } from './runStoreAction';
+-export { isEntityState, setEntities } from './setEntities';
+-export { setLoading } from './setLoading';
+-export { setLoadingAndError } from './setLoadingAndError';
+-export { setValue } from './setValueByString';
+-export { SnapshotManager, snapshotManager } from './snapshotManager';
+-export { compareValues, Order } from './sort';
+-export { sortByOptions } from './sortByOptions';
+-export { Store } from './store';
+-export { configKey, StoreConfig } from './storeConfig';
+-export { __stores__ } from './stores';
+-export { toBoolean } from './toBoolean';
+-export { toEntitiesIds } from './toEntitiesIds';
+-export { toEntitiesObject } from './toEntitiesObject';
+-export { trackIdChanges } from './trackIdChanges';
+-export { applyTransaction, commit, endBatch, isTransactionInProcess, startBatch, transaction, transactionManager, withTransaction } from './transaction';
+-export * from './types';
+-export { updateEntities } from './updateEntities';
++export { action, currentAction, logAction, resetCustomAction, setAction, setSkipAction } from './actions.js';
++export { getExitingActives, hasActiveState, isMultiActiveState, resolveActiveEntity } from './activeState.js';
++export { addEntities } from './addEntities.js';
++export { arrayAdd } from './arrayAdd.js';
++export { arrayFind, distinctUntilArrayItemChanged, find } from './arrayFind.js';
++export { arrayRemove } from './arrayRemove.js';
++export { arrayToggle, byId, byKey } from './arrayToggle.js';
++export { arrayUpdate } from './arrayUpdate.js';
++export { arrayUpsert } from './arrayUpsert.js';
++export { cacheable } from './cacheable.js';
++export { coerceArray } from './coerceArray.js';
++export { combineQueries } from './combineQueries.js';
++export { akitaConfig, getAkitaConfig } from './config.js';
++export { DEFAULT_ID_KEY } from './defaultIDKey.js';
++export { akitaDevtools } from './devtools.js';
++export * from './dispatchers.js';
++export { entitiesToArray } from './entitiesToArray.js';
++export { entitiesToMap } from './entitiesToMap.js';
++export * from './entityActions.js';
++export { EntityService } from './entityService.js';
++export { EntityStore, EntityUIStore } from './entityStore.js';
++export { enableAkitaProdMode, isDev, __DEV__ } from './env.js';
++export { filterNil, filterNilValue } from './filterNil.js';
++export { createEntityQuery, createEntityStore, createQuery, createStore } from './fp.js';
++export { getActiveEntities } from './getActiveEntities.js';
++export { getInitialEntitiesState } from './getInitialEntitiesState.js';
++export { getValue } from './getValueByString.js';
++export { guid } from './guid.js';
++export { hasEntity } from './hasEntity.js';
++export { isArray } from './isArray.js';
++export { isDefined } from './isDefined.js';
++export { isEmpty } from './isEmpty.js';
++export { isFunction } from './isFunction.js';
++export { isNil } from './isNil.js';
++export { isNumber } from './isNumber.js';
++export { isObject } from './isObject.js';
++export { isPlainObject } from './isPlainObject.js';
++export { isString } from './isString.js';
++export { isUndefined } from './isUndefined.js';
++export { persistState, selectPersistStateInit } from './persistState.js';
++export { dirtyCheckDefaultParams, DirtyCheckPlugin, getNestedPath } from './plugins/dirtyCheck/dirtyCheckPlugin.js';
++export { EntityDirtyCheckPlugin } from './plugins/dirtyCheck/entityDirtyCheckPlugin.js';
++export { EntityCollectionPlugin } from './plugins/entityCollectionPlugin.js';
++export { Paginator, PaginatorPlugin } from './plugins/paginator/paginatorPlugin.js';
++export { PersistNgFormPlugin } from './plugins/persistForm/persistNgFormPlugin.js';
++export { AkitaPlugin } from './plugins/plugin.js';
++export { EntityStateHistoryPlugin } from './plugins/stateHistory/entityStateHistoryPlugin.js';
++export { StateHistoryPlugin } from './plugins/stateHistory/stateHistoryPlugin.js';
++export { Query } from './query.js';
++export { QueryConfig, queryConfigKey } from './queryConfig.js';
++export { EntityUIQuery, QueryEntity } from './queryEntity.js';
++export { removeAllEntities, removeEntities } from './removeEntities.js';
++export { resetStores } from './resetStores.js';
++export { isNotBrowser } from './root.js';
++export { EntityStoreAction, getEntityStore, getEntityStoreByName, getStore, getStoreByName, runEntityStoreAction, runStoreAction, StoreAction } from './runStoreAction.js';
++export { isEntityState, setEntities } from './setEntities.js';
++export { setLoading } from './setLoading.js';
++export { setLoadingAndError } from './setLoadingAndError.js';
++export { setValue } from './setValueByString.js';
++export { SnapshotManager, snapshotManager } from './snapshotManager.js';
++export { compareValues, Order } from './sort.js';
++export { sortByOptions } from './sortByOptions.js';
++export { Store } from './store.js';
++export { configKey, StoreConfig } from './storeConfig.js';
++export { __stores__ } from './stores.js';
++export { toBoolean } from './toBoolean.js';
++export { toEntitiesIds } from './toEntitiesIds.js';
++export { toEntitiesObject } from './toEntitiesObject.js';
++export { trackIdChanges } from './trackIdChanges.js';
++export { applyTransaction, commit, endBatch, isTransactionInProcess, startBatch, transaction, transactionManager, withTransaction } from './transaction.js';
++export * from './types.js';
++export { updateEntities } from './updateEntities.js';
+ //# sourceMappingURL=index.js.map
+\ No newline at end of file
+diff --git a/node_modules/@datorama/akita/src/lib/isDefined.js b/node_modules/@datorama/akita/src/lib/isDefined.js
+index 103715c..0f819b1 100644
+--- a/node_modules/@datorama/akita/src/lib/isDefined.js
++++ b/node_modules/@datorama/akita/src/lib/isDefined.js
+@@ -1,4 +1,4 @@
+-import { isNil } from './isNil';
++import { isNil } from './isNil.js';
+ // @internal
+ export function isDefined(val) {
+     return isNil(val) === false;
+diff --git a/node_modules/@datorama/akita/src/lib/isEmpty.js b/node_modules/@datorama/akita/src/lib/isEmpty.js
+index 956b04a..2e46dcb 100644
+--- a/node_modules/@datorama/akita/src/lib/isEmpty.js
++++ b/node_modules/@datorama/akita/src/lib/isEmpty.js
+@@ -1,4 +1,4 @@
+-import { isArray } from './isArray';
++import { isArray } from './isArray.js';
+ // @internal
+ export function isEmpty(arr) {
+     if (isArray(arr)) {
+diff --git a/node_modules/@datorama/akita/src/lib/isNumber.js b/node_modules/@datorama/akita/src/lib/isNumber.js
+index 150fc2e..c33e59d 100644
+--- a/node_modules/@datorama/akita/src/lib/isNumber.js
++++ b/node_modules/@datorama/akita/src/lib/isNumber.js
+@@ -1,4 +1,4 @@
+-import { isArray } from './isArray';
++import { isArray } from './isArray.js';
+ // @internal
+ export function isNumber(value) {
+     return !isArray(value) && value - parseFloat(value) + 1 >= 0;
+diff --git a/node_modules/@datorama/akita/src/lib/isPlainObject.js b/node_modules/@datorama/akita/src/lib/isPlainObject.js
+index c18c05b..05a12e2 100644
+--- a/node_modules/@datorama/akita/src/lib/isPlainObject.js
++++ b/node_modules/@datorama/akita/src/lib/isPlainObject.js
+@@ -1,4 +1,4 @@
+-import { toBoolean } from './toBoolean';
++import { toBoolean } from './toBoolean.js';
+ // @internal
+ export function isPlainObject(value) {
+     return toBoolean(value) && value.constructor.name === 'Object';
+diff --git a/node_modules/@datorama/akita/src/lib/persistState.js b/node_modules/@datorama/akita/src/lib/persistState.js
+index 838a866..e4ab95f 100644
+--- a/node_modules/@datorama/akita/src/lib/persistState.js
++++ b/node_modules/@datorama/akita/src/lib/persistState.js
+@@ -1,13 +1,13 @@
+ import { filter, from, isObservable, map, of, ReplaySubject, skip } from 'rxjs';
+-import { setAction } from './actions';
+-import { $$addStore, $$deleteStore } from './dispatchers';
+-import { getValue } from './getValueByString';
+-import { isFunction } from './isFunction';
+-import { isNil } from './isNil';
+-import { isObject } from './isObject';
+-import { hasLocalStorage, hasSessionStorage, isNotBrowser } from './root';
+-import { setValue } from './setValueByString';
+-import { __stores__ } from './stores';
++import { setAction } from './actions.js';
++import { $$addStore, $$deleteStore } from './dispatchers.js';
++import { getValue } from './getValueByString.js';
++import { isFunction } from './isFunction.js';
++import { isNil } from './isNil.js';
++import { isObject } from './isObject.js';
++import { hasLocalStorage, hasSessionStorage, isNotBrowser } from './root.js';
++import { setValue } from './setValueByString.js';
++import { __stores__ } from './stores.js';
+ let skipStorageUpdate = false;
+ const _persistStateInit = new ReplaySubject(1);
+ export function selectPersistStateInit() {
+diff --git a/node_modules/@datorama/akita/src/lib/plugins/dirtyCheck/dirtyCheckPlugin.js b/node_modules/@datorama/akita/src/lib/plugins/dirtyCheck/dirtyCheckPlugin.js
+index 30f2324..6035109 100644
+--- a/node_modules/@datorama/akita/src/lib/plugins/dirtyCheck/dirtyCheckPlugin.js
++++ b/node_modules/@datorama/akita/src/lib/plugins/dirtyCheck/dirtyCheckPlugin.js
+@@ -1,10 +1,10 @@
+ import { BehaviorSubject, combineLatest, distinctUntilChanged, map, skip, Subject } from 'rxjs';
+-import { logAction } from '../../actions';
+-import { coerceArray } from '../../coerceArray';
+-import { isFunction } from '../../isFunction';
+-import { isUndefined } from '../../isUndefined';
+-import { QueryEntity } from '../../queryEntity';
+-import { AkitaPlugin } from '../plugin';
++import { logAction } from '../../actions.js';
++import { coerceArray } from '../../coerceArray.js';
++import { isFunction } from '../../isFunction.js';
++import { isUndefined } from '../../isUndefined.js';
++import { QueryEntity } from '../../queryEntity.js';
++import { AkitaPlugin } from '../plugin.js';
+ export const dirtyCheckDefaultParams = {
+     comparator: (head, current) => JSON.stringify(head) !== JSON.stringify(current),
+ };
+diff --git a/node_modules/@datorama/akita/src/lib/plugins/dirtyCheck/entityDirtyCheckPlugin.js b/node_modules/@datorama/akita/src/lib/plugins/dirtyCheck/entityDirtyCheckPlugin.js
+index 35127e9..1e5df05 100644
+--- a/node_modules/@datorama/akita/src/lib/plugins/dirtyCheck/entityDirtyCheckPlugin.js
++++ b/node_modules/@datorama/akita/src/lib/plugins/dirtyCheck/entityDirtyCheckPlugin.js
+@@ -1,7 +1,7 @@
+ import { auditTime, map, merge, skip, Subject } from 'rxjs';
+-import { coerceArray } from '../../coerceArray';
+-import { EntityCollectionPlugin } from '../entityCollectionPlugin';
+-import { dirtyCheckDefaultParams, DirtyCheckPlugin, getNestedPath } from './dirtyCheckPlugin';
++import { coerceArray } from '../../coerceArray.js';
++import { EntityCollectionPlugin } from '../entityCollectionPlugin.js';
++import { dirtyCheckDefaultParams, DirtyCheckPlugin, getNestedPath } from './dirtyCheckPlugin.js';
+ export class EntityDirtyCheckPlugin extends EntityCollectionPlugin {
+     constructor(query, params = {}) {
+         super(query, params.entityIds);
+diff --git a/node_modules/@datorama/akita/src/lib/plugins/entityCollectionPlugin.js b/node_modules/@datorama/akita/src/lib/plugins/entityCollectionPlugin.js
+index 50fd884..f3b2caa 100644
+--- a/node_modules/@datorama/akita/src/lib/plugins/entityCollectionPlugin.js
++++ b/node_modules/@datorama/akita/src/lib/plugins/entityCollectionPlugin.js
+@@ -1,7 +1,7 @@
+-import { isUndefined } from '../isUndefined';
+-import { coerceArray } from '../coerceArray';
+-import { toBoolean } from '../toBoolean';
+-import { isFunction } from '../isFunction';
++import { isUndefined } from '../isUndefined.js';
++import { coerceArray } from '../coerceArray.js';
++import { toBoolean } from '../toBoolean.js';
++import { isFunction } from '../isFunction.js';
+ /**
+  * Each plugin that wants to add support for entities should extend this interface.
+  */
+diff --git a/node_modules/@datorama/akita/src/lib/plugins/paginator/paginatorPlugin.js b/node_modules/@datorama/akita/src/lib/plugins/paginator/paginatorPlugin.js
+index 4549f4b..1fbea9a 100644
+--- a/node_modules/@datorama/akita/src/lib/plugins/paginator/paginatorPlugin.js
++++ b/node_modules/@datorama/akita/src/lib/plugins/paginator/paginatorPlugin.js
+@@ -1,10 +1,10 @@
+ import { __decorate, __metadata } from "tslib";
+ import { BehaviorSubject, delay, from, isObservable, map, switchMap, take } from 'rxjs';
+-import { action, logAction } from '../../actions';
+-import { isNil } from '../../isNil';
+-import { isUndefined } from '../../isUndefined';
+-import { applyTransaction } from '../../transaction';
+-import { AkitaPlugin } from '../plugin';
++import { action, logAction } from '../../actions.js';
++import { isNil } from '../../isNil.js';
++import { isUndefined } from '../../isUndefined.js';
++import { applyTransaction } from '../../transaction.js';
++import { AkitaPlugin } from '../plugin.js';
+ const paginatorDefaults = {
+     pagesControls: false,
+     range: false,
+diff --git a/node_modules/@datorama/akita/src/lib/plugins/persistForm/persistNgFormPlugin.js b/node_modules/@datorama/akita/src/lib/plugins/persistForm/persistNgFormPlugin.js
+index 0aa9851..83a809c 100644
+--- a/node_modules/@datorama/akita/src/lib/plugins/persistForm/persistNgFormPlugin.js
++++ b/node_modules/@datorama/akita/src/lib/plugins/persistForm/persistNgFormPlugin.js
+@@ -1,10 +1,10 @@
+ import { debounceTime } from 'rxjs';
+-import { logAction } from '../../actions';
+-import { getValue } from '../../getValueByString';
+-import { isString } from '../../isString';
+-import { setValue } from '../../setValueByString';
+-import { toBoolean } from '../../toBoolean';
+-import { AkitaPlugin } from '../plugin';
++import { logAction } from '../../actions.js';
++import { getValue } from '../../getValueByString.js';
++import { isString } from '../../isString.js';
++import { setValue } from '../../setValueByString.js';
++import { toBoolean } from '../../toBoolean.js';
++import { AkitaPlugin } from '../plugin.js';
+ export class PersistNgFormPlugin extends AkitaPlugin {
+     constructor(query, factoryFnOrPath, params = {}) {
+         super(query);
+diff --git a/node_modules/@datorama/akita/src/lib/plugins/plugin.js b/node_modules/@datorama/akita/src/lib/plugins/plugin.js
+index a31a9f5..652d25a 100644
+--- a/node_modules/@datorama/akita/src/lib/plugins/plugin.js
++++ b/node_modules/@datorama/akita/src/lib/plugins/plugin.js
+@@ -1,8 +1,8 @@
+-import { filterNilValue } from '../filterNil';
+-import { toBoolean } from '../toBoolean';
+-import { getAkitaConfig } from '../config';
+-import { getValue } from '../getValueByString';
+-import { setValue } from '../setValueByString';
++import { filterNilValue } from '../filterNil.js';
++import { toBoolean } from '../toBoolean.js';
++import { getAkitaConfig } from '../config.js';
++import { getValue } from '../getValueByString.js';
++import { setValue } from '../setValueByString.js';
+ export class AkitaPlugin {
+     constructor(query, config) {
+         this.query = query;
+diff --git a/node_modules/@datorama/akita/src/lib/plugins/stateHistory/entityStateHistoryPlugin.js b/node_modules/@datorama/akita/src/lib/plugins/stateHistory/entityStateHistoryPlugin.js
+index 020f577..19f1486 100644
+--- a/node_modules/@datorama/akita/src/lib/plugins/stateHistory/entityStateHistoryPlugin.js
++++ b/node_modules/@datorama/akita/src/lib/plugins/stateHistory/entityStateHistoryPlugin.js
+@@ -1,7 +1,7 @@
+ import { skip } from 'rxjs';
+-import { toBoolean } from '../../toBoolean';
+-import { EntityCollectionPlugin } from '../entityCollectionPlugin';
+-import { StateHistoryPlugin } from './stateHistoryPlugin';
++import { toBoolean } from '../../toBoolean.js';
++import { EntityCollectionPlugin } from '../entityCollectionPlugin.js';
++import { StateHistoryPlugin } from './stateHistoryPlugin.js';
+ export class EntityStateHistoryPlugin extends EntityCollectionPlugin {
+     constructor(query, params = {}) {
+         super(query, params.entityIds);
+diff --git a/node_modules/@datorama/akita/src/lib/plugins/stateHistory/stateHistoryPlugin.js b/node_modules/@datorama/akita/src/lib/plugins/stateHistory/stateHistoryPlugin.js
+index 2a62c44..b0ac7a3 100644
+--- a/node_modules/@datorama/akita/src/lib/plugins/stateHistory/stateHistoryPlugin.js
++++ b/node_modules/@datorama/akita/src/lib/plugins/stateHistory/stateHistoryPlugin.js
+@@ -1,7 +1,7 @@
+ import { BehaviorSubject, distinctUntilChanged, pairwise } from 'rxjs';
+-import { logAction } from '../../actions';
+-import { isFunction } from '../../isFunction';
+-import { AkitaPlugin } from '../plugin';
++import { logAction } from '../../actions.js';
++import { isFunction } from '../../isFunction.js';
++import { AkitaPlugin } from '../plugin.js';
+ export class StateHistoryPlugin extends AkitaPlugin {
+     constructor(query, params = {}, _entityId) {
+         super(query, {
+diff --git a/node_modules/@datorama/akita/src/lib/query.js b/node_modules/@datorama/akita/src/lib/query.js
+index 8724539..ad646a6 100644
+--- a/node_modules/@datorama/akita/src/lib/query.js
++++ b/node_modules/@datorama/akita/src/lib/query.js
+@@ -1,10 +1,10 @@
+ import { distinctUntilChanged, map } from 'rxjs';
+-import { compareKeys } from './compareKeys';
+-import { isDev } from './env';
+-import { isFunction } from './isFunction';
+-import { isString } from './isString';
+-import { queryConfigKey } from './queryConfig';
+-import { __queries__ } from './stores';
++import { compareKeys } from './compareKeys.js';
++import { isDev } from './env.js';
++import { isFunction } from './isFunction.js';
++import { isString } from './isString.js';
++import { queryConfigKey } from './queryConfig.js';
++import { __queries__ } from './stores.js';
+ export class Query {
+     constructor(store) {
+         this.store = store;
+diff --git a/node_modules/@datorama/akita/src/lib/queryEntity.js b/node_modules/@datorama/akita/src/lib/queryEntity.js
+index 5fd5cff..5650486 100644
+--- a/node_modules/@datorama/akita/src/lib/queryEntity.js
++++ b/node_modules/@datorama/akita/src/lib/queryEntity.js
+@@ -1,17 +1,17 @@
+ import { distinctUntilChanged, filter, map, of, switchMap } from 'rxjs';
+-import { distinctUntilArrayItemChanged } from './arrayFind';
+-import { coerceArray } from './coerceArray';
+-import { entitiesToArray } from './entitiesToArray';
+-import { entitiesToMap } from './entitiesToMap';
+-import { findEntityByPredicate, getEntity } from './getEntity';
+-import { isArray } from './isArray';
+-import { isDefined } from './isDefined';
+-import { isFunction } from './isFunction';
+-import { isNil } from './isNil';
+-import { mapSkipUndefined } from './mapSkipUndefined';
+-import { Query } from './query';
+-import { sortByOptions } from './sortByOptions';
+-import { toBoolean } from './toBoolean';
++import { distinctUntilArrayItemChanged } from './arrayFind.js';
++import { coerceArray } from './coerceArray.js';
++import { entitiesToArray } from './entitiesToArray.js';
++import { entitiesToMap } from './entitiesToMap.js';
++import { findEntityByPredicate, getEntity } from './getEntity.js';
++import { isArray } from './isArray.js';
++import { isDefined } from './isDefined.js';
++import { isFunction } from './isFunction.js';
++import { isNil } from './isNil.js';
++import { mapSkipUndefined } from './mapSkipUndefined.js';
++import { Query } from './query.js';
++import { sortByOptions } from './sortByOptions.js';
++import { toBoolean } from './toBoolean.js';
+ /**
+  *
+  *  The Entity Query is similar to the general Query, with additional functionality tailored for EntityStores.
+diff --git a/node_modules/@datorama/akita/src/lib/removeEntities.js b/node_modules/@datorama/akita/src/lib/removeEntities.js
+index 0c33ae9..b371dfe 100644
+--- a/node_modules/@datorama/akita/src/lib/removeEntities.js
++++ b/node_modules/@datorama/akita/src/lib/removeEntities.js
+@@ -1,5 +1,5 @@
+-import { isNil } from './isNil';
+-import { hasActiveState, isMultiActiveState, resolveActiveEntity } from './activeState';
++import { isNil } from './isNil.js';
++import { hasActiveState, isMultiActiveState, resolveActiveEntity } from './activeState.js';
+ // @internal
+ export function removeEntities({ state, ids }) {
+     if (isNil(ids))
+diff --git a/node_modules/@datorama/akita/src/lib/resetStores.js b/node_modules/@datorama/akita/src/lib/resetStores.js
+index e2ce907..e330e76 100644
+--- a/node_modules/@datorama/akita/src/lib/resetStores.js
++++ b/node_modules/@datorama/akita/src/lib/resetStores.js
+@@ -1,5 +1,5 @@
+-import { __stores__ } from './stores';
+-import { applyTransaction } from './transaction';
++import { __stores__ } from './stores.js';
++import { applyTransaction } from './transaction.js';
+ /**
+  * Reset stores back to their initial state
+  *
+diff --git a/node_modules/@datorama/akita/src/lib/runStoreAction.js b/node_modules/@datorama/akita/src/lib/runStoreAction.js
+index 71b171d..e473ef2 100644
+--- a/node_modules/@datorama/akita/src/lib/runStoreAction.js
++++ b/node_modules/@datorama/akita/src/lib/runStoreAction.js
+@@ -1,7 +1,7 @@
+-import { AkitaError } from './errors';
+-import { isNil } from './isNil';
+-import { configKey } from './storeConfig';
+-import { __stores__ } from './stores';
++import { AkitaError } from './errors.js';
++import { isNil } from './isNil.js';
++import { configKey } from './storeConfig.js';
++import { __stores__ } from './stores.js';
+ export var StoreAction;
+ (function (StoreAction) {
+     StoreAction["Update"] = "UPDATE";
+diff --git a/node_modules/@datorama/akita/src/lib/setEntities.js b/node_modules/@datorama/akita/src/lib/setEntities.js
+index 30f561c..1b702e9 100644
+--- a/node_modules/@datorama/akita/src/lib/setEntities.js
++++ b/node_modules/@datorama/akita/src/lib/setEntities.js
+@@ -1,6 +1,6 @@
+-import { toEntitiesObject } from './toEntitiesObject';
+-import { isArray } from './isArray';
+-import { hasActiveState, resolveActiveEntity } from './activeState';
++import { toEntitiesObject } from './toEntitiesObject.js';
++import { isArray } from './isArray.js';
++import { hasActiveState, resolveActiveEntity } from './activeState.js';
+ // @internal
+ export function isEntityState(state) {
+     return state.entities && state.ids;
+diff --git a/node_modules/@datorama/akita/src/lib/setValueByString.js b/node_modules/@datorama/akita/src/lib/setValueByString.js
+index e07c51a..059a4e8 100644
+--- a/node_modules/@datorama/akita/src/lib/setValueByString.js
++++ b/node_modules/@datorama/akita/src/lib/setValueByString.js
+@@ -1,4 +1,4 @@
+-import { isObject } from './isObject';
++import { isObject } from './isObject.js';
+ /**
+  * @internal
+  *
+diff --git a/node_modules/@datorama/akita/src/lib/snapshotManager.js b/node_modules/@datorama/akita/src/lib/snapshotManager.js
+index a881609..a157cee 100644
+--- a/node_modules/@datorama/akita/src/lib/snapshotManager.js
++++ b/node_modules/@datorama/akita/src/lib/snapshotManager.js
+@@ -1,8 +1,8 @@
+ import { filter, take } from 'rxjs';
+-import { $$addStore } from './dispatchers';
+-import { isString } from './isString';
+-import { setSkipStorageUpdate } from './persistState';
+-import { __stores__ } from './stores';
++import { $$addStore } from './dispatchers.js';
++import { isString } from './isString.js';
++import { setSkipStorageUpdate } from './persistState.js';
++import { __stores__ } from './stores.js';
+ export class SnapshotManager {
+     /**
+      * Get a snapshot of the whole state or a specific stores
+diff --git a/node_modules/@datorama/akita/src/lib/store.js b/node_modules/@datorama/akita/src/lib/store.js
+index d29baf7..f660972 100644
+--- a/node_modules/@datorama/akita/src/lib/store.js
++++ b/node_modules/@datorama/akita/src/lib/store.js
+@@ -1,17 +1,17 @@
+ import { BehaviorSubject, distinctUntilChanged, map } from 'rxjs';
+-import { currentAction, resetCustomAction, setAction } from './actions';
+-import { getAkitaConfig, getGlobalProducerFn } from './config';
+-import { deepFreeze } from './deepFreeze';
+-import { dispatchAdded, dispatchDeleted, dispatchUpdate } from './dispatchers';
+-import { isDev, __DEV__ } from './env';
+-import { assertStoreHasName } from './errors';
+-import { isDefined } from './isDefined';
+-import { isFunction } from './isFunction';
+-import { isPlainObject } from './isPlainObject';
+-import { isBrowser } from './root';
+-import { configKey } from './storeConfig';
+-import { __stores__ } from './stores';
+-import { commit, isTransactionInProcess } from './transaction';
++import { currentAction, resetCustomAction, setAction } from './actions.js';
++import { getAkitaConfig, getGlobalProducerFn } from './config.js';
++import { deepFreeze } from './deepFreeze.js';
++import { dispatchAdded, dispatchDeleted, dispatchUpdate } from './dispatchers.js';
++import { isDev, __DEV__ } from './env.js';
++import { assertStoreHasName } from './errors.js';
++import { isDefined } from './isDefined.js';
++import { isFunction } from './isFunction.js';
++import { isPlainObject } from './isPlainObject.js';
++import { isBrowser } from './root.js';
++import { configKey } from './storeConfig.js';
++import { __stores__ } from './stores.js';
++import { commit, isTransactionInProcess } from './transaction.js';
+ /**
+  *
+  * Store for managing any type of data
+diff --git a/node_modules/@datorama/akita/src/lib/stores.js b/node_modules/@datorama/akita/src/lib/stores.js
+index be221ce..85bfbff 100644
+--- a/node_modules/@datorama/akita/src/lib/stores.js
++++ b/node_modules/@datorama/akita/src/lib/stores.js
+@@ -1,4 +1,4 @@
+-import { isBrowser } from './root';
++import { isBrowser } from './root.js';
+ // @internal
+ export const __stores__ = {};
+ // @internal
+diff --git a/node_modules/@datorama/akita/src/lib/toEntitiesIds.js b/node_modules/@datorama/akita/src/lib/toEntitiesIds.js
+index d190734..e773085 100644
+--- a/node_modules/@datorama/akita/src/lib/toEntitiesIds.js
++++ b/node_modules/@datorama/akita/src/lib/toEntitiesIds.js
+@@ -1,4 +1,4 @@
+-import { DEFAULT_ID_KEY } from './defaultIDKey';
++import { DEFAULT_ID_KEY } from './defaultIDKey.js';
+ // @internal
+ export function toEntitiesIds(entities, idKey = DEFAULT_ID_KEY) {
+     const ids = [];
+diff --git a/node_modules/@datorama/akita/src/lib/transaction.js b/node_modules/@datorama/akita/src/lib/transaction.js
+index 929814a..2be95eb 100644
+--- a/node_modules/@datorama/akita/src/lib/transaction.js
++++ b/node_modules/@datorama/akita/src/lib/transaction.js
+@@ -1,5 +1,5 @@
+ import { BehaviorSubject, of, Subject, tap } from 'rxjs';
+-import { logAction } from './actions';
++import { logAction } from './actions.js';
+ // @internal
+ const transactionFinished = new Subject();
+ // @internal
+diff --git a/node_modules/@datorama/akita/src/lib/updateEntities.js b/node_modules/@datorama/akita/src/lib/updateEntities.js
+index 94d3224..03ece6a 100644
+--- a/node_modules/@datorama/akita/src/lib/updateEntities.js
++++ b/node_modules/@datorama/akita/src/lib/updateEntities.js
+@@ -1,6 +1,6 @@
+-import { isFunction } from './isFunction';
+-import { hasEntity } from './hasEntity';
+-import { isPlainObject } from './isPlainObject';
++import { isFunction } from './isFunction.js';
++import { hasEntity } from './hasEntity.js';
++import { isPlainObject } from './isPlainObject.js';
+ // @internal
+ export function updateEntities({ state, ids, idKey, newStateOrFn, preUpdateEntity, producerFn, onEntityIdChanges }) {
+     const updatedEntities = {};
