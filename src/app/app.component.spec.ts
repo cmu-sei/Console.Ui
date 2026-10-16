@@ -3,6 +3,11 @@
 
 import { describe, it, expect, vi, beforeEach, onTestFinished } from 'vitest';
 import { Component } from '@angular/core';
+import { provideHttpClient } from '@angular/common/http';
+import {
+  HttpTestingController,
+  provideHttpClientTesting,
+} from '@angular/common/http/testing';
 import { Router } from '@angular/router';
 import { MatIconRegistry } from '@angular/material/icon';
 import { BehaviorSubject, Subject } from 'rxjs';
@@ -12,17 +17,35 @@ import {
   ComnAuthService,
   ComnHeaderBarModule,
   ComnSettingsService,
+  CrucibleThemeService,
   Theme,
+  provideCrucibleTheme,
 } from '@cmusei/crucible-common';
 import { AppComponent } from './app.component';
 import { renderComponent } from './test-utils/render-component';
-import {
-  captureUnhandledRxErrors,
-  flush,
-} from './test-utils/unhandled-rx-errors';
 
 @Component({ selector: 'comn-header-bar', template: '' })
 class HeaderBarStubComponent {}
+
+const THEME_PROPERTIES = [
+  '--crucible-topbar-background',
+  '--crucible-topbar-text',
+  '--mat-sys-primary',
+  '--mat-sys-on-primary',
+];
+
+const COLOR_SETTINGS = {
+  AppTopBarHexColor: '#112233',
+  AppTopBarHexTextColor: '#EEEEEE',
+  AppLightModePrimaryHexColor: '#AB1234',
+  AppLightModePrimaryHexTextColor: '#FFFFFF',
+  AppDarkModePrimaryHexColor: '#CD5678',
+  AppDarkModePrimaryHexTextColor: '#000000',
+};
+
+function bodyStyle(prop: string): string {
+  return document.body.style.getPropertyValue(prop).trim().toUpperCase();
+}
 
 async function renderApp(
   overrides: { theme?: Theme; settings?: Record<string, string> } = {},
@@ -35,6 +58,7 @@ async function renderApp(
   // provides the real MatIconRegistry instead and records what it registers.
   // AppComponent's own template renders no mat-icon, so nothing is fetched.
   const addSvgIcon = vi.spyOn(MatIconRegistry.prototype, 'addSvgIcon');
+  const applyTheme = vi.spyOn(CrucibleThemeService.prototype, 'applyTheme');
   const routerQuery: Pick<RouterQuery, 'selectQueryParams'> = {
     selectQueryParams: (() => themeParam$.asObservable()) as RouterQuery['selectQueryParams'],
   };
@@ -42,6 +66,10 @@ async function renderApp(
   const rendered = await renderComponent(AppComponent, {
     childStubs: [{ replace: ComnHeaderBarModule, with: HeaderBarStubComponent }],
     providers: [
+      // CrucibleFaviconService loads the favicon SVG through HttpBackend.
+      provideHttpClient(),
+      provideHttpClientTesting(),
+      provideCrucibleTheme({ brand: { color: '#3B62A5', text: '#FFFFFF' } }),
       MatIconRegistry,
       {
         provide: ComnAuthQuery,
@@ -52,38 +80,43 @@ async function renderApp(
       {
         provide: ComnSettingsService,
         useValue: {
-          settings: overrides.settings ?? {
-            AppTopBarHexColor: '#3B62A5',
-            AppTopBarHexTextColor: '#FFFFFF',
-          },
+          settings: overrides.settings ?? {},
         } satisfies Pick<ComnSettingsService, 'settings'>,
       },
     ],
   });
-  const router = rendered.fixture.debugElement.injector.get(Router);
+  const injector = rendered.fixture.debugElement.injector;
+  const router = injector.get(Router);
   vi.spyOn(router, 'navigate').mockImplementation(navigate);
+  const http = injector.get(HttpTestingController);
 
   const registered = new Set(addSvgIcon.mock.calls.map(([name]) => name));
 
-  return { ...rendered, theme$, themeParam$, auth, navigate, registered };
+  return { ...rendered, theme$, themeParam$, auth, navigate, registered, applyTheme, http };
 }
 
 describe('AppComponent', () => {
   beforeEach(() => {
     document.body.classList.remove('darkMode');
-    document.documentElement.style.removeProperty('--mat-sys-primary');
+    for (const el of [document.documentElement, document.body]) {
+      for (const prop of THEME_PROPERTIES) {
+        el.style.removeProperty(prop);
+      }
+    }
   });
 
   /**
-   * Verifies: the user's theme toggles the darkMode body class.
-   * Interacts with: ComnAuthQuery.userTheme$; document.body.classList.
+   * Verifies: every emitted user theme is handed to the shared theme service, which toggles the darkMode body class.
+   * Interacts with: ComnAuthQuery.userTheme$; CrucibleThemeService.applyTheme (spied, real implementation); document.body.classList.
    * Data: light, then dark, then light.
    */
-  it('applies the user theme to the page', async () => {
-    const { theme$ } = await renderApp();
+  it('applies the user theme through CrucibleThemeService', async () => {
+    const { theme$, applyTheme } = await renderApp();
+    expect(applyTheme).toHaveBeenLastCalledWith(Theme.LIGHT);
     expect(document.body).not.toHaveClass('darkMode');
 
     theme$.next(Theme.DARK);
+    expect(applyTheme).toHaveBeenLastCalledWith(Theme.DARK);
     expect(document.body).toHaveClass('darkMode');
 
     theme$.next(Theme.LIGHT);
@@ -91,23 +124,68 @@ describe('AppComponent', () => {
   });
 
   /**
-   * Verifies: the top bar colours come from settings, with the Crucible red as fallback.
-   * Interacts with: ComnSettingsService.settings; the --mat-sys-primary custom property.
-   * Data: AppTopBarHexColor '#3B62A5'.
+   * Verifies: in light mode the top bar and the primary colour come from their own settings pairs.
+   * Interacts with: ComnSettingsService.settings; the --crucible-topbar-* and --mat-sys-* custom properties on body.
+   * Data: COLOR_SETTINGS (top bar #112233/#EEEEEE, light primary #AB1234/#FFFFFF).
    */
-  it('sets the primary colour from settings', async () => {
-    await renderApp();
-    expect(document.documentElement.style.getPropertyValue('--mat-sys-primary')).toBe('#3B62A5');
+  it('applies independent top-bar and primary pairs in light mode', async () => {
+    await renderApp({ settings: COLOR_SETTINGS });
+    expect(document.body).not.toHaveClass('darkMode');
+    expect(bodyStyle('--crucible-topbar-background')).toBe('#112233');
+    expect(bodyStyle('--crucible-topbar-text')).toBe('#EEEEEE');
+    expect(bodyStyle('--mat-sys-primary')).toBe('#AB1234');
+    expect(bodyStyle('--mat-sys-on-primary')).toBe('#FFFFFF');
   });
 
   /**
-   * Verifies: without a configured colour the Crucible red is used.
-   * Interacts with: ComnSettingsService.settings; --mat-sys-primary.
-   * Data: empty settings.
+   * Verifies: in dark mode the primary pair switches to the dark settings while the top bar keeps its colours.
+   * Interacts with: ComnSettingsService.settings; the --crucible-topbar-* and --mat-sys-* custom properties on body.
+   * Data: COLOR_SETTINGS (dark primary #CD5678/#000000); initial theme dark.
    */
-  it('falls back to the default primary colour', async () => {
-    await renderApp({ settings: {} });
-    expect(document.documentElement.style.getPropertyValue('--mat-sys-primary')).toBe('#C41230');
+  it('switches primary in dark mode while the top bar stays the same', async () => {
+    await renderApp({ theme: Theme.DARK, settings: COLOR_SETTINGS });
+    expect(document.body).toHaveClass('darkMode');
+    expect(bodyStyle('--crucible-topbar-background')).toBe('#112233');
+    expect(bodyStyle('--crucible-topbar-text')).toBe('#EEEEEE');
+    expect(bodyStyle('--mat-sys-primary')).toBe('#CD5678');
+    expect(bodyStyle('--mat-sys-on-primary')).toBe('#000000');
+  });
+
+  /**
+   * Verifies: without configured colours the top bar and primary fall back to the Player brand colour.
+   * Interacts with: provideCrucibleTheme brand; the --crucible-topbar-* and --mat-sys-* custom properties on html and body.
+   * Data: empty settings; brand #3B62A5/#FFFFFF.
+   */
+  it('falls back to the Player brand colour', async () => {
+    await renderApp();
+    expect(bodyStyle('--crucible-topbar-background')).toBe('#3B62A5');
+    expect(bodyStyle('--crucible-topbar-text')).toBe('#FFFFFF');
+    expect(bodyStyle('--mat-sys-primary')).toBe('#3B62A5');
+    expect(
+      document.documentElement.style.getPropertyValue('--crucible-topbar-background').toUpperCase(),
+    ).toBe('#3B62A5');
+  });
+
+  /**
+   * Verifies: the favicon is recoloured to the top bar colour.
+   * Interacts with: a <link rel="icon"> in the document; CrucibleFaviconService over HttpTestingController.
+   * Data: AppTopBarHexColor '#112233'; a favicon SVG with a .cls-1 fill rule.
+   */
+  it('recolours the favicon to the top bar colour', async () => {
+    const link = document.createElement('link');
+    link.rel = 'icon';
+    link.href = 'https://console.test/favicon.svg';
+    document.head.appendChild(link);
+    onTestFinished(() => link.remove());
+
+    const { http } = await renderApp({ settings: COLOR_SETTINGS });
+    http
+      .expectOne('https://console.test/favicon.svg')
+      .flush('<svg><style>.cls-1{fill:#000;}</style></svg>');
+
+    expect(link.href.startsWith('data:image/svg+xml,')).toBe(true);
+    expect(decodeURIComponent(link.href)).toContain('.cls-1{fill:#112233;}');
+    http.verify();
   });
 
   /**
@@ -153,11 +231,11 @@ describe('AppComponent', () => {
   });
 
   /**
-   * Verifies: the console's SVG icons are registered at startup, except the lock icon, which is registered under a misspelled name.
+   * Verifies: every SVG icon the templates request is registered at startup, including the lock icon under the name the wmks template uses.
    * Interacts with: the real MatIconRegistry.addSvgIcon (spied).
    * Data: the icon names the templates request (svgIcon="..." across src/app).
    */
-  it('registers every icon the templates use except the lock icon', async () => {
+  it('registers every icon the templates use', async () => {
     const { registered } = await renderApp();
     const used = [
       'gear',
@@ -165,34 +243,25 @@ describe('AppComponent', () => {
       'ic_clipboard_copy',
       'ic_clipboard_paste',
       'ic_error_outline_black_48px',
+      'ic_lock_outline_black_48px',
       'ic_power_settings_new_black_48px',
       'keyboard',
     ];
     expect([...registered]).toEqual(expect.arrayContaining(used));
-    expect(registered.has('ic_lock_outline_black_48px')).toBe(false);
-    expect(registered.has('ic_lock_outine_black_48px')).toBe(true);
+    expect(registered.has('ic_lock_outine_black_48px')).toBe(false);
   });
 
   /**
-   * Verifies: a favicon that cannot be fetched for recolouring leaves an unhandled rejection (current behavior).
-   * Interacts with: a <link rel="icon"> in the document; global fetch (spied, rejecting); captureUnhandledRxErrors.
-   * Data: AppTopBarHexColor '#3B62A5'; fetch rejects with 'offline'.
-   * Why: the chain is built in the constructor inside the Angular zone, which reports the rejection on NgZone.onError; the ComponentFixture rethrows that from an rxjs subscriber, so it surfaces through rxjs's unhandled-error hook.
+   * Verifies: the lock icon resolves to its SVG asset, so the wmks lock overlay is not blank.
+   * Interacts with: the real MatIconRegistry.getNamedSvgIcon; HttpTestingController.
+   * Data: icon 'ic_lock_outline_black_48px'.
    */
-  it('lets a failed favicon fetch escape unhandled', async () => {
-    const link = document.createElement('link');
-    link.rel = 'icon';
-    link.href = 'https://console.test/favicon.svg';
-    document.head.appendChild(link);
-    onTestFinished(() => link.remove());
-    const offline = new TypeError('offline');
-    vi.spyOn(globalThis, 'fetch').mockRejectedValue(offline);
-    const errors = captureUnhandledRxErrors();
+  it('loads the lock icon from its asset path', async () => {
+    const { fixture, http } = await renderApp();
+    const registry = fixture.debugElement.injector.get(MatIconRegistry);
 
-    await renderApp();
-    await flush();
+    registry.getNamedSvgIcon('ic_lock_outline_black_48px').subscribe();
 
-    expect(errors).toEqual([offline]);
-    expect(link.href).toBe('https://console.test/favicon.svg');
+    http.expectOne('assets/svg-icons/ic_lock_outline_black_48px.svg');
   });
 });

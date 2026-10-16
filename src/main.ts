@@ -28,6 +28,7 @@ import {
   ComnAuthModule,
   ComnSettingsConfig,
   ComnHeaderBarModule,
+  provideCrucibleTheme,
 } from '@cmusei/crucible-common';
 import { BASE_PATH } from './app/generated/vm-api';
 import { ErrorService } from './app/services/error/error.service';
@@ -98,5 +99,6 @@ bootstrapApplication(AppComponent, {
     provideHttpClient(withInterceptorsFromDi()),
     provideAnimations(),
     provideRouter(routes),
+    provideCrucibleTheme({ brand: { color: '#3B62A5', text: '#FFFFFF' } }),
   ],
 }).catch((err) => console.log(err));

@@ -6,8 +6,13 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
 <div class="d-flex align-items-center justify-content-between">
   <div class="w-25 d-flex align-items-center justify-content-between">
     <div class="d-flex align-items-center">
-      <button class="z-3" mat-icon-button [matMenuTriggerFor]="mainMenu">
-        <mat-icon svgIcon="gear" alt="Gear"></mat-icon>
+      <button
+        class="z-3"
+        mat-icon-button
+        aria-label="Console options"
+        [matMenuTriggerFor]="mainMenu"
+      >
+        <mat-icon svgIcon="gear"></mat-icon>
       </button>
       <span class="ms-1"
         >{{ vm?.name }}{{ readOnly ? ' (Read Only)' : '' }}</span
@@ -56,7 +61,6 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
               mat-menu-item
               [matMenuTriggerFor]="resolutionMenu"
               matTooltipPosition="after"
-              aria-label="warning"
             >
               <span
                 [matTooltip]="
@@ -136,7 +140,6 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
                   "
                   (click)="shutdownOS()"
                   matTooltipPosition="after"
-                  aria-label="warning"
                 >
                   Shutdown OS
                 </button>
