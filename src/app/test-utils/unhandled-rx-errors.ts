@@ -22,15 +22,19 @@ export function captureUnhandledRxErrors(): unknown[] {
 }
 
 /**
- * Collects promise rejections that nothing handled. Under zone.js they never
- * reach Node's 'unhandledRejection' event: once the microtask queue drains,
- * zone logs each one as `console.error(reason)`, the reason alone with no
- * prefix. This spies on `console.error` (which opts the test out of the guard
- * in test-setup.ts) and returns a live array of every argument logged.
- * Await `flush()`, then assert on the whole array, so an unrelated error
- * still fails the test: `expect(rejections).toEqual([error])`. Pair it with
- * `rejectInvokes()` (fake-hub-connection.ts) for hub calls; a rejection that
- * comes from a `vi.fn` counts as handled.
+ * Collects promise rejections that nothing handled outside Angular's zone (a
+ * service called from the test body, a hub invoke that rejects there). zone.js
+ * keeps them from Node's 'unhandledRejection' event: once the microtask queue
+ * drains, it logs each one as `console.error(reason)`, the reason alone with
+ * no prefix. A rejection inside Angular's zone (a lifecycle hook, a template
+ * event handler) never reaches this helper: TestBed rethrows it, and Vitest
+ * reports a run-level "Uncaught Exception" while the test still shows as
+ * passed (see test-setup.ts). This spies on `console.error` (which opts the
+ * test out of the guard in test-setup.ts) and returns a live array of every
+ * argument logged. Await `flush()`, then assert on the whole array, so an
+ * unrelated error still fails the test: `expect(rejections).toEqual([error])`.
+ * Pair it with `rejectInvokes()` (fake-hub-connection.ts) for hub calls; a
+ * rejection that comes from a `vi.fn` counts as handled.
  */
 export function captureUnhandledRejections(): unknown[] {
   const rejections: unknown[] = [];

@@ -105,6 +105,24 @@ describe('ConsoleComponent', () => {
   );
 
   /**
+   * Verifies: when the page denies the read-only toggle (a user who can view but not control the Vm), the vSphere options bar receives allowReadOnlyToggle false.
+   * Interacts with: real VmService (VmsService.getVm stub); @defer blocks; OptionsBarStubComponent inputs.
+   * Data: vSphere Vm; allowReadOnlyToggle false with readOnly true, the pair the page passes for a user without a Control permission.
+   */
+  it('passes allowReadOnlyToggle false to the vSphere options bar when the toggle is denied', async () => {
+    const { child } = await renderConsole({
+      type: VmType.Vsphere,
+      readOnly: true,
+      allowReadOnlyToggle: false,
+    });
+
+    const optionsBarStub = child(OptionsBarStubComponent);
+    expect(optionsBarStub).toBeDefined();
+    expect(optionsBarStub?.allowReadOnlyToggle).toBe(false);
+    expect(optionsBarStub?.readOnly).toBe(true);
+  });
+
+  /**
    * Verifies: a Proxmox Vm gets the noVNC console and the generic options bar, both receiving the page's readOnly value as given.
    * Interacts with: real VmService; @defer blocks; the Proxmox child stubs' inputs.
    * Data: Proxmox Vm; the readOnly value under test.

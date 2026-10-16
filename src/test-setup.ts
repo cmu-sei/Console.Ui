@@ -4,10 +4,15 @@
 import '@testing-library/jest-dom/vitest';
 import { beforeEach, vi } from 'vitest';
 
-// Under zone.js an unhandled promise rejection is reported through
-// `console.error`, not Node's 'unhandledRejection' event, so Vitest would let
-// the test pass. Angular also reports some runtime failures the same way. Every
-// `console.error` during a test therefore fails it, with the messages attached.
+// TestBed rethrows application errors (`rethrowApplicationErrors` defaults to
+// true), so an unhandled rejection or a throw inside a subscribe that runs in
+// Angular's zone (a lifecycle hook, a template event handler) surfaces as a
+// Vitest "Uncaught Exception": it fails the run, while the test itself still
+// shows as passed. This guard covers what that path misses: a direct
+// `console.error` from app code or from Angular's runtime checks, and a promise
+// rejection outside Angular's zone (a service called from the test body), which
+// zone.js logs as `console.error(reason)`. Every `console.error` during a test
+// therefore fails that test, with the messages attached.
 //
 // The check runs from a `beforeEach` teardown, not an `afterEach`. Vitest stops
 // at the first `afterEach` that throws, and the builder registers Angular's
