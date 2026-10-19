@@ -10,10 +10,10 @@ import {
   OnChanges,
   OnDestroy,
   SimpleChanges,
-  ViewChild,
   inject,
   input,
   output,
+  viewChild,
 } from '@angular/core';
 import { BehaviorSubject, Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -49,13 +49,13 @@ export class NovncComponent implements OnChanges, AfterViewInit, OnDestroy {
   private viewInitialized = false;
   private destroyed = false;
 
-  @ViewChild('screen') screen: ElementRef;
+  readonly screen = viewChild<ElementRef>('screen');
 
   ngAfterViewInit() {
     this.viewInitialized = true;
 
     this.backgroundColor = getComputedStyle(
-      this.screen.nativeElement,
+      this.screen().nativeElement,
     ).backgroundColor;
 
     // The parent may render this component with a url and ticket already set, so the first
@@ -71,7 +71,7 @@ export class NovncComponent implements OnChanges, AfterViewInit, OnDestroy {
       .pipe(takeUntil(this.unsubscribe$))
       .subscribe(() => {
         this.backgroundColor = getComputedStyle(
-          this.screen.nativeElement,
+          this.screen().nativeElement,
         ).backgroundColor;
         this.novncService.updateBackground(this.backgroundColor);
       });
