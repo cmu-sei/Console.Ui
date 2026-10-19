@@ -2,7 +2,7 @@
 // Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
 
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { Component, EventEmitter, Output, input } from '@angular/core';
+import { Component, input, output } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { TestbedHarnessEnvironment } from '@angular/cdk/testing/testbed';
 import { MatIconHarness } from '@angular/material/icon/testing';
@@ -24,7 +24,7 @@ class NovncStubComponent {
   readonly url = input<string>(undefined);
   readonly ticket = input<string>(undefined);
   readonly readOnly = input<boolean>(undefined);
-  @Output() reconnect = new EventEmitter<number>();
+  readonly reconnect = output<number>();
 }
 
 const VM: Vm = { id: 'vm-1', name: 'Alpha', type: VmType.Proxmox };

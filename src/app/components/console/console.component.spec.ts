@@ -2,7 +2,7 @@
 // Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
 
 import { describe, it, expect, vi } from 'vitest';
-import { Component, EventEmitter, Output, input } from '@angular/core';
+import { Component, input, output } from '@angular/core';
 import { DeferBlockBehavior } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { of } from 'rxjs';
@@ -46,7 +46,7 @@ class OptionsBar2StubComponent {
 class ProxmoxConsoleStubComponent {
   readonly vm = input<Vm>(undefined);
   readonly readOnly = input<boolean>(undefined);
-  @Output() reconnect = new EventEmitter<number>();
+  readonly reconnect = output<number>();
 }
 
 async function renderConsole(

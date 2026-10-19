@@ -7,14 +7,13 @@ import {
   AfterViewInit,
   Component,
   ElementRef,
-  EventEmitter,
   OnChanges,
   OnDestroy,
-  Output,
   SimpleChanges,
   ViewChild,
   inject,
   input,
+  output,
 } from '@angular/core';
 import { BehaviorSubject, Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -36,7 +35,7 @@ export class NovncComponent implements OnChanges, AfterViewInit, OnDestroy {
   readonly url = input<string>(undefined);
   readonly readOnly = input(false);
 
-  @Output() reconnect = new EventEmitter<number>();
+  readonly reconnect = output<number>();
 
   private isConnectedSubject = new BehaviorSubject(false);
   public isConnected$ = this.isConnectedSubject.asObservable();
