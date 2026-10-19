@@ -11,6 +11,7 @@ import {
   linkedSignal,
   signal,
   inject,
+  input,
 } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -105,7 +106,7 @@ export class OptionsBar2Component {
     return this.vmState();
   }
 
-  @Input() readOnly = false;
+  readonly readOnly = input(false);
 
   theme$ = this.authQuery.userTheme$;
 

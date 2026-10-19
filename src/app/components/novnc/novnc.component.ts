@@ -8,13 +8,13 @@ import {
   Component,
   ElementRef,
   EventEmitter,
-  Input,
   OnChanges,
   OnDestroy,
   Output,
   SimpleChanges,
   ViewChild,
   inject,
+  input,
 } from '@angular/core';
 import { BehaviorSubject, Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -32,9 +32,9 @@ export class NovncComponent implements OnChanges, AfterViewInit, OnDestroy {
   private novncService = inject(NoVNCService);
   private authQuery = inject(ComnAuthQuery);
 
-  @Input() ticket: string;
-  @Input() url: string;
-  @Input() readOnly = false;
+  readonly ticket = input<string>(undefined);
+  readonly url = input<string>(undefined);
+  readonly readOnly = input(false);
 
   @Output() reconnect = new EventEmitter<number>();
 
@@ -61,8 +61,10 @@ export class NovncComponent implements OnChanges, AfterViewInit, OnDestroy {
 
     // The parent may render this component with a url and ticket already set, so the first
     // ngOnChanges runs before the #screen element exists. Connect here instead.
-    if (this.url && this.ticket) {
-      this.startClient(this.url, this.ticket);
+    const url = this.url();
+    const ticket = this.ticket();
+    if (url && ticket) {
+      this.startClient(url, ticket);
     }
 
     // Listen for theme changes and update noVNC background
@@ -87,17 +89,19 @@ export class NovncComponent implements OnChanges, AfterViewInit, OnDestroy {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
+    const url = this.url();
+    const ticket = this.ticket();
     if (
       this.viewInitialized &&
-      this.url &&
-      this.ticket &&
+      url &&
+      ticket &&
       (changes['url'] || changes['ticket'])
     ) {
-      this.startClient(this.url, this.ticket);
+      this.startClient(url, ticket);
     }
 
     if (changes['readOnly']) {
-      this.novncService.setViewOnly(this.readOnly);
+      this.novncService.setViewOnly(this.readOnly());
     }
   }
 
@@ -106,7 +110,7 @@ export class NovncComponent implements OnChanges, AfterViewInit, OnDestroy {
       url,
       ticket,
       'screen',
-      this.readOnly,
+      this.readOnly(),
       this.backgroundColor,
     );
 

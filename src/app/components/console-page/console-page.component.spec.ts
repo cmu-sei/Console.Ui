@@ -2,7 +2,7 @@
 // Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { Component, Input } from '@angular/core';
+import { Component, input } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute } from '@angular/router';
@@ -34,9 +34,9 @@ import { permissionResult } from '../../test-utils/mock-permission-data.service'
 
 @Component({ selector: 'app-console', template: '' })
 class ConsoleStubComponent {
-  @Input() readOnly: boolean;
-  @Input() allowReadOnlyToggle: boolean;
-  @Input() vmId: string;
+  readonly readOnly = input<boolean>(undefined);
+  readonly allowReadOnlyToggle = input<boolean>(undefined);
+  readonly vmId = input<string>(undefined);
 }
 
 type SignalRStub = Pick<
@@ -59,12 +59,16 @@ async function renderConsolePage(
   // The real VmService and UserPermissionsService run; only the API is stubbed.
   const vmsService = {
     getVm: vi.fn(
-      () => overrides.vm ?? of({ id: 'vm-1', name: 'Alpha', type: VmType.Vsphere }),
+      () =>
+        overrides.vm ?? of({ id: 'vm-1', name: 'Alpha', type: VmType.Vsphere }),
     ),
-    getVmPermissions: vi.fn(() => overrides.permissions ?? of(permissionResult())),
+    getVmPermissions: vi.fn(
+      () => overrides.permissions ?? of(permissionResult()),
+    ),
   } satisfies ApiStub<VmsService>;
   const signalr: SignalRStub = {
-    startConnection: overrides.startConnection ?? vi.fn(() => Promise.resolve()),
+    startConnection:
+      overrides.startConnection ?? vi.fn(() => Promise.resolve()),
     joinVm: vi.fn(),
     leaveVm: vi.fn(),
     setActiveVirtualMachine: vi.fn(),
@@ -130,15 +134,18 @@ describe('ConsolePageComponent', () => {
       const { consoleStub } = await renderConsolePage({
         permissions: of(
           permissionResult({
-            system: [AppSystemPermission.ViewVms, AppSystemPermission.ManageViews],
+            system: [
+              AppSystemPermission.ViewVms,
+              AppSystemPermission.ManageViews,
+            ],
             team: [AppTeamPermission.ViewTeamVms, AppTeamPermission.ManageTeam],
             view: [AppViewPermission.ViewViewVms, AppViewPermission.ManageView],
           }),
         ),
       });
-      expect(consoleStub()?.readOnly).toBe(true);
-      expect(consoleStub()?.allowReadOnlyToggle).toBe(false);
-      expect(consoleStub()?.vmId).toBe('vm-1');
+      expect(consoleStub()?.readOnly()).toBe(true);
+      expect(consoleStub()?.allowReadOnlyToggle()).toBe(false);
+      expect(consoleStub()?.vmId()).toBe('vm-1');
     });
 
     /**
@@ -148,11 +155,13 @@ describe('ConsolePageComponent', () => {
      */
     it('renders interactive with the toggle for a view Vm controller', async () => {
       const { consoleStub } = await renderConsolePage({
-        permissions: of(permissionResult({ view: [AppViewPermission.ControlViewVms] })),
+        permissions: of(
+          permissionResult({ view: [AppViewPermission.ControlViewVms] }),
+        ),
       });
-      expect(consoleStub()?.readOnly).toBe(false);
-      expect(consoleStub()?.allowReadOnlyToggle).toBe(true);
-      expect(consoleStub()?.vmId).toBe('vm-1');
+      expect(consoleStub()?.readOnly()).toBe(false);
+      expect(consoleStub()?.allowReadOnlyToggle()).toBe(true);
+      expect(consoleStub()?.vmId()).toBe('vm-1');
     });
 
     /**
@@ -166,8 +175,8 @@ describe('ConsolePageComponent', () => {
           permissionResult({ team: [AppTeamPermission.ControlTeamVms] }),
         ),
       });
-      expect(consoleStub()?.readOnly).toBe(false);
-      expect(consoleStub()?.allowReadOnlyToggle).toBe(true);
+      expect(consoleStub()?.readOnly()).toBe(false);
+      expect(consoleStub()?.allowReadOnlyToggle()).toBe(true);
     });
 
     /**
@@ -181,9 +190,9 @@ describe('ConsolePageComponent', () => {
           permissionResult({ system: [AppSystemPermission.ControlVms] }),
         ),
       });
-      expect(consoleStub()?.readOnly).toBe(false);
-      expect(consoleStub()?.allowReadOnlyToggle).toBe(true);
-      expect(consoleStub()?.vmId).toBe('vm-1');
+      expect(consoleStub()?.readOnly()).toBe(false);
+      expect(consoleStub()?.allowReadOnlyToggle()).toBe(true);
+      expect(consoleStub()?.vmId()).toBe('vm-1');
     });
 
     /**
@@ -198,8 +207,8 @@ describe('ConsolePageComponent', () => {
           permissionResult({ system: [AppSystemPermission.ControlVms] }),
         ),
       });
-      expect(consoleStub()?.readOnly).toBe(true);
-      expect(consoleStub()?.allowReadOnlyToggle).toBe(true);
+      expect(consoleStub()?.readOnly()).toBe(true);
+      expect(consoleStub()?.allowReadOnlyToggle()).toBe(true);
     });
   });
 
@@ -295,7 +304,9 @@ describe('ConsolePageComponent', () => {
       const { fixture } = await renderConsolePage();
       expect(document.title).toBe('Alpha');
 
-      fixture.debugElement.injector.get(VmService).update('vm-1', { name: 'Beta' });
+      fixture.debugElement.injector
+        .get(VmService)
+        .update('vm-1', { name: 'Beta' });
 
       expect(document.title).toBe('Beta');
     });

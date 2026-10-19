@@ -9,6 +9,7 @@ import {
   Input,
   OnDestroy,
   inject,
+  input,
 } from '@angular/core';
 import { BehaviorSubject, Subscription, of, timer } from 'rxjs';
 import { catchError, exhaustMap, map, takeWhile } from 'rxjs/operators';
@@ -43,7 +44,7 @@ export class ProxmoxConsoleComponent implements OnDestroy {
   // connectTimer WmksComponent uses.
   private static readonly pollMilliseconds = 5000;
 
-  @Input() readOnly = false;
+  readonly readOnly = input(false);
 
   @Input() set vm(value: Vm) {
     this._vm = value;

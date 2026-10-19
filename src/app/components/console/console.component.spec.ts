@@ -2,11 +2,16 @@
 // Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
 
 import { describe, it, expect, vi } from 'vitest';
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Output, input } from '@angular/core';
 import { DeferBlockBehavior } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { of } from 'rxjs';
-import { Vm, VmsService, VmType, VsphereVirtualMachine } from '../../generated/vm-api';
+import {
+  Vm,
+  VmsService,
+  VmType,
+  VsphereVirtualMachine,
+} from '../../generated/vm-api';
 import { VmService } from '../../state/vm/vm.service';
 import { VmStore as VsphereStore } from '../../state/vsphere/vsphere.store';
 import { ConsoleComponent } from './console.component';
@@ -19,37 +24,47 @@ import { ApiStub } from '../../test-utils/api-stub';
 
 @Component({ selector: 'app-options-bar', template: '' })
 class OptionsBarStubComponent {
-  @Input() readOnly: boolean;
-  @Input() allowReadOnlyToggle: boolean;
-  @Input() vm: VsphereVirtualMachine;
-  @Input() vmId: string;
+  readonly readOnly = input<boolean>(undefined);
+  readonly allowReadOnlyToggle = input<boolean>(undefined);
+  readonly vm = input<VsphereVirtualMachine>(undefined);
+  readonly vmId = input<string>(undefined);
 }
 
 @Component({ selector: 'app-wmks', template: '' })
 class WmksStubComponent {
-  @Input() readOnly: boolean;
-  @Input() vmId: string;
+  readonly readOnly = input<boolean>(undefined);
+  readonly vmId = input<string>(undefined);
 }
 
 @Component({ selector: 'app-options-bar2', template: '' })
 class OptionsBar2StubComponent {
-  @Input() vm: Vm;
-  @Input() readOnly: boolean;
+  readonly vm = input<Vm>(undefined);
+  readonly readOnly = input<boolean>(undefined);
 }
 
 @Component({ selector: 'app-proxmox-console', template: '' })
 class ProxmoxConsoleStubComponent {
-  @Input() vm: Vm;
-  @Input() readOnly: boolean;
+  readonly vm = input<Vm>(undefined);
+  readonly readOnly = input<boolean>(undefined);
   @Output() reconnect = new EventEmitter<number>();
 }
 
 async function renderConsole(
-  overrides: { type?: VmType; readOnly?: boolean; allowReadOnlyToggle?: boolean } = {},
+  overrides: {
+    type?: VmType;
+    readOnly?: boolean;
+    allowReadOnlyToggle?: boolean;
+  } = {},
 ) {
-  const vm: Vm = { id: 'vm-1', name: 'Alpha', type: overrides.type ?? VmType.Vsphere };
+  const vm: Vm = {
+    id: 'vm-1',
+    name: 'Alpha',
+    type: overrides.type ?? VmType.Vsphere,
+  };
   // The real VmService runs; only the generated API is stubbed.
-  const vmsService = { getVm: vi.fn(() => of(vm)) } satisfies ApiStub<VmsService>;
+  const vmsService = {
+    getVm: vi.fn(() => of(vm)),
+  } satisfies ApiStub<VmsService>;
 
   const rendered = await renderComponent(ConsoleComponent, {
     childStubs: [
@@ -70,7 +85,8 @@ async function renderConsole(
   rendered.fixture.detectChanges();
 
   const child = <T>(type: new (...args: never[]) => T): T | undefined =>
-    rendered.fixture.debugElement.query(By.directive(type))?.componentInstance as T | undefined;
+    rendered.fixture.debugElement.query(By.directive(type))
+      ?.componentInstance as T | undefined;
 
   return { ...rendered, vm, vmsService, child };
 }
@@ -94,11 +110,11 @@ describe('ConsoleComponent', () => {
       });
 
       const bar = child(OptionsBarStubComponent);
-      expect(bar?.readOnly).toBe(readOnly);
-      expect(bar?.allowReadOnlyToggle).toBe(allowReadOnlyToggle);
-      expect(bar?.vmId).toBe('vm-1');
-      expect(child(WmksStubComponent)?.readOnly).toBe(readOnly);
-      expect(child(WmksStubComponent)?.vmId).toBe('vm-1');
+      expect(bar?.readOnly()).toBe(readOnly);
+      expect(bar?.allowReadOnlyToggle()).toBe(allowReadOnlyToggle);
+      expect(bar?.vmId()).toBe('vm-1');
+      expect(child(WmksStubComponent)?.readOnly()).toBe(readOnly);
+      expect(child(WmksStubComponent)?.vmId()).toBe('vm-1');
       expect(child(ProxmoxConsoleStubComponent)).toBeUndefined();
       expect(child(OptionsBar2StubComponent)).toBeUndefined();
     },
@@ -118,8 +134,8 @@ describe('ConsoleComponent', () => {
 
     const optionsBarStub = child(OptionsBarStubComponent);
     expect(optionsBarStub).toBeDefined();
-    expect(optionsBarStub?.allowReadOnlyToggle).toBe(false);
-    expect(optionsBarStub?.readOnly).toBe(true);
+    expect(optionsBarStub?.allowReadOnlyToggle()).toBe(false);
+    expect(optionsBarStub?.readOnly()).toBe(true);
   });
 
   /**
@@ -127,15 +143,21 @@ describe('ConsoleComponent', () => {
    * Interacts with: real VmService; @defer blocks; the Proxmox child stubs' inputs.
    * Data: Proxmox Vm; the readOnly value under test.
    */
-  it.each([true, false])('renders the noVNC console for a Proxmox Vm with readOnly %s', async (readOnly) => {
-    const { child, vm } = await renderConsole({ type: VmType.Proxmox, readOnly });
+  it.each([true, false])(
+    'renders the noVNC console for a Proxmox Vm with readOnly %s',
+    async (readOnly) => {
+      const { child, vm } = await renderConsole({
+        type: VmType.Proxmox,
+        readOnly,
+      });
 
-    expect(child(ProxmoxConsoleStubComponent)?.vm).toEqual(vm);
-    expect(child(ProxmoxConsoleStubComponent)?.readOnly).toBe(readOnly);
-    expect(child(OptionsBar2StubComponent)?.vm).toEqual(vm);
-    expect(child(OptionsBar2StubComponent)?.readOnly).toBe(readOnly);
-    expect(child(WmksStubComponent)).toBeUndefined();
-  });
+      expect(child(ProxmoxConsoleStubComponent)?.vm()).toEqual(vm);
+      expect(child(ProxmoxConsoleStubComponent)?.readOnly()).toBe(readOnly);
+      expect(child(OptionsBar2StubComponent)?.vm()).toEqual(vm);
+      expect(child(OptionsBar2StubComponent)?.readOnly()).toBe(readOnly);
+      expect(child(WmksStubComponent)).toBeUndefined();
+    },
+  );
 
   /**
    * Verifies: a Vm of Unknown type falls back to the vSphere console.
@@ -155,8 +177,13 @@ describe('ConsoleComponent', () => {
    */
   it('feeds the options bar from the vSphere store', async () => {
     const { fixture, child } = await renderConsole();
-    fixture.debugElement.injector.get(VsphereStore).upsert('vm-1', { name: 'Stored' });
+    fixture.debugElement.injector
+      .get(VsphereStore)
+      .upsert('vm-1', { name: 'Stored' });
     fixture.detectChanges();
-    expect(child(OptionsBarStubComponent)?.vm).toEqual({ id: 'vm-1', name: 'Stored' });
+    expect(child(OptionsBarStubComponent)?.vm()).toEqual({
+      id: 'vm-1',
+      name: 'Stored',
+    });
   });
 });

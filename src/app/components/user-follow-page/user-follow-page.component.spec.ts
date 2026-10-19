@@ -2,7 +2,7 @@
 // Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
 
 import { describe, it, expect, vi } from 'vitest';
-import { Component, Input } from '@angular/core';
+import { Component, input } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { screen } from '@testing-library/angular';
 import { RouterQuery } from '@datorama/akita-ng-router-store';
@@ -21,14 +21,17 @@ import {
 
 @Component({ selector: 'app-console', template: '' })
 class ConsoleStubComponent {
-  @Input() readOnly: boolean;
-  @Input() allowReadOnlyToggle: boolean;
-  @Input() vmId: string;
+  readonly readOnly = input<boolean>(undefined);
+  readonly allowReadOnlyToggle = input<boolean>(undefined);
+  readonly vmId = input<string>(undefined);
 }
 
 const PARAMS: Record<string, string> = { userId: 'u1', viewId: 'view-1' };
 
-type HubStub = Pick<SignalRService, 'startConnection' | 'joinUser' | 'leaveUser'>;
+type HubStub = Pick<
+  SignalRService,
+  'startConnection' | 'joinUser' | 'leaveUser'
+>;
 
 async function renderFollowPage(
   vmUser: VmUser = { userId: 'u1', lastVmId: 'vm-last' },
@@ -42,7 +45,8 @@ async function renderFollowPage(
   } satisfies HubStub;
   const routerQuery = {
     getParams: ((key: string) => PARAMS[key]) as RouterQuery['getParams'],
-    getQueryParams: ((key: string) => (key === 'teamId' ? 'team-1' : null)) as RouterQuery['getQueryParams'],
+    getQueryParams: ((key: string) =>
+      key === 'teamId' ? 'team-1' : null) as RouterQuery['getQueryParams'],
   } satisfies Pick<RouterQuery, 'getParams' | 'getQueryParams'>;
 
   const rendered = await renderComponent(UserFollowPageComponent, {
@@ -88,7 +92,9 @@ describe('UserFollowPageComponent', () => {
    */
   it('shows Loading... until the user is known', async () => {
     await renderFollowPage();
-    expect(screen.getByRole('heading', { name: 'Loading...' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: 'Loading...' }),
+    ).toBeInTheDocument();
   });
 
   /**
@@ -102,10 +108,12 @@ describe('UserFollowPageComponent', () => {
     vms.setActive('vm-7');
     fixture.detectChanges();
 
-    expect(screen.getByRole('heading', { name: /Following Alice/ })).toBeInTheDocument();
-    expect(consoleStub()?.vmId).toBe('vm-7');
-    expect(consoleStub()?.readOnly).toBe(true);
-    expect(consoleStub()?.allowReadOnlyToggle).toBe(false);
+    expect(
+      screen.getByRole('heading', { name: /Following Alice/ }),
+    ).toBeInTheDocument();
+    expect(consoleStub()?.vmId()).toBe('vm-7');
+    expect(consoleStub()?.readOnly()).toBe(true);
+    expect(consoleStub()?.allowReadOnlyToggle()).toBe(false);
     expect(document.title).toBe('Alice - Following');
   });
 
@@ -119,8 +127,12 @@ describe('UserFollowPageComponent', () => {
     followAlice();
     fixture.detectChanges();
 
-    expect(await screen.findByRole('heading', { name: 'Following Alice (inactive)' })).toBeInTheDocument();
-    expect(consoleStub()?.vmId).toBe('vm-last');
+    expect(
+      await screen.findByRole('heading', {
+        name: 'Following Alice (inactive)',
+      }),
+    ).toBeInTheDocument();
+    expect(consoleStub()?.vmId()).toBe('vm-last');
   });
 
   /**
@@ -129,12 +141,16 @@ describe('UserFollowPageComponent', () => {
    * Data: Alice with no active Vm and no lastVmId.
    */
   it('says when the user is not viewing a Vm', async () => {
-    const { fixture, followAlice, consoleStub } = await renderFollowPage({ userId: 'u1' });
+    const { fixture, followAlice, consoleStub } = await renderFollowPage({
+      userId: 'u1',
+    });
     followAlice();
     fixture.detectChanges();
 
     expect(
-      screen.getByRole('heading', { name: 'Alice is not currently viewing a virtual machine' }),
+      screen.getByRole('heading', {
+        name: 'Alice is not currently viewing a virtual machine',
+      }),
     ).toBeInTheDocument();
     expect(consoleStub()).toBeUndefined();
   });
@@ -165,9 +181,21 @@ describe('UserFollowPageComponent', () => {
    * Data: the failing call named in the row rejects with 'hub down'.
    */
   it.each<[string, (failure: Error) => Partial<HubStub>, boolean]>([
-    ['startConnection() in ngOnInit', (f) => ({ startConnection: failOnCall(f, 1) }), false],
-    ['joinUser() in ngOnInit', (f) => ({ joinUser: () => Promise.reject(f) }), false],
-    ['startConnection() in leaveUser()', (f) => ({ startConnection: failOnCall(f, 2) }), true],
+    [
+      'startConnection() in ngOnInit',
+      (f) => ({ startConnection: failOnCall(f, 1) }),
+      false,
+    ],
+    [
+      'joinUser() in ngOnInit',
+      (f) => ({ joinUser: () => Promise.reject(f) }),
+      false,
+    ],
+    [
+      'startConnection() in leaveUser()',
+      (f) => ({ startConnection: failOnCall(f, 2) }),
+      true,
+    ],
   ])('lets a failed %s escape unhandled', async (_call, hub, destroy) => {
     const failure = new Error('hub down');
     const rxErrors = captureUnhandledRxErrors();
