@@ -11,6 +11,7 @@ import {
   Pipe,
   PipeTransform,
   signal,
+  inject,
 } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ActivatedRoute } from '@angular/router';
@@ -97,6 +98,19 @@ export class KeysPipe implements PipeTransform {
   ],
 })
 export class OptionsBarComponent implements OnInit, OnDestroy {
+  vsphereService = inject(VsphereService);
+  settingsService = inject(ComnSettingsService);
+  private dialogService = inject(DialogService);
+  private crucibleDialogService = inject(CrucibleDialogService);
+  private notificationService = inject(NotificationService);
+  private route = inject(ActivatedRoute);
+  private snackBar = inject(MatSnackBar);
+  private signalrService = inject(SignalRService);
+  private vmService = inject(VmService);
+  private userPermissionsService = inject(UserPermissionsService);
+  private authService = inject(ComnAuthService);
+  private authQuery = inject(ComnAuthQuery);
+
   @Input() vm: VsphereVirtualMachine;
   @Input() vmId: string;
   @Input() readOnly: boolean;
@@ -157,21 +171,6 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
       return { key: adapterKey, sorted };
     });
   });
-
-  constructor(
-    public vsphereService: VsphereService,
-    public settingsService: ComnSettingsService,
-    private dialogService: DialogService,
-    private crucibleDialogService: CrucibleDialogService,
-    private notificationService: NotificationService,
-    private route: ActivatedRoute,
-    private snackBar: MatSnackBar,
-    private signalrService: SignalRService,
-    private vmService: VmService,
-    private userPermissionsService: UserPermissionsService,
-    private authService: ComnAuthService,
-    private authQuery: ComnAuthQuery,
-  ) {}
 
   theme$ = this.authQuery.userTheme$;
 

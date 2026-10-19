@@ -2,6 +2,7 @@
 // Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
 
 import { describe, it, expect } from 'vitest';
+import { Injector, runInInjectionContext } from '@angular/core';
 import { UserStore } from './user.store';
 import { UserQuery } from './user.query';
 import { UserService } from './user.service';
@@ -9,8 +10,11 @@ import { recordEmissions } from '../../test-utils/record-emissions';
 
 function createState() {
   const store = new UserStore();
-  const query = new UserQuery(store);
-  const service = new UserService(store);
+  const injector = Injector.create({
+    providers: [{ provide: UserStore, useValue: store }],
+  });
+  const query = runInInjectionContext(injector, () => new UserQuery());
+  const service = runInInjectionContext(injector, () => new UserService());
   return { store, query, service };
 }
 

@@ -1,7 +1,7 @@
 // Copyright 2021 Carnegie Mellon University. All Rights Reserved.
 // Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { Observable } from 'rxjs';
 import {
@@ -21,7 +21,7 @@ import { IsoFile, IsoResult } from '../../models/vm/iso-result';
 
 @Injectable()
 export class DialogService {
-  constructor(private dialog: MatDialog) {}
+  private dialog = inject(MatDialog);
 
   public sendText(title: string): Observable<SendTextDialogResult | undefined> {
     const dialogRef = this.dialog.open<

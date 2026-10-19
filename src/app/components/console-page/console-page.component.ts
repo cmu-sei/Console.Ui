@@ -10,12 +10,20 @@ import {
   HostListener,
   OnDestroy,
   signal,
+  inject,
 } from '@angular/core';
 import { Title } from '@angular/platform-browser';
 import { ComnAuthService } from '@cmusei/crucible-common';
 import { RouterQuery } from '@datorama/akita-ng-router-store';
 import { Observable, Subject, of, EMPTY } from 'rxjs';
-import { catchError, map, take, takeUntil, switchMap, tap } from 'rxjs/operators';
+import {
+  catchError,
+  map,
+  take,
+  takeUntil,
+  switchMap,
+  tap,
+} from 'rxjs/operators';
 import { SignalRService } from '../../services/signalr/signalr.service';
 import { VmQuery } from '../../state/vm/vm.query';
 import { VmService } from '../../state/vm/vm.service';
@@ -24,28 +32,26 @@ import { ConsoleComponent } from '../console/console.component';
 import { UserPermissionsService } from '../../services/user-permissions/user-permissions.service';
 
 @Component({
-    selector: 'app-console-page',
-    templateUrl: './console-page.component.html',
-    styleUrls: ['./console-page.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [ConsoleComponent, AsyncPipe]
+  selector: 'app-console-page',
+  templateUrl: './console-page.component.html',
+  styleUrls: ['./console-page.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [ConsoleComponent, AsyncPipe],
 })
 export class ConsolePageComponent implements OnInit, OnDestroy {
+  private routerQuery = inject(RouterQuery);
+  private signalrRService = inject(SignalRService);
+  private vmQuery = inject(VmQuery);
+  private titleService = inject(Title);
+  private vmService = inject(VmService);
+  userPermissionsService = inject(UserPermissionsService);
+
   readOnly$: Observable<boolean>;
   vmId$: Observable<string> = this.routerQuery.selectParams('id');
   vmId: string;
   vmNotFound = signal(false);
 
   unsubscribe$ = new Subject();
-
-  constructor(
-    private routerQuery: RouterQuery,
-    private signalrRService: SignalRService,
-    private vmQuery: VmQuery,
-    private titleService: Title,
-    private vmService: VmService,
-    public userPermissionsService: UserPermissionsService,
-  ) {}
 
   ngOnInit() {
     this.vmId = this.routerQuery.getParams('id');
@@ -55,32 +61,35 @@ export class ConsolePageComponent implements OnInit, OnDestroy {
     this.readOnly$ = this.userPermissionsService.readOnly$;
 
     // Load VM and check if it exists
-    this.vmService.get(this.vmId).pipe(
-      take(1),
-      catchError((error) => {
-        if (error.status === 403 || error.status === 404) {
-          this.vmNotFound.set(true);
-        }
-        return EMPTY;
-      }),
-      switchMap(() => this.userPermissionsService.load(this.vmId)),
-      tap(() => {
-        this.signalrRService.startConnection().then(() => {
-          this.signalrRService.joinVm(this.vmId);
-
-          if (document.hasFocus()) {
-            this.signalrRService.setActiveVirtualMachine(this.vmId);
+    this.vmService
+      .get(this.vmId)
+      .pipe(
+        take(1),
+        catchError((error) => {
+          if (error.status === 403 || error.status === 404) {
+            this.vmNotFound.set(true);
           }
-        });
+          return EMPTY;
+        }),
+        switchMap(() => this.userPermissionsService.load(this.vmId)),
+        tap(() => {
+          this.signalrRService.startConnection().then(() => {
+            this.signalrRService.joinVm(this.vmId);
 
-        this.vmQuery
-          .selectEntityNotNull(this.vmId)
-          .pipe(takeUntil(this.unsubscribe$))
-          .subscribe((vm) => {
-            this.titleService.setTitle(vm.name);
+            if (document.hasFocus()) {
+              this.signalrRService.setActiveVirtualMachine(this.vmId);
+            }
           });
-      })
-    ).subscribe();
+
+          this.vmQuery
+            .selectEntityNotNull(this.vmId)
+            .pipe(takeUntil(this.unsubscribe$))
+            .subscribe((vm) => {
+              this.titleService.setTitle(vm.name);
+            });
+        }),
+      )
+      .subscribe();
   }
 
   ngOnDestroy(): void {

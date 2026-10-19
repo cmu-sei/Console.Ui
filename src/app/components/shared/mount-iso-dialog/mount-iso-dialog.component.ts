@@ -9,6 +9,7 @@ import {
   Input,
   OnDestroy,
   OnInit,
+  inject,
 } from '@angular/core';
 import { MatButton } from '@angular/material/button';
 import { MatDialogRef } from '@angular/material/dialog';
@@ -39,6 +40,10 @@ import { IsoFile, IsoResult } from '../../../models/vm/iso-result';
   ],
 })
 export class MountIsoDialogComponent implements OnInit, OnDestroy {
+  private dialogRef =
+    inject<MatDialogRef<MountIsoDialogComponent, IsoFile>>(MatDialogRef);
+  private changeDetectorRef = inject(ChangeDetectorRef);
+
   public isoResults: IsoResult[] = [];
 
   @Input()
@@ -60,11 +65,6 @@ export class MountIsoDialogComponent implements OnInit, OnDestroy {
   private filterValue = '';
   private searchSubject$ = new Subject<string>();
   private unsubscribe$ = new Subject<void>();
-
-  constructor(
-    private dialogRef: MatDialogRef<MountIsoDialogComponent, IsoFile>,
-    private changeDetectorRef: ChangeDetectorRef,
-  ) {}
 
   ngOnInit() {
     this.searchSubject$

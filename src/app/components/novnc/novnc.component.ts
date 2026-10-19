@@ -14,6 +14,7 @@ import {
   Output,
   SimpleChanges,
   ViewChild,
+  inject,
 } from '@angular/core';
 import { BehaviorSubject, Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -22,12 +23,15 @@ import { AsyncPipe } from '@angular/common';
 import { ComnAuthQuery } from '@cmusei/crucible-common';
 
 @Component({
-    selector: 'app-novnc',
-    templateUrl: './novnc.component.html',
-    styleUrls: ['./novnc.component.scss'],
-    imports: [AsyncPipe]
+  selector: 'app-novnc',
+  templateUrl: './novnc.component.html',
+  styleUrls: ['./novnc.component.scss'],
+  imports: [AsyncPipe],
 })
 export class NovncComponent implements OnChanges, AfterViewInit, OnDestroy {
+  private novncService = inject(NoVNCService);
+  private authQuery = inject(ComnAuthQuery);
+
   @Input() ticket: string;
   @Input() url: string;
   @Input() readOnly = false;
@@ -47,11 +51,6 @@ export class NovncComponent implements OnChanges, AfterViewInit, OnDestroy {
   private destroyed = false;
 
   @ViewChild('screen') screen: ElementRef;
-
-  constructor(
-    private novncService: NoVNCService,
-    private authQuery: ComnAuthQuery,
-  ) {}
 
   ngAfterViewInit() {
     this.viewInitialized = true;

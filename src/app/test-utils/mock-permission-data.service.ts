@@ -8,8 +8,7 @@
 // REAL service over a stubbed endpoint, so the gate logic under test is the
 // production code, not a re-implementation that can drift from it.
 
-import { inject, Provider } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { Provider } from '@angular/core';
 import { vi } from 'vitest';
 import { of } from 'rxjs';
 import {
@@ -57,13 +56,10 @@ export function permissionDataProviders(
     { provide: VmsService, useValue: stubs.vms },
     {
       provide: UserPermissionsService,
-      // inject() resolves the stub above (or a test's own VmsService and
-      // ActivatedRoute overrides) with the real types, so no casts are needed.
+      // The service's inject() calls resolve the stub above (or a test's own
+      // VmsService and ActivatedRoute overrides), so no casts are needed.
       useFactory: () => {
-        const service = new UserPermissionsService(
-          inject(VmsService),
-          inject(ActivatedRoute),
-        );
+        const service = new UserPermissionsService();
         service.load(PERMISSION_TEST_VM_ID).subscribe();
         return service;
       },

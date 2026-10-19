@@ -2,7 +2,7 @@
 // Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
 
 import { A11yModule } from '@angular/cdk/a11y';
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { MatIconButton } from '@angular/material/button';
 import { MatDialogRef } from '@angular/material/dialog';
@@ -40,17 +40,18 @@ export interface SendTextDialogResult {
   ],
 })
 export class SendTextDialogComponent {
+  settingsService = inject(ComnSettingsService);
+  private dialogRef =
+    inject<MatDialogRef<SendTextDialogComponent, SendTextDialogResult>>(
+      MatDialogRef,
+    );
+
   public title: string;
   public readonly form;
 
-  constructor(
-    public settingsService: ComnSettingsService,
-    private dialogRef: MatDialogRef<
-      SendTextDialogComponent,
-      SendTextDialogResult
-    >,
-    formBuilder: FormBuilder,
-  ) {
+  constructor() {
+    const formBuilder = inject(FormBuilder);
+
     this.form = formBuilder.group({
       textToSend: formBuilder.nonNullable.control(''),
       pasteSpeed: formBuilder.control<string | undefined>(undefined),

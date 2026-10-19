@@ -1,7 +1,7 @@
 // Copyright 2021 Carnegie Mellon University. All Rights Reserved.
 // Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
 
-import { Component, Input } from '@angular/core';
+import { Component, Input, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { shareReplay } from 'rxjs/operators';
 import { Vm, VmType, VsphereVirtualMachine } from '../../generated/vm-api';
@@ -26,6 +26,9 @@ import { OptionsBar2Component } from '../options-bar2/options-bar2.component';
   ],
 })
 export class ConsoleComponent {
+  private vsphereQuery = inject(VsphereQuery);
+  private vmService = inject(VmService);
+
   @Input({ required: true }) readOnly;
   @Input({ required: true }) allowReadOnlyToggle;
 
@@ -49,9 +52,4 @@ export class ConsoleComponent {
 
   vsphereVm$: Observable<VsphereVirtualMachine>;
   virtualMachine$: Observable<Vm>;
-
-  constructor(
-    private vsphereQuery: VsphereQuery,
-    private vmService: VmService,
-  ) {}
 }

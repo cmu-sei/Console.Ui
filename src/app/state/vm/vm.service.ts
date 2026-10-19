@@ -3,7 +3,7 @@ Copyright 2021 Carnegie Mellon University. All Rights Reserved.
  Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
 */
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { Observable, throwError } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import {
@@ -28,15 +28,13 @@ export enum PowerAction {
 
 @Injectable({ providedIn: 'root' })
 export class VmService {
-  constructor(
-    private vmStore: VmStore,
-    private vmsService: VmsService,
-    private vmQuery: VmQuery,
-    private proxmoxService: ProxmoxService,
-    private apiProxmoxService: ApiProxmoxService,
-    private apiVsphereService: ApiVsphereService,
-    private router: Router,
-  ) {}
+  private vmStore = inject(VmStore);
+  private vmsService = inject(VmsService);
+  private vmQuery = inject(VmQuery);
+  private proxmoxService = inject(ProxmoxService);
+  private apiProxmoxService = inject(ApiProxmoxService);
+  private apiVsphereService = inject(ApiVsphereService);
+  private router = inject(Router);
 
   get(id: string) {
     return this.vmsService.getVm(id).pipe(

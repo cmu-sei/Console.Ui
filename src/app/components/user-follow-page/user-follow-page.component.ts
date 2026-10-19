@@ -8,6 +8,7 @@ import {
   OnInit,
   ChangeDetectionStrategy,
   OnDestroy,
+  inject,
 } from '@angular/core';
 import { Title } from '@angular/platform-browser';
 import { RouterQuery } from '@datorama/akita-ng-router-store';
@@ -21,13 +22,19 @@ import { ConsoleComponent } from '../console/console.component';
 import { VmUser } from '../../generated/vm-api';
 
 @Component({
-    selector: 'app-user-follow-page',
-    templateUrl: './user-follow-page.component.html',
-    styleUrls: ['./user-follow-page.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [ConsoleComponent, AsyncPipe]
+  selector: 'app-user-follow-page',
+  templateUrl: './user-follow-page.component.html',
+  styleUrls: ['./user-follow-page.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [ConsoleComponent, AsyncPipe],
 })
 export class UserFollowPageComponent implements OnInit, OnDestroy {
+  private routerQuery = inject(RouterQuery);
+  private signalrRService = inject(SignalRService);
+  private vmQuery = inject(VsphereQuery);
+  private userQuery = inject(UserQuery);
+  private titleService = inject(Title);
+
   vmId$: Observable<string>;
   isActive$ = this.vmQuery.selectActiveId().pipe(
     map((x) => x != null),
@@ -39,13 +46,9 @@ export class UserFollowPageComponent implements OnInit, OnDestroy {
 
   unsubscribe$ = new Subject();
 
-  constructor(
-    private routerQuery: RouterQuery,
-    private signalrRService: SignalRService,
-    private vmQuery: VsphereQuery,
-    private userQuery: UserQuery,
-    private titleService: Title,
-  ) {
+  constructor() {
+    const titleService = this.titleService;
+
     titleService.setTitle('Following...');
   }
 

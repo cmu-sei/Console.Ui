@@ -8,6 +8,7 @@ import {
   ChangeDetectionStrategy,
   Input,
   OnDestroy,
+  inject,
 } from '@angular/core';
 import { BehaviorSubject, Subscription, of, timer } from 'rxjs';
 import { catchError, exhaustMap, map, takeWhile } from 'rxjs/operators';
@@ -28,13 +29,15 @@ export interface ProxmoxConsoleState {
 }
 
 @Component({
-    selector: 'app-proxmox-console',
-    templateUrl: './proxmox-console.component.html',
-    styleUrls: ['./proxmox-console.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [NovncComponent, MatIcon, AsyncPipe]
+  selector: 'app-proxmox-console',
+  templateUrl: './proxmox-console.component.html',
+  styleUrls: ['./proxmox-console.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [NovncComponent, MatIcon, AsyncPipe],
 })
 export class ProxmoxConsoleComponent implements OnDestroy {
+  private proxmoxService = inject(ProxmoxService);
+
   // A Vm that is not running has no console, and console.ui is not subscribed to VmUpdated
   // events, so polling is the only way to notice it come back up. Matches the 5 second
   // connectTimer WmksComponent uses.
@@ -52,8 +55,6 @@ export class ProxmoxConsoleComponent implements OnDestroy {
 
   private consoleStateSubject = new BehaviorSubject<ProxmoxConsoleState>(null);
   public consoleState$ = this.consoleStateSubject.asObservable();
-
-  constructor(private proxmoxService: ProxmoxService) {}
 
   ngOnDestroy() {
     this.pollSubscription?.unsubscribe();
