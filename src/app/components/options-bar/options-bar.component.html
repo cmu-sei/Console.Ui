@@ -12,7 +12,7 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
         aria-label="Console options"
         [matMenuTriggerFor]="mainMenu"
       >
-        <mat-icon svgIcon="gear"></mat-icon>
+        <mat-icon svgIcon="gear" />
       </button>
       <span class="ms-1"
         >{{ vm()?.name }}{{ readOnly() ? ' (Read Only)' : '' }}</span
@@ -347,7 +347,7 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
         (click)="copyVmClipboard()"
       >
         Copy
-        <mat-icon svgIcon="ic_clipboard_copy"></mat-icon>
+        <mat-icon svgIcon="ic_clipboard_copy" />
       </button>
       <button
         mat-stroked-button
@@ -355,7 +355,7 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
         (click)="pasteFromClipboard()"
       >
         Paste
-        <mat-icon svgIcon="ic_clipboard_paste"></mat-icon>
+        <mat-icon svgIcon="ic_clipboard_paste" />
       </button>
       <button
         mat-stroked-button
@@ -363,7 +363,7 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
         (click)="cad()"
       >
         Ctrl-Alt-Del
-        <mat-icon svgIcon="keyboard"></mat-icon>
+        <mat-icon svgIcon="keyboard" />
       </button>
     </div>
   }

@@ -10,14 +10,11 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
         when virtualMachine.value.type == vmType.Proxmox;
         prefetch on idle
       ) {
-        <app-options-bar2
-          [vm]="virtualMachine.value"
-          [readOnly]="readOnly()"
-        ></app-options-bar2>
+        <app-options-bar2 [vm]="virtualMachine.value" [readOnly]="readOnly()" />
         <app-proxmox-console
           [vm]="virtualMachine.value"
           [readOnly]="readOnly()"
-        ></app-proxmox-console>
+        />
       }
       @defer (
         when virtualMachine.value.type == vmType.Vsphere || virtualMachine.value.type == vmType.Unknown;
@@ -28,8 +25,8 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
           [allowReadOnlyToggle]="allowReadOnlyToggle()"
           [vm]="vsphereVm$ | async"
           [vmId]="vmId"
-        ></app-options-bar>
-        <app-wmks [readOnly]="readOnly()" [vmId]="vmId"></app-wmks>
+        />
+        <app-wmks [readOnly]="readOnly()" [vmId]="vmId" />
       }
     }
   }
