@@ -29,8 +29,8 @@ export class ConsoleComponent {
   private vsphereQuery = inject(VsphereQuery);
   private vmService = inject(VmService);
 
-  readonly readOnly = input.required();
-  readonly allowReadOnlyToggle = input.required();
+  readonly readOnly = input.required<boolean>();
+  readonly allowReadOnlyToggle = input.required<boolean>();
 
   @Input({ required: true }) set vmId(value: string) {
     this._vmId = value;
