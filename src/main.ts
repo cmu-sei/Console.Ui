@@ -13,7 +13,6 @@ import { environment } from './environments/environment';
 import { AppComponent } from './app/app.component';
 import { AkitaNgRouterStoreModule } from '@datorama/akita-ng-router-store';
 import { AkitaNgDevtools } from '@datorama/akita-ngdevtools';
-import { provideAnimations } from '@angular/platform-browser/animations';
 import { withInterceptorsFromDi, provideHttpClient } from '@angular/common/http';
 import { bootstrapApplication } from '@angular/platform-browser';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
@@ -95,7 +94,6 @@ bootstrapApplication(AppComponent, {
     },
     provideAnimationsAsync(),
     provideHttpClient(withInterceptorsFromDi()),
-    provideAnimations(),
     provideRouter(routes),
     provideCrucibleTheme({ brand: { color: '#3B62A5', text: '#FFFFFF' } }),
   ],
