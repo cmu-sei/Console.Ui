@@ -1121,7 +1121,7 @@ describe('OptionsBarComponent', () => {
       await flush();
 
       // Not a defect: these subscribes have no error callback, so the error
-      // reaches ErrorService (the global ErrorHandler, main.ts:81), which
+      // reaches ErrorService (the global ErrorHandler, app.config.ts), which
       // shows it; no loading flag is left set (CONVENTIONS.md section 3).
       expect(errors).toEqual([failure]);
       expect(bar.vsphere.model.name).toBe('Alpha');
