@@ -27,7 +27,6 @@ import {
   ComnSettingsModule,
   ComnAuthModule,
   ComnSettingsConfig,
-  ComnHeaderBarModule,
   provideCrucibleTheme,
 } from '@cmusei/crucible-common';
 import { BASE_PATH } from './app/generated/vm-api';
@@ -71,7 +70,6 @@ bootstrapApplication(AppComponent, {
     provideZoneChangeDetection(), importProvidersFrom(
       ComnSettingsModule.forRoot(),
       ComnAuthModule.forRoot(),
-      ComnHeaderBarModule,
       environment.production ? [] : AkitaNgDevtools.forRoot(),
       AkitaNgRouterStoreModule,
     ),
