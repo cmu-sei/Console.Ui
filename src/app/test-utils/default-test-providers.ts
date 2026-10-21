@@ -9,6 +9,7 @@ import {
   ComnAuthService,
   ComnSettingsService,
   CrucibleDialogService,
+  CrucibleThemeService,
 } from '@cmusei/crucible-common';
 import { AnyProvider, mergeProviders, unstubbed } from './unstubbed';
 
@@ -123,6 +124,7 @@ export function getDefaultProviders(
       },
     },
     unstubbed(CrucibleDialogService),
+    unstubbed(CrucibleThemeService),
 
     // Dialog tokens
     { provide: MAT_DIALOG_DATA, useValue: {} },

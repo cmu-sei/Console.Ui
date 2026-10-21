@@ -10,6 +10,16 @@ import { config } from 'rxjs';
  * and fails the run; routing them here lets a test pin that the error escapes
  * (the "subscribe() with no error callback" pattern; CONVENTIONS.md says when
  * that is a defect). Await `flush()` before asserting on the returned array.
+ *
+ * It records a rejection inside Angular's zone too: a promise a lifecycle
+ * hook, a template event handler or an operator such as `tap` drops (a hub call
+ * that rejects). zone.js hands that rejection to NgZone.onError, which the
+ * ComponentFixture rethrows from an rxjs subscriber, so rxjs reports it here;
+ * the TestBed's ErrorHandler never sees it, whatever `rethrowApplicationErrors`
+ * says. That is how a test makes that very call reject and pins that the
+ * rejection escapes (the proof `check-repo.js scan` runs for a dropped promise):
+ * `const errors = captureUnhandledRxErrors();`, render with the call rejecting,
+ * `await flush()`, `expect(errors).toEqual([failure])`.
  */
 export function captureUnhandledRxErrors(): unknown[] {
   const errors: unknown[] = [];
@@ -27,9 +37,10 @@ export function captureUnhandledRxErrors(): unknown[] {
  * keeps them from Node's 'unhandledRejection' event: once the microtask queue
  * drains, it logs each one as `console.error(reason)`, the reason alone with
  * no prefix. A rejection inside Angular's zone (a lifecycle hook, a template
- * event handler) never reaches this helper: TestBed rethrows it, and Vitest
- * reports a run-level "Uncaught Exception" while the test still shows as
- * passed (see test-setup.ts). This spies on `console.error` (which opts the
+ * event handler) never reaches this helper: the ComponentFixture rethrows it
+ * through rxjs, so `captureUnhandledRxErrors()` above records it; unrecorded,
+ * Vitest reports it as a run-level "Uncaught Exception" (see test-setup.ts).
+ * This spies on `console.error` (which opts the
  * test out of the guard in test-setup.ts) and returns a live array of every
  * argument logged. Await `flush()`, then assert on the whole array, so an
  * unrelated error still fails the test: `expect(rejections).toEqual([error])`.

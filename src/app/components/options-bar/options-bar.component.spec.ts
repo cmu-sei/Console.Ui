@@ -417,6 +417,20 @@ describe('OptionsBarComponent', () => {
 
   describe('view permission gates', () => {
     /**
+     * Verifies: available networks do not expose Network Cards when the VM denies NIC configuration.
+     * Interacts with: the VM's canAccessNicConfiguration flag; the rendered gear menu.
+     * Data: interactive console, canAccessNicConfiguration false, and the default two available networks.
+     */
+    it('hides Network Cards without canAccessNicConfiguration', async () => {
+      const { fixture } = await renderOptionsBar({
+        readOnly: false,
+        model: model({ canAccessNicConfiguration: false }),
+      });
+
+      expect(await mainMenuItems(fixture)).not.toContain('Network Cards');
+    });
+
+    /**
      * Verifies: Snapshots is withheld without the RevertVms view permission, however many other view permissions the user holds.
      * Interacts with: real UserPermissionsService.can() over a stubbed getVmPermissions; the gear menu.
      * Data: every view permission except RevertVms.
@@ -1171,6 +1185,28 @@ describe('OptionsBarComponent', () => {
       } finally {
         vi.useRealTimers();
       }
+    });
+
+    /**
+     * Verifies: sending dialog text without a console client rejects unhandled and shows no message (current behavior).
+     * Interacts with: the rendered Keyboard > Send Text menu; DialogService.sendText; the vSphere runtime edge; captureUnhandledRxErrors.
+     * Data: text 'hello', timeout '50', and a null WMKS client as after a disconnect.
+     */
+    it('lets Send Text fail unhandled without a console client', async () => {
+      const errors = captureUnhandledRxErrors();
+      const { fixture, dialogs, vsphere, confirm } = await renderOptionsBar();
+      dialogs.sendText.mockReturnValue(of({ textToSend: 'hello', timeout: '50' }));
+      vsphere.wmks = null;
+
+      await clickMenu(fixture, 'Keyboard', 'Send Text');
+      await flush();
+
+      // Current behavior; see agent-docs/ui-test-bugs/console.ui.md.
+      expect(errors).toEqual([expect.any(TypeError)]);
+      expect((errors[0] as TypeError).message).toContain('sendInputString');
+      expect(dialogs.sendText).toHaveBeenCalledOnce();
+      expect(dialogs.sendText).toHaveBeenCalledWith('Enter Text to Send');
+      expect(confirm).not.toHaveBeenCalled();
     });
 
     /**
