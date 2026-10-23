@@ -184,8 +184,7 @@ describe('SignalRService', () => {
       expect(ctx.hub.connections).toHaveLength(1);
       expect(ctx.connection().start).toHaveBeenCalledOnce();
       expect(ctx.connection().invoke).not.toHaveBeenCalled();
-      // The joinGroups() chain and both joinVm() calls reject unhandled; see
-      // 'lets a failed hub promise in %s escape unhandled' below.
+      // The startConnection chain and both joinVm outer chains reject unhandled.
       expect(rejections).toEqual([failure, failure, failure]);
 
       // Only a renewed sign-in stops and restarts the connection.
@@ -223,15 +222,42 @@ describe('SignalRService', () => {
         act(service);
         return () => calls.map(([m]) => m);
       };
+    const failedRejoin: Arm = async (failure) => {
+      const ctx = setup();
+      await follow(ctx);
+      await flush();
+      const calls = rejectInvokes(ctx.connection(), failure, ['JoinUser']);
+      ctx.connection().reconnect();
+      return () => calls.map(([method]) => method);
+    };
+    const failedOuterStart =
+      (act: (service: SignalRService) => void): Arm =>
+      async (failure) => {
+        const ctx = setup({
+          onBuild: (connection) => connection.start.mockRejectedValueOnce(failure),
+        });
+        act(ctx.service);
+        return () => ctx.connection().invoke.mock.calls.map(([method]) => method);
+      };
 
     /**
-     * Verifies: every hub promise the service drops without a .catch turns a hub failure into an unhandled rejection (current behavior).
-     * Interacts with: mockHubConnectionBuilder (start() rejecting via onBuild or after connecting); rejectInvokes; captureUnhandledRejections.
-     * Data: the method in the row; a connection joined to 'vm-1' for the invoke rows; failure 'hub down'.
+     * Verifies: each dropped hub invoke and outer promise chain lets its own failure escape unhandled (current behavior).
+     * Interacts with: mockHubConnectionBuilder (start() rejecting via onBuild or after connecting); real user and vSphere stores; rejectInvokes; captureUnhandledRejections.
+     * Data: the site in the row; 'vm-1' for invoke rows; Alice for a followed-user rejoin; failure 'hub down'; failed initial starts also reject the startConnection joinGroups chain.
      */
-    it.each<[string, string[], Arm]>([
+    it.each<[string, string[], Arm, number?]>([
       ['startConnection()', [], failedStart],
       ['reconnect()', [], failedRestart],
+      ['joinGroups() followed-user rejoin', ['JoinUser'], failedRejoin],
+      ['leaveUser() start', [], failedOuterStart((s) => s.leaveUser('u1', 'view-1')), 2],
+      ['leaveVm() start', [], failedOuterStart((s) => s.leaveVm('vm-1')), 2],
+      [
+        'setActiveVirtualMachine() start',
+        [],
+        failedOuterStart((s) => s.setActiveVirtualMachine('vm-1')),
+        2,
+      ],
+      ['unsetActiveVirtualMachine() start', [], failedOuterStart((s) => s.unsetActiveVirtualMachine()), 2],
       ['leaveUser()', ['LeaveUser'], failedInvoke((s) => s.leaveUser('u1', 'view-1'))],
       ['joinVm()', ['JoinVm'], failedInvoke((s) => s.joinVm('vm-2'))],
       ['leaveVm()', ['LeaveVm'], failedInvoke((s) => s.leaveVm('vm-1'))],
@@ -245,7 +271,7 @@ describe('SignalRService', () => {
         ['UnsetActiveVirtualMachine'],
         failedInvoke((s) => s.unsetActiveVirtualMachine()),
       ],
-    ])('lets a failed hub promise in %s escape unhandled', async (_method, invokes, arm) => {
+    ])('lets a failed hub promise in %s escape unhandled', async (_method, invokes, arm, escapes = 1) => {
       const rejections = captureUnhandledRejections();
       const failure = new Error('hub down');
 
@@ -253,7 +279,7 @@ describe('SignalRService', () => {
       await flush();
 
       expect(invoked()).toEqual(invokes);
-      expect(rejections).toEqual([failure]);
+      expect(rejections).toEqual(escapes === 2 ? [failure, failure] : [failure]);
     });
   });
 
