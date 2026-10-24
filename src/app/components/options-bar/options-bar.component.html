@@ -12,10 +12,10 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
         aria-label="Console options"
         [matMenuTriggerFor]="mainMenu"
       >
-        <mat-icon svgIcon="gear"></mat-icon>
+        <mat-icon svgIcon="gear" />
       </button>
       <span class="ms-1"
-        >{{ vm?.name }}{{ readOnly ? ' (Read Only)' : '' }}</span
+        >{{ vm()?.name }}{{ readOnly() ? ' (Read Only)' : '' }}</span
       >
       <mat-menu #mainMenu="matMenu">
         <button mat-menu-item (click)="fullscreen()">Fullscreen</button>
@@ -24,12 +24,12 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
         }
         <button mat-menu-item (click)="reconnect()">Reconnect</button>
 
-        @if (allowReadOnlyToggle) {
+        @if (allowReadOnlyToggle()) {
           <button mat-menu-item (click)="$event.stopPropagation()">
             <mat-slide-toggle
               labelPosition="before"
               color="primary"
-              [checked]="readOnly"
+              [checked]="readOnly()"
               (click)="$event.stopPropagation()"
               (change)="toggleReadOnly($event)"
             >
@@ -54,7 +54,7 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
           </mat-slide-toggle>
         </button>
 
-        @if (!readOnly) {
+        @if (!readOnly()) {
           <!-- Resolution -->
           @if (!vsphereService.model.isOwner) {
             <button
@@ -270,18 +270,37 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
                     {{ mainItem.key }}
                   </button>
 
-                  <mat-menu #sub_menu="matMenu" (closed)="resetNetworkFilter(mainItem.key)">
-                    <div (click)="$event.stopPropagation()" (keydown)="$event.stopPropagation()" class="network-search-container">
-                      <input [formControl]="getNetworkFilterControl(mainItem.key)"
-                             placeholder="Search networks..."
-                             class="network-search-input" />
+                  <mat-menu
+                    #sub_menu="matMenu"
+                    (closed)="resetNetworkFilter(mainItem.key)"
+                  >
+                    <div
+                      (click)="$event.stopPropagation()"
+                      (keydown)="$event.stopPropagation()"
+                      class="network-search-container"
+                    >
+                      <input
+                        [formControl]="getNetworkFilterControl(mainItem.key)"
+                        placeholder="Search networks..."
+                        class="network-search-input"
+                      />
                     </div>
-                    @for (subItem of filteredNetworks(mainItem.key, mainItem.sorted); track subItem.ref) {
+                    @for (
+                      subItem of filteredNetworks(
+                        mainItem.key,
+                        mainItem.sorted
+                      );
+                      track subItem.ref
+                    ) {
                       <button
                         (click)="changeNic(mainItem.key, subItem.ref)"
                         mat-menu-item
                         [disabled]="subItem.readOnly"
-                        [matTooltip]="subItem.readOnly ? 'Current network — not in your allowed list' : ''"
+                        [matTooltip]="
+                          subItem.readOnly
+                            ? 'Current network — not in your allowed list'
+                            : ''
+                        "
                       >
                         @if (
                           subItem.ref ===
@@ -320,7 +339,7 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
     }
   </div>
 
-  @if (!readOnly) {
+  @if (!readOnly()) {
     <div class="w-50 d-flex justify-content-center gap-3">
       <button
         mat-stroked-button
@@ -328,7 +347,7 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
         (click)="copyVmClipboard()"
       >
         Copy
-        <mat-icon svgIcon="ic_clipboard_copy"></mat-icon>
+        <mat-icon svgIcon="ic_clipboard_copy" />
       </button>
       <button
         mat-stroked-button
@@ -336,7 +355,7 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
         (click)="pasteFromClipboard()"
       >
         Paste
-        <mat-icon svgIcon="ic_clipboard_paste"></mat-icon>
+        <mat-icon svgIcon="ic_clipboard_paste" />
       </button>
       <button
         mat-stroked-button
@@ -344,14 +363,14 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
         (click)="cad()"
       >
         Ctrl-Alt-Del
-        <mat-icon svgIcon="keyboard"></mat-icon>
+        <mat-icon svgIcon="keyboard" />
       </button>
     </div>
   }
 
   <div class="w-25">
     @if (currentVmUsers$ | async; as currentVmUsers) {
-      @if (showConnectedUsers && !readOnly) {
+      @if (showConnectedUsers && !readOnly()) {
         <div [title]="formatConnectedUserToolTip(currentVmUsers)">
           <span class="connected-users">
             {{ formatConnectedUser(currentVmUsers) }}

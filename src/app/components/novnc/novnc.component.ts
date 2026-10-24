@@ -7,13 +7,13 @@ import {
   AfterViewInit,
   Component,
   ElementRef,
-  EventEmitter,
-  Input,
   OnChanges,
   OnDestroy,
-  Output,
   SimpleChanges,
-  ViewChild,
+  inject,
+  input,
+  output,
+  viewChild,
 } from '@angular/core';
 import { BehaviorSubject, Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -22,17 +22,20 @@ import { AsyncPipe } from '@angular/common';
 import { ComnAuthQuery } from '@cmusei/crucible-common';
 
 @Component({
-    selector: 'app-novnc',
-    templateUrl: './novnc.component.html',
-    styleUrls: ['./novnc.component.scss'],
-    imports: [AsyncPipe]
+  selector: 'app-novnc',
+  templateUrl: './novnc.component.html',
+  styleUrls: ['./novnc.component.scss'],
+  imports: [AsyncPipe],
 })
 export class NovncComponent implements OnChanges, AfterViewInit, OnDestroy {
-  @Input() ticket: string;
-  @Input() url: string;
-  @Input() readOnly = false;
+  private novncService = inject(NoVNCService);
+  private authQuery = inject(ComnAuthQuery);
 
-  @Output() reconnect = new EventEmitter<number>();
+  readonly ticket = input<string>(undefined);
+  readonly url = input<string>(undefined);
+  readonly readOnly = input(false);
+
+  readonly reconnect = output<number>();
 
   private isConnectedSubject = new BehaviorSubject(false);
   public isConnected$ = this.isConnectedSubject.asObservable();
@@ -46,24 +49,21 @@ export class NovncComponent implements OnChanges, AfterViewInit, OnDestroy {
   private viewInitialized = false;
   private destroyed = false;
 
-  @ViewChild('screen') screen: ElementRef;
-
-  constructor(
-    private novncService: NoVNCService,
-    private authQuery: ComnAuthQuery,
-  ) {}
+  readonly screen = viewChild<ElementRef>('screen');
 
   ngAfterViewInit() {
     this.viewInitialized = true;
 
     this.backgroundColor = getComputedStyle(
-      this.screen.nativeElement,
+      this.screen().nativeElement,
     ).backgroundColor;
 
     // The parent may render this component with a url and ticket already set, so the first
     // ngOnChanges runs before the #screen element exists. Connect here instead.
-    if (this.url && this.ticket) {
-      this.startClient(this.url, this.ticket);
+    const url = this.url();
+    const ticket = this.ticket();
+    if (url && ticket) {
+      this.startClient(url, ticket);
     }
 
     // Listen for theme changes and update noVNC background
@@ -71,7 +71,7 @@ export class NovncComponent implements OnChanges, AfterViewInit, OnDestroy {
       .pipe(takeUntil(this.unsubscribe$))
       .subscribe(() => {
         this.backgroundColor = getComputedStyle(
-          this.screen.nativeElement,
+          this.screen().nativeElement,
         ).backgroundColor;
         this.novncService.updateBackground(this.backgroundColor);
       });
@@ -88,17 +88,19 @@ export class NovncComponent implements OnChanges, AfterViewInit, OnDestroy {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
+    const url = this.url();
+    const ticket = this.ticket();
     if (
       this.viewInitialized &&
-      this.url &&
-      this.ticket &&
+      url &&
+      ticket &&
       (changes['url'] || changes['ticket'])
     ) {
-      this.startClient(this.url, this.ticket);
+      this.startClient(url, ticket);
     }
 
     if (changes['readOnly']) {
-      this.novncService.setViewOnly(this.readOnly);
+      this.novncService.setViewOnly(this.readOnly());
     }
   }
 
@@ -107,7 +109,7 @@ export class NovncComponent implements OnChanges, AfterViewInit, OnDestroy {
       url,
       ticket,
       'screen',
-      this.readOnly,
+      this.readOnly(),
       this.backgroundColor,
     );
 

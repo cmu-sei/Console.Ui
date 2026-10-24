@@ -4,7 +4,7 @@
  */
 
 import { HttpClient } from '@angular/common/http';
-import { Inject, Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { BehaviorSubject, interval, Observable } from 'rxjs';
 import { filter, map, startWith, take, takeWhile, tap } from 'rxjs/operators';
 import {
@@ -33,6 +33,13 @@ declare var WMKS: any; // needed to check values
 
 @Injectable({ providedIn: 'root' })
 export class VsphereService {
+  private http = inject(HttpClient);
+  private vsphereService = inject(ApiVsphereService);
+  private vmStore = inject(VmStore);
+  settingsService = inject(ComnSettingsService);
+  private vmService = inject(VmService);
+  private userPermissionsService = inject(UserPermissionsService);
+
   public wmks;
   public model = {} as VsphereVirtualMachine;
   public showLoading = true;
@@ -73,15 +80,9 @@ export class VsphereService {
   private pointerEvents;
   private tabIndex;
 
-  constructor(
-    private http: HttpClient,
-    private vsphereService: ApiVsphereService,
-    private vmStore: VmStore,
-    public settingsService: ComnSettingsService,
-    private vmService: VmService,
-    private userPermissionsService: UserPermissionsService,
-    @Inject(BASE_PATH) basePath: string,
-  ) {
+  constructor() {
+    const basePath = inject(BASE_PATH);
+
     this.apiUrl = basePath;
 
     this.userPermissionsService.readOnly$
@@ -422,7 +423,9 @@ export class VsphereService {
   }
 
   public getSnapshots(id: string): Observable<VmSnapshot[]> {
-    return this.vsphereService.getVsphereVirtualMachineSnapshots(id) as Observable<VmSnapshot[]>;
+    return this.vsphereService.getVsphereVirtualMachineSnapshots(
+      id,
+    ) as Observable<VmSnapshot[]>;
   }
 
   public revertToSnapshot(id: string, snapshotId: string) {

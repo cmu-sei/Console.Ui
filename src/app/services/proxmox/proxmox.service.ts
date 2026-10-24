@@ -3,7 +3,7 @@
  * Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
  */
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import {
   ChangeProxmoxVirtualMachineNetwork,
@@ -18,10 +18,8 @@ import { NoVNCService } from '../novnc/novnc.service';
   providedIn: 'root',
 })
 export class ProxmoxService {
-  constructor(
-    private novncService: NoVNCService,
-    private apiProxmoxService: ApiProxmoxService,
-  ) {}
+  private novncService = inject(NoVNCService);
+  private apiProxmoxService = inject(ApiProxmoxService);
 
   public getVm(id: string): Observable<ProxmoxVirtualMachine> {
     return this.apiProxmoxService.getProxmoxVirtualMachine(id);

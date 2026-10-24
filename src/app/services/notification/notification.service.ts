@@ -1,7 +1,7 @@
 // Copyright 2021 Carnegie Mellon University. All Rights Reserved.
 // Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
 
-import { Inject, Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import * as signalR from '@microsoft/signalr';
 import { BehaviorSubject } from 'rxjs';
 import { BASE_PATH } from '../../generated/vm-api';
@@ -10,6 +10,8 @@ import { ComnAuthService } from '@cmusei/crucible-common';
 
 @Injectable()
 export class NotificationService {
+  private authService = inject(ComnAuthService);
+
   private hubConnection: signalR.HubConnection;
   private connectionPromise: Promise<void>;
 
@@ -20,10 +22,9 @@ export class NotificationService {
     new Array<NotificationData>(),
   );
 
-  constructor(
-    private authService: ComnAuthService,
-    @Inject(BASE_PATH) basePath: string,
-  ) {
+  constructor() {
+    const basePath = inject(BASE_PATH);
+
     this.apiUrl = basePath;
 
     this.authService.user$.subscribe(() => {

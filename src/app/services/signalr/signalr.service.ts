@@ -3,7 +3,7 @@
  * Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
  */
 
-import { Inject, Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { ComnAuthService } from '@cmusei/crucible-common';
 import * as signalR from '@microsoft/signalr';
 import { BehaviorSubject, Observable } from 'rxjs';
@@ -15,6 +15,10 @@ import { VsphereService } from '../../state/vsphere/vsphere.service';
   providedIn: 'root',
 })
 export class SignalRService {
+  private authService = inject(ComnAuthService);
+  private vmService = inject(VsphereService);
+  private userService = inject(UserService);
+
   public currentVmUsers$: BehaviorSubject<string[]>;
   private hubConnection: signalR.HubConnection;
   private connectionPromise: Promise<void>;
@@ -28,12 +32,9 @@ export class SignalRService {
 
   private apiUrl: string;
 
-  constructor(
-    private authService: ComnAuthService,
-    private vmService: VsphereService,
-    private userService: UserService,
-    @Inject(BASE_PATH) basePath: string,
-  ) {
+  constructor() {
+    const basePath = inject(BASE_PATH);
+
     this.apiUrl = basePath;
     this.currentVmUsers$ = new BehaviorSubject<string[]>([]);
 

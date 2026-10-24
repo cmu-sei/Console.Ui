@@ -12,11 +12,11 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
         aria-label="Console options"
         [matMenuTriggerFor]="mainMenu"
       >
-        <mat-icon svgIcon="gear"></mat-icon>
+        <mat-icon svgIcon="gear" />
       </button>
       <span class="ms-1">{{ vm?.name }}</span>
       <mat-menu #mainMenu="matMenu">
-        @if (!readOnly) {
+        @if (!readOnly()) {
           <button mat-menu-item [matMenuTriggerFor]="keyboardMenu">
             Keyboard
           </button>

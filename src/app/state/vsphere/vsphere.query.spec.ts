@@ -2,6 +2,7 @@
 // Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
 
 import { describe, it, expect } from 'vitest';
+import { Injector, runInInjectionContext } from '@angular/core';
 import { getStoreByName } from '@datorama/akita';
 import { VsphereVirtualMachine } from '../../generated/vm-api';
 import { VmStore as VsphereStore } from './vsphere.store';
@@ -17,7 +18,10 @@ function vsphereVm(
 
 function createState() {
   const store = new VsphereStore();
-  const query = new VsphereQuery(store);
+  const injector = Injector.create({
+    providers: [{ provide: VsphereStore, useValue: store }],
+  });
+  const query = runInInjectionContext(injector, () => new VsphereQuery());
   return { store, query };
 }
 

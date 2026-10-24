@@ -380,7 +380,7 @@ describe('OptionsBar2Component', () => {
 
       // Not a defect: performChange()'s subscribe (options-bar2.component.ts:179)
       // has no error callback, so the error reaches ErrorService (the global
-      // ErrorHandler, main.ts:81), which shows it; no loading flag is left set.
+      // ErrorHandler, app.config.ts), which shows it; no loading flag is left set.
       expect(errors).toEqual([failure]);
       const adapter = await openSubmenu(fixture, 'Network Cards', 'net0');
       expect(await itemTexts(adapter)).toEqual(['✔ Lab', 'Internet']);

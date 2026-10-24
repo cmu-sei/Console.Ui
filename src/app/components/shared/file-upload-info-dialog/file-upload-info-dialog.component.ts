@@ -2,7 +2,7 @@
 // Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
 
 import { A11yModule } from '@angular/cdk/a11y';
-import { Component, Inject } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { MatFormField, MatLabel } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
@@ -33,18 +33,19 @@ export interface FileUploadInfoDialogResult {
   ],
 })
 export class FileUploadInfoDialogComponent {
+  private dialogRef =
+    inject<
+      MatDialogRef<FileUploadInfoDialogComponent, FileUploadInfoDialogResult>
+    >(MatDialogRef);
+
   public title: string;
   public readonly form;
   public readonly showCredentials: boolean;
 
-  constructor(
-    @Inject(MAT_DIALOG_DATA) data: FileUploadInfoDialogData,
-    private dialogRef: MatDialogRef<
-      FileUploadInfoDialogComponent,
-      FileUploadInfoDialogResult
-    >,
-    formBuilder: FormBuilder,
-  ) {
+  constructor() {
+    const data = inject<FileUploadInfoDialogData>(MAT_DIALOG_DATA);
+    const formBuilder = inject(FormBuilder);
+
     this.showCredentials = data.showCredentials ?? true;
     this.form = formBuilder.nonNullable.group({
       filepath: '',

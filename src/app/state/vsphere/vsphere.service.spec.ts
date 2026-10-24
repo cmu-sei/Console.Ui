@@ -533,7 +533,7 @@ describe('VsphereService', () => {
       // Not a defect under CONVENTIONS.md section 3: the inner
       // checkForVmTools(...).subscribe() (vsphere.service.ts:331) has no error
       // callback, so each failure reaches ErrorService (the global
-      // ErrorHandler, main.ts:81), which shows it; no loading flag is left
+      // ErrorHandler, app.config.ts), which shows it; no loading flag is left
       // set. The poll keeps running because Tools still reports not running.
       expect(api.getVsphereVirtualMachineToolsStatus).toHaveBeenCalledTimes(3);
       expect(errors).toEqual([failure, failure, failure]);

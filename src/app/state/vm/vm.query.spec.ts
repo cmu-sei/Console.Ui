@@ -2,6 +2,7 @@
 // Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
 
 import { describe, it, expect } from 'vitest';
+import { Injector, runInInjectionContext } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { applyTransaction } from '@datorama/akita';
 import { Vm, VmType } from '../../generated/vm-api';
@@ -16,7 +17,10 @@ function vm(overrides: Partial<Vm> = {}): Vm {
 // A pure store/query pair: no TestBed, a fresh store per test.
 function createState() {
   const store = new VmStore();
-  const query = new VmQuery(store);
+  const injector = Injector.create({
+    providers: [{ provide: VmStore, useValue: store }],
+  });
+  const query = runInInjectionContext(injector, () => new VmQuery());
   return { store, query };
 }
 

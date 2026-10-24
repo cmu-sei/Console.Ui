@@ -10,6 +10,8 @@ import {
   computed,
   linkedSignal,
   signal,
+  inject,
+  input,
 } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -63,6 +65,15 @@ type NetworkVirtualMachine = ProxmoxVirtualMachine | VsphereVirtualMachine;
   ],
 })
 export class OptionsBar2Component {
+  private vmService = inject(VmService);
+  private authService = inject(ComnAuthService);
+  private authQuery = inject(ComnAuthQuery);
+  private crucibleDialogService = inject(CrucibleDialogService);
+  private snackBar = inject(MatSnackBar);
+  private proxmoxService = inject(ProxmoxService);
+  private vsphereService = inject(VsphereService);
+  private dialogService = inject(DialogService);
+
   // Generic Options Bar - Will eventually replace OptionsBarComponent
 
   private readonly vmState = signal<Vm | null>(null);
@@ -95,18 +106,7 @@ export class OptionsBar2Component {
     return this.vmState();
   }
 
-  @Input() readOnly = false;
-
-  constructor(
-    private vmService: VmService,
-    private authService: ComnAuthService,
-    private authQuery: ComnAuthQuery,
-    private crucibleDialogService: CrucibleDialogService,
-    private snackBar: MatSnackBar,
-    private proxmoxService: ProxmoxService,
-    private vsphereService: VsphereService,
-    private dialogService: DialogService,
-  ) {}
+  readonly readOnly = input(false);
 
   theme$ = this.authQuery.userTheme$;
 

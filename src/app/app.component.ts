@@ -1,6 +1,6 @@
 // Copyright 2021 Carnegie Mellon University. All Rights Reserved.
 // Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
-import { Component, OnDestroy } from '@angular/core';
+import { Component, OnDestroy, inject } from '@angular/core';
 import { MatIconRegistry } from '@angular/material/icon';
 import { DomSanitizer } from '@angular/platform-browser';
 import {
@@ -16,26 +16,26 @@ import { takeUntil } from 'rxjs/operators';
 import { RouterOutlet, Router } from '@angular/router';
 
 @Component({
-    selector: 'app-root',
-    templateUrl: './app.component.html',
-    styleUrls: ['./app.component.scss'],
-    imports: [RouterOutlet, ComnHeaderBarModule]
+  selector: 'app-root',
+  templateUrl: './app.component.html',
+  styleUrls: ['./app.component.scss'],
+  imports: [RouterOutlet, ComnHeaderBarModule],
 })
 export class AppComponent implements OnDestroy {
+  private iconRegistry = inject(MatIconRegistry);
+  private sanitizer = inject(DomSanitizer);
+  private authQuery = inject(ComnAuthQuery);
+  private routerQuery = inject(RouterQuery);
+  private authService = inject(ComnAuthService);
+  private themeService = inject(CrucibleThemeService);
+  private router = inject(Router);
+
   theme$: Observable<Theme> = this.authQuery.userTheme$;
   unsubscribe$ = new Subject();
   hideTopbar = this.inIframe();
   private paramTheme;
 
-  constructor(
-    private iconRegistry: MatIconRegistry,
-    private sanitizer: DomSanitizer,
-    private authQuery: ComnAuthQuery,
-    private routerQuery: RouterQuery,
-    private authService: ComnAuthService,
-    private themeService: CrucibleThemeService,
-    private router: Router,
-  ) {
+  constructor() {
     this.addIcons();
 
     this.theme$.pipe(takeUntil(this.unsubscribe$)).subscribe((theme) => {

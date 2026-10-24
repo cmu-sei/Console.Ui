@@ -2,7 +2,7 @@
 // Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
 
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, input, output } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { TestbedHarnessEnvironment } from '@angular/cdk/testing/testbed';
 import { MatIconHarness } from '@angular/material/icon/testing';
@@ -21,10 +21,10 @@ import { ApiStub } from '../../../test-utils/api-stub';
 
 @Component({ selector: 'app-novnc', template: '' })
 class NovncStubComponent {
-  @Input() url: string;
-  @Input() ticket: string;
-  @Input() readOnly: boolean;
-  @Output() reconnect = new EventEmitter<number>();
+  readonly url = input<string>(undefined);
+  readonly ticket = input<string>(undefined);
+  readonly readOnly = input<boolean>(undefined);
+  readonly reconnect = output<number>();
 }
 
 const VM: Vm = { id: 'vm-1', name: 'Alpha', type: VmType.Proxmox };
@@ -45,9 +45,9 @@ async function renderProxmoxConsole(
     rendered.fixture.debugElement.query(By.directive(NovncStubComponent))
       ?.componentInstance as NovncStubComponent | undefined;
   const iconName = async () => {
-    const icons = await TestbedHarnessEnvironment.loader(rendered.fixture).getAllHarnesses(
-      MatIconHarness,
-    );
+    const icons = await TestbedHarnessEnvironment.loader(
+      rendered.fixture,
+    ).getAllHarnesses(MatIconHarness);
     return icons.length ? icons[0].getName() : null;
   };
   return { ...rendered, api, novnc, iconName };
@@ -67,15 +67,16 @@ describe('ProxmoxConsoleComponent', () => {
   it('connects noVNC with the ticket and stops polling', async () => {
     vi.useFakeTimers();
     const { fixture, api, novnc } = await renderProxmoxConsole(
-      () => of({ url: 'wss://pve/ws', ticket: 't-1', powerState: PowerState.On }),
+      () =>
+        of({ url: 'wss://pve/ws', ticket: 't-1', powerState: PowerState.On }),
       { readOnly: true },
     );
     await vi.advanceTimersByTimeAsync(0);
     fixture.detectChanges();
 
-    expect(novnc()?.url).toBe('wss://pve/ws');
-    expect(novnc()?.ticket).toBe('t-1');
-    expect(novnc()?.readOnly).toBe(true);
+    expect(novnc()?.url()).toBe('wss://pve/ws');
+    expect(novnc()?.ticket()).toBe('t-1');
+    expect(novnc()?.readOnly()).toBe(true);
 
     await vi.advanceTimersByTimeAsync(20000);
     expect(api.getProxmoxConsole).toHaveBeenCalledOnce();
@@ -97,7 +98,9 @@ describe('ProxmoxConsoleComponent', () => {
     expect(await iconName()).toBe('ic_power_settings_new_black_48px');
     expect(novnc()).toBeUndefined();
 
-    api.getProxmoxConsole.mockReturnValue(of({ powerState: PowerState.Suspended }));
+    api.getProxmoxConsole.mockReturnValue(
+      of({ powerState: PowerState.Suspended }),
+    );
     await vi.advanceTimersByTimeAsync(5000);
     expect(api.getProxmoxConsole).toHaveBeenCalledTimes(2);
     expect(await iconName()).toBe('ic_power_settings_new_black_48px');
@@ -117,11 +120,13 @@ describe('ProxmoxConsoleComponent', () => {
     fixture.detectChanges();
     expect(await iconName()).toBe('ic_error_outline_black_48px');
 
-    api.getProxmoxConsole.mockReturnValue(of({ url: 'wss://pve/ws', ticket: 't-1' }));
+    api.getProxmoxConsole.mockReturnValue(
+      of({ url: 'wss://pve/ws', ticket: 't-1' }),
+    );
     await vi.advanceTimersByTimeAsync(5000);
     fixture.detectChanges();
 
-    expect(novnc()?.ticket).toBe('t-1');
+    expect(novnc()?.ticket()).toBe('t-1');
   });
 
   /**
@@ -172,7 +177,9 @@ describe('ProxmoxConsoleComponent', () => {
    */
   it('stops polling when destroyed', async () => {
     vi.useFakeTimers();
-    const { fixture, api } = await renderProxmoxConsole(() => of({ powerState: PowerState.Off }));
+    const { fixture, api } = await renderProxmoxConsole(() =>
+      of({ powerState: PowerState.Off }),
+    );
     await vi.advanceTimersByTimeAsync(0);
 
     fixture.destroy();

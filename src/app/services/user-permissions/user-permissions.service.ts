@@ -1,8 +1,13 @@
 // Copyright 2021 Carnegie Mellon University. All Rights Reserved.
 // Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
 
-import { Injectable } from '@angular/core';
-import { BehaviorSubject, combineLatest, Observable, ReplaySubject } from 'rxjs';
+import { Injectable, inject } from '@angular/core';
+import {
+  BehaviorSubject,
+  combineLatest,
+  Observable,
+  ReplaySubject,
+} from 'rxjs';
 import { map, tap } from 'rxjs/operators';
 import {
   AppSystemPermission,
@@ -17,17 +22,15 @@ import { ActivatedRoute, ParamMap } from '@angular/router';
   providedIn: 'root',
 })
 export class UserPermissionsService {
+  private vmApi = inject(VmsService);
+  private route = inject(ActivatedRoute);
+
   private permissionsSubject = new BehaviorSubject<VmPermissionResult>({
     systemPermissions: [],
     teamPermissions: [],
     viewPermissions: [],
   });
   public permissions$ = this.permissionsSubject.asObservable();
-
-  constructor(
-    private vmApi: VmsService,
-    private route: ActivatedRoute,
-  ) {}
 
   private readOnlyToggleableSubject = new ReplaySubject<boolean>(1);
   readOnlyToggleable$ = this.readOnlyToggleableSubject.asObservable();

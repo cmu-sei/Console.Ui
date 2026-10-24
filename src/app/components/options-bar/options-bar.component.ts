@@ -5,12 +5,13 @@ import { HttpErrorResponse } from '@angular/common/http';
 import {
   Component,
   computed,
-  Input,
   OnDestroy,
   OnInit,
   Pipe,
   PipeTransform,
   signal,
+  inject,
+  input,
 } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ActivatedRoute } from '@angular/router';
@@ -97,10 +98,23 @@ export class KeysPipe implements PipeTransform {
   ],
 })
 export class OptionsBarComponent implements OnInit, OnDestroy {
-  @Input() vm: VsphereVirtualMachine;
-  @Input() vmId: string;
-  @Input() readOnly: boolean;
-  @Input() allowReadOnlyToggle: boolean;
+  vsphereService = inject(VsphereService);
+  settingsService = inject(ComnSettingsService);
+  private dialogService = inject(DialogService);
+  private crucibleDialogService = inject(CrucibleDialogService);
+  private notificationService = inject(NotificationService);
+  private route = inject(ActivatedRoute);
+  private snackBar = inject(MatSnackBar);
+  private signalrService = inject(SignalRService);
+  private vmService = inject(VmService);
+  private userPermissionsService = inject(UserPermissionsService);
+  private authService = inject(ComnAuthService);
+  private authQuery = inject(ComnAuthQuery);
+
+  readonly vm = input<VsphereVirtualMachine>(undefined);
+  readonly vmId = input<string>(undefined);
+  readonly readOnly = input<boolean>(undefined);
+  readonly allowReadOnlyToggle = input<boolean>(undefined);
 
   opened = false;
 
@@ -158,21 +172,6 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
     });
   });
 
-  constructor(
-    public vsphereService: VsphereService,
-    public settingsService: ComnSettingsService,
-    private dialogService: DialogService,
-    private crucibleDialogService: CrucibleDialogService,
-    private notificationService: NotificationService,
-    private route: ActivatedRoute,
-    private snackBar: MatSnackBar,
-    private signalrService: SignalRService,
-    private vmService: VmService,
-    private userPermissionsService: UserPermissionsService,
-    private authService: ComnAuthService,
-    private authQuery: ComnAuthQuery,
-  ) {}
-
   theme$ = this.authQuery.userTheme$;
 
   ngOnInit() {
@@ -193,7 +192,7 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
         this.tasksInProgress = <Array<NotificationData>>data;
       }
     });
-    this.notificationService.connectToProgressHub(this.vmId);
+    this.notificationService.connectToProgressHub(this.vmId());
 
     this.inFrame = this.inIframe();
 
@@ -278,7 +277,7 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
 
     const performChange = () => {
       this.vsphereService
-        .changeNic(this.vmId, adapter, networkRef)
+        .changeNic(this.vmId(), adapter, networkRef)
         .subscribe((model: VmModel) => {
           this.vsphereService.model = model;
           this.refreshNetworks.update((v) => v + 1);
@@ -348,39 +347,39 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
 
   connect() {
     console.log('connect requested');
-    this.vsphereService.connect(this.vmId, this.readOnly);
+    this.vsphereService.connect(this.vmId(), this.readOnly());
   }
 
   poweron() {
     console.log('poweron requested');
-    this.vsphereService.powerOn(this.vmId);
+    this.vsphereService.powerOn(this.vmId());
   }
 
   poweroff() {
     console.log('poweroff requested');
-    this.vsphereService.powerOff(this.vmId);
+    this.vsphereService.powerOff(this.vmId());
   }
 
   reboot() {
     console.log('reboot requested');
-    this.vsphereService.reBoot(this.vmId);
+    this.vsphereService.reBoot(this.vmId());
   }
 
   shutdownOS() {
     console.log('shutdown OS requested');
-    this.vsphereService.shutdownOS(this.vmId);
+    this.vsphereService.shutdownOS(this.vmId());
   }
 
   selectAndRevertSnapshot() {
     console.log('select snapshot requested');
     this.vsphereService
-      .getSnapshots(this.vmId)
+      .getSnapshots(this.vmId())
       .pipe(
         take(1),
         switchMap((snapshots) => this.dialogService.selectSnapshot(snapshots)),
         filter((selected): selected is VmSnapshot => !!selected),
         switchMap((selected) =>
-          this.vsphereService.revertToSnapshot(this.vmId, selected.id),
+          this.vsphereService.revertToSnapshot(this.vmId(), selected.id),
         ),
         tap(() => this.showMessage('Revert VM', 'Revert Successful')),
         catchError((error) => {
@@ -426,7 +425,7 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
           return;
         }
       }
-      this.vsphereService.verifyCredentials(this.vmId).subscribe(
+      this.vsphereService.verifyCredentials(this.vmId()).subscribe(
         () => {
           this.uploadEnabled = true;
           this.showMessage('Credentials Verified', '');
@@ -455,7 +454,7 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
 
     this.uploading = true;
     this.vsphereService
-      .sendFileToVm(this.vmId, fileSelector.files)
+      .sendFileToVm(this.vmId(), fileSelector.files)
       .pipe(
         finalize(() => {
           progressRef.close();
@@ -488,19 +487,21 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
         if (!filePath) {
           return;
         }
-        this.vsphereService.getVmFileUrl(this.vmId, filePath).subscribe((x) => {
-          const link = document.createElement('a');
-          link.href = x.url;
-          link.download = x.fileName;
-          link.click();
-        });
+        this.vsphereService
+          .getVmFileUrl(this.vmId(), filePath)
+          .subscribe((x) => {
+            const link = document.createElement('a');
+            link.href = x.url;
+            link.download = x.fileName;
+            link.click();
+          });
       });
   }
 
   startIsoMount() {
     // refresh the iso list
     this.retrievingIsos = true;
-    this.vsphereService.getIsos(this.vmId).subscribe(
+    this.vsphereService.getIsos(this.vmId()).subscribe(
       (isoResult) => {
         this.retrievingIsos = false;
         this.mountIso(isoResult);
@@ -519,7 +520,7 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
         return;
       }
       // mount the iso
-      this.vsphereService.mountIso(this.vmId, result.mountValue).subscribe(
+      this.vsphereService.mountIso(this.vmId(), result.mountValue).subscribe(
         // refresh the vm model
         (model: VmModel) => {
           this.vsphereService.model = model;
@@ -594,7 +595,7 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
   setResolution(vmResolution: VmResolution) {
     console.log('Setting Resolution:  ', vmResolution);
     this.vsphereService
-      .setResolution(this.vmId, vmResolution)
+      .setResolution(this.vmId(), vmResolution)
       .pipe(take(1))
       .subscribe();
   }

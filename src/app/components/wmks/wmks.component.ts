@@ -10,6 +10,7 @@ import {
   OnDestroy,
   OnInit,
   ViewChild,
+  inject,
 } from '@angular/core';
 import { interval, Subscription } from 'rxjs';
 import { repeat, startWith, takeUntil, takeWhile } from 'rxjs/operators';
@@ -21,13 +22,15 @@ import { AsyncPipe } from '@angular/common';
 declare var WMKS: any; // needed to check values
 
 @Component({
-    selector: 'app-wmks',
-    templateUrl: './wmks.component.html',
-    styleUrls: ['./wmks.component.scss'],
-    imports: [MatIcon, AsyncPipe],
-    changeDetection: ChangeDetectionStrategy.Default
+  selector: 'app-wmks',
+  templateUrl: './wmks.component.html',
+  styleUrls: ['./wmks.component.scss'],
+  imports: [MatIcon, AsyncPipe],
+  changeDetection: ChangeDetectionStrategy.Default,
 })
 export class WmksComponent implements OnInit, OnDestroy {
+  vmService = inject(VsphereService);
+
   @Input() readOnly: boolean;
 
   @Input() set vmId(value: string) {
@@ -45,8 +48,6 @@ export class WmksComponent implements OnInit, OnDestroy {
 
   public progressMessage = 'Connecting ...';
   public showWmks = true;
-
-  constructor(public vmService: VsphereService) {}
 
   ngOnInit(): void {
     // This interval will fire every 5 seconds

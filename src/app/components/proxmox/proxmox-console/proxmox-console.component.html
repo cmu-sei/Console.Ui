@@ -10,20 +10,20 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
       svgIcon="ic_error_outline_black_48px"
       aria-hidden="false"
       aria-label="Error"
-    ></mat-icon>
+    />
   } @else if (consoleState.value?.showPower) {
     <mat-icon
       class="center"
       svgIcon="ic_power_settings_new_black_48px"
       aria-hidden="false"
       aria-label="Off"
-    ></mat-icon>
+    />
   } @else {
     <app-novnc
       [url]="consoleState.value?.url"
       [ticket]="consoleState.value?.ticket"
-      [readOnly]="readOnly"
+      [readOnly]="readOnly()"
       (reconnect)="getConsole($event)"
-    ></app-novnc>
+    />
   }
 }
