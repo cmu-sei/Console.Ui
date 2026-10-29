@@ -40,6 +40,9 @@ updates:
         update-types: [version-update:semver-major]
       - dependency-name: typescript
         update-types: [version-update:semver-major]
+      # noVNC 1.6 adds top-level await to lib/ (require() fails) and 1.7 drops lib/; moving to the ESM import needs a Proxmox console test.
+      - dependency-name: "@novnc/novnc"
+        versions: [">= 1.6.0"]
       # @types/node follows the Node major the app runs on (the Dockerfile's node image); move it by hand with Node.
       - dependency-name: "@types/node"
         update-types: [version-update:semver-major]
