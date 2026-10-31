@@ -15,9 +15,12 @@ import {
 } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { HttpErrorResponse } from '@angular/common/http';
 import {
+  AppViewPermission,
   ProxmoxVirtualMachine,
   Vm,
+  VmSnapshot,
   VmType,
   VsphereVirtualMachine,
 } from '../../generated/vm-api';
@@ -43,6 +46,7 @@ import { ProxmoxService } from '../../services/proxmox/proxmox.service';
 import { DialogService } from '../../services/dialog/dialog.service';
 import { IsoFile, IsoResult } from '../../models/vm/iso-result';
 import { VsphereService } from '../../state/vsphere/vsphere.service';
+import { UserPermissionsService } from '../../services/user-permissions/user-permissions.service';
 import { EMPTY, Observable, of } from 'rxjs';
 
 type NetworkVirtualMachine = ProxmoxVirtualMachine | VsphereVirtualMachine;
@@ -74,6 +78,7 @@ export class OptionsBar2Component {
   private proxmoxService = inject(ProxmoxService);
   private vsphereService = inject(VsphereService);
   private dialogService = inject(DialogService);
+  private userPermissionsService = inject(UserPermissionsService);
 
   // Generic Options Bar - Will eventually replace OptionsBarComponent
 
@@ -128,6 +133,20 @@ export class OptionsBar2Component {
   );
 
   public readonly retrievingIsos = signal(false);
+
+  private readonly proxmoxVm = computed(
+    () => this.networkVmState() as ProxmoxVirtualMachine | null,
+  );
+
+  // Same gate as the vSphere bar's Snapshots item.
+  canRevertSnapshots$ = this.userPermissionsService.can(
+    null,
+    AppViewPermission.RevertVms,
+  );
+
+  public readonly hasSnapshot = computed(
+    () => this.proxmoxVm()?.hasSnapshot === true,
+  );
 
   public readonly networkMenuItems = computed(() => {
     const cards = this.networkCards();
@@ -301,6 +320,34 @@ export class OptionsBar2Component {
       });
   }
 
+  // Lists the Vm's snapshots in the same dialog the vSphere bar uses, which asks for confirmation
+  // before closing. The snapshot the Vm is running from is reverted through actions/revert; any
+  // other is reverted by name.
+  public selectAndRevertSnapshot() {
+    const vm = this.vmState();
+    if (!vm?.id) {
+      return;
+    }
+
+    this.proxmoxService
+      .getSnapshots(vm.id, this.proxmoxVm()?.currentSnapshot)
+      .pipe(
+        take(1),
+        switchMap((snapshots) => this.dialogService.selectSnapshot(snapshots)),
+        filter((selected): selected is VmSnapshot => !!selected),
+        switchMap((selected) =>
+          selected.isCurrent
+            ? this.proxmoxService.revertToCurrentSnapshot(vm.id)
+            : this.proxmoxService.revertToSnapshot(vm.id, selected.name),
+        ),
+      )
+      .subscribe({
+        next: () => this.showMessage('Revert Successful'),
+        error: (error) =>
+          this.showMessage(`Revert Failed: ${apiErrorMessage(error)}`, 10000),
+      });
+  }
+
   public ctrlAltDel() {
     this.vmService.sendCtrlAltDel(this.vm.id);
   }
@@ -412,4 +459,13 @@ export class OptionsBar2Component {
     const theme = event.checked ? Theme.DARK : Theme.LIGHT;
     this.authService.setUserTheme(theme);
   }
+}
+
+// vm.api reports a failure as ProblemDetails with the reason in `title`; fall back to the HTTP
+// client's own message when there is no body.
+export function apiErrorMessage(error: unknown): string {
+  if (error instanceof HttpErrorResponse) {
+    return error.error?.title || error.message;
+  }
+  return (error as Error)?.message ?? String(error);
 }

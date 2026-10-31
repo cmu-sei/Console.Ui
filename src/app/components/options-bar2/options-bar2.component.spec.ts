@@ -16,7 +16,9 @@ import {
   CrucibleDialogService,
   Theme,
 } from '@cmusei/crucible-common';
+import { HttpErrorResponse } from '@angular/common/http';
 import {
+  AppViewPermission,
   ProxmoxService as ApiProxmoxService,
   ProxmoxVirtualMachine,
   Vm,
@@ -31,6 +33,10 @@ import { VsphereService } from '../../state/vsphere/vsphere.service';
 import { OptionsBar2Component } from './options-bar2.component';
 import { renderComponent } from '../../test-utils/render-component';
 import { ApiStub } from '../../test-utils/api-stub';
+import {
+  PermissionGrants,
+  permissionDataProviders,
+} from '../../test-utils/mock-permission-data.service';
 import { dialogRefStub, dismissedDialogRefStub } from '../../test-utils/dialog-refs';
 import { stubClipboard } from '../../test-utils/clipboard';
 import {
@@ -63,6 +69,8 @@ async function renderOptionsBar2(
     networkVm?: Observable<ProxmoxVirtualMachine>;
     // 'dismissed': the confirm dialog closes without an answer (Esc, backdrop).
     confirmation?: boolean | 'dismissed';
+    // When given, the real UserPermissionsService is primed with these grants.
+    grants?: PermissionGrants;
   } = {},
 ) {
   const vm = overrides.vm ?? PROXMOX_VM;
@@ -87,6 +95,14 @@ async function renderOptionsBar2(
     sendCtrlAltDel: vi.fn<ProxmoxService['sendCtrlAltDel']>(),
     sendClipboardText: vi.fn<ProxmoxService['sendClipboardText']>(),
     sendText: vi.fn<ProxmoxService['sendText']>(() => true),
+    getSnapshots: vi.fn<ProxmoxService['getSnapshots']>(() =>
+      of([
+        { id: 'clean', name: 'clean', isCurrent: true, depth: 0 },
+        { id: 'later', name: 'later', isCurrent: false, depth: 1 },
+      ]),
+    ),
+    revertToCurrentSnapshot: vi.fn<ProxmoxService['revertToCurrentSnapshot']>(() => of('ok')),
+    revertToSnapshot: vi.fn<ProxmoxService['revertToSnapshot']>(() => of('ok')),
   } satisfies Pick<
     ProxmoxService,
     | 'getVm'
@@ -96,6 +112,9 @@ async function renderOptionsBar2(
     | 'sendCtrlAltDel'
     | 'sendClipboardText'
     | 'sendText'
+    | 'getSnapshots'
+    | 'revertToCurrentSnapshot'
+    | 'revertToSnapshot'
   >;
   const vsphere = {
     getVm: vi.fn<VsphereService['getVm']>(() => of(networkVm() as VsphereVirtualMachine)),
@@ -104,7 +123,8 @@ async function renderOptionsBar2(
   const dialogs = {
     mountIso: vi.fn<DialogService['mountIso']>(() => of(undefined)),
     sendText: vi.fn<DialogService['sendText']>(() => of(undefined)),
-  } satisfies Pick<DialogService, 'mountIso' | 'sendText'>;
+    selectSnapshot: vi.fn<DialogService['selectSnapshot']>(() => of(undefined)),
+  } satisfies Pick<DialogService, 'mountIso' | 'sendText' | 'selectSnapshot'>;
   const confirm = vi.fn<CrucibleDialogService['confirm']>(() =>
     overrides.confirmation === 'dismissed'
       ? dismissedDialogRefStub<unknown, boolean>().dialogRef
@@ -130,6 +150,7 @@ async function renderOptionsBar2(
         useValue: { userTheme$: of(Theme.LIGHT) } satisfies Pick<ComnAuthQuery, 'userTheme$'>,
       },
       { provide: MatSnackBar, useValue: snackBar },
+      ...(overrides.grants ? permissionDataProviders(overrides.grants) : []),
     ],
   });
   await rendered.fixture.whenStable();
@@ -802,6 +823,120 @@ describe('OptionsBar2Component', () => {
     it('hides the toolbar when read-only', async () => {
       await renderOptionsBar2({ readOnly: true });
       expect(screen.queryByRole('button', { name: /^Paste/ })).not.toBeInTheDocument();
+    });
+  });
+
+  describe('snapshots', () => {
+    const canRevert: PermissionGrants = { view: [AppViewPermission.RevertVms] };
+
+    /**
+     * Verifies: Snapshots is offered only with the RevertVms view permission, as in the vSphere bar.
+     * Interacts with: the real UserPermissionsService over a stubbed getVmPermissions; the gear menu.
+     * Data: no grants, then RevertVms.
+     */
+    it.each<[PermissionGrants, boolean]>([
+      [{}, false],
+      [{ view: [AppViewPermission.ControlViewVms] }, false],
+      [canRevert, true],
+    ])('with grants %j shows Snapshots: %s', async (grants, shown) => {
+      const { fixture } = await renderOptionsBar2({
+        grants,
+        networkVm: of(networkVm({ hasSnapshot: true })),
+      });
+      expect((await menuTexts(fixture)).includes('Snapshots')).toBe(shown);
+    });
+
+    /**
+     * Verifies: Snapshots is disabled when the Vm has no snapshot.
+     * Interacts with: ProxmoxService.getVm (hasSnapshot); the gear menu.
+     * Data: RevertVms; hasSnapshot false, then true.
+     */
+    it.each([false, true])('is enabled only with a snapshot (hasSnapshot %s)', async (hasSnapshot) => {
+      const { fixture } = await renderOptionsBar2({
+        grants: canRevert,
+        networkVm: of(networkVm({ hasSnapshot })),
+      });
+      expect(await (await findMenuItem(fixture, 'Snapshots')).isDisabled()).toBe(!hasSnapshot);
+    });
+
+    /**
+     * Verifies: choosing the current snapshot reverts through actions/revert, and success is reported.
+     * Interacts with: the Snapshots item; ProxmoxService.getSnapshots/revertToCurrentSnapshot; DialogService.selectSnapshot; MatSnackBar.open.
+     * Data: currentSnapshot 'clean' on the model; 'clean' (current) chosen.
+     */
+    it('reverts to the current snapshot', async () => {
+      const { fixture, proxmox, dialogs, snackBar } = await renderOptionsBar2({
+        grants: canRevert,
+        networkVm: of(networkVm({ hasSnapshot: true, currentSnapshot: 'clean' })),
+      });
+      dialogs.selectSnapshot.mockImplementation((snapshots) => of(snapshots[0]));
+
+      await clickMenu(fixture, 'Snapshots');
+
+      expect(proxmox.getSnapshots).toHaveBeenCalledWith('vm-1', 'clean');
+      expect(proxmox.revertToCurrentSnapshot).toHaveBeenCalledWith('vm-1');
+      expect(proxmox.revertToSnapshot).not.toHaveBeenCalled();
+      expect(snackBar.open).toHaveBeenCalledWith('Revert Successful', 'Close', expect.anything());
+    });
+
+    /**
+     * Verifies: choosing another snapshot reverts to it by name.
+     * Interacts with: the Snapshots item; DialogService.selectSnapshot; ProxmoxService.revertToSnapshot.
+     * Data: 'later' (not current) chosen.
+     */
+    it('reverts to another snapshot by name', async () => {
+      const { fixture, proxmox, dialogs } = await renderOptionsBar2({
+        grants: canRevert,
+        networkVm: of(networkVm({ hasSnapshot: true })),
+      });
+      dialogs.selectSnapshot.mockImplementation((snapshots) => of(snapshots[1]));
+
+      await clickMenu(fixture, 'Snapshots');
+
+      expect(proxmox.revertToSnapshot).toHaveBeenCalledWith('vm-1', 'later');
+      expect(proxmox.revertToCurrentSnapshot).not.toHaveBeenCalled();
+    });
+
+    /**
+     * Verifies: closing the snapshot dialog without a choice (or declining its confirmation) reverts nothing.
+     * Interacts with: the Snapshots item; DialogService.selectSnapshot (undefined).
+     * Data: dialog dismissed.
+     */
+    it('reverts nothing when no snapshot is chosen', async () => {
+      const { fixture, proxmox, snackBar } = await renderOptionsBar2({
+        grants: canRevert,
+        networkVm: of(networkVm({ hasSnapshot: true })),
+      });
+      await clickMenu(fixture, 'Snapshots');
+      expect(proxmox.revertToCurrentSnapshot).not.toHaveBeenCalled();
+      expect(proxmox.revertToSnapshot).not.toHaveBeenCalled();
+      expect(snackBar.open).not.toHaveBeenCalled();
+    });
+
+    /**
+     * Verifies: a failed revert is reported with the API's ProblemDetails title.
+     * Interacts with: the Snapshots item; ProxmoxService.revertToCurrentSnapshot rejecting with an HttpErrorResponse; MatSnackBar.open.
+     * Data: 400 with title 'Vm is locked'.
+     */
+    it('reports a failed revert', async () => {
+      const { fixture, proxmox, dialogs, snackBar } = await renderOptionsBar2({
+        grants: canRevert,
+        networkVm: of(networkVm({ hasSnapshot: true })),
+      });
+      dialogs.selectSnapshot.mockImplementation((snapshots) => of(snapshots[0]));
+      proxmox.revertToCurrentSnapshot.mockReturnValue(
+        throwError(
+          () => new HttpErrorResponse({ status: 400, error: { title: 'Vm is locked' } }),
+        ),
+      );
+
+      await clickMenu(fixture, 'Snapshots');
+
+      expect(snackBar.open).toHaveBeenCalledWith(
+        'Revert Failed: Vm is locked',
+        'Close',
+        expect.objectContaining({ duration: 10000 }),
+      );
     });
   });
 });

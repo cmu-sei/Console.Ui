@@ -39,6 +39,22 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
             <button mat-menu-item (click)="shutdown()">Shutdown</button>
           </mat-menu>
 
+          <!-- Snapshots -->
+          @if (canRevertSnapshots$ | async) {
+            <button
+              mat-menu-item
+              (click)="selectAndRevertSnapshot()"
+              [disabled]="!hasSnapshot()"
+              [matTooltip]="
+                hasSnapshot()
+                  ? 'Select a snapshot to revert to'
+                  : 'No snapshots available'
+              "
+            >
+              Snapshots
+            </button>
+          }
+
           @if (canAccessNicConfiguration() && networkMenuItems().length > 0) {
             <button mat-menu-item [matMenuTriggerFor]="networkMenu">
               Network Cards

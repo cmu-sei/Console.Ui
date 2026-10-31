@@ -9,7 +9,7 @@ import {
   ProxmoxVirtualMachine,
 } from '../../generated/vm-api';
 import { NoVNCService } from '../novnc/novnc.service';
-import { ProxmoxService } from './proxmox.service';
+import { ProxmoxService, toVmSnapshots } from './proxmox.service';
 import { ApiStub } from '../../test-utils/api-stub';
 
 const VM: ProxmoxVirtualMachine = { id: 'vm-1', name: 'Alpha' };
@@ -20,6 +20,14 @@ function setup() {
     changeProxmoxVirtualMachineNetwork: vi.fn(() => of(VM)),
     getProxmoxVirtualMachineIsos: vi.fn(() => of([])),
     mountProxmoxVirtualMachineIso: vi.fn(() => of(VM)),
+    getProxmoxVirtualMachineSnapshots: vi.fn(() =>
+      of([
+        { name: 'clean', snapTime: 1000 },
+        { name: 'current', parent: 'clean' },
+      ]),
+    ),
+    revertProxmoxVirtualMachine: vi.fn(() => of('reverted')),
+    revertProxmoxVirtualMachineSnapshot: vi.fn(() => of('reverted')),
   } satisfies ApiStub<ApiProxmoxService>;
   const novnc = {
     sendCtrlAltDel: vi.fn(),
@@ -118,5 +126,89 @@ describe('ProxmoxService', () => {
     expect(novnc.sendText).toHaveBeenCalledWith('hello');
     novnc.sendText.mockReturnValue(false);
     expect(service.sendText('hello')).toBe(false);
+  });
+
+  describe('snapshots', () => {
+    /**
+     * Verifies: getSnapshots() reads the Vm's snapshots and returns them in the shared dialog's shape.
+     * Interacts with: generated getProxmoxVirtualMachineSnapshots stub.
+     * Data: one snapshot 'clean' at snaptime 1000, and Proxmox's synthetic 'current' entry under it.
+     */
+    it('lists snapshots for the snapshot dialog', async () => {
+      const { service, api } = setup();
+      expect(await firstValueFrom(service.getSnapshots('vm-1'))).toEqual([
+        {
+          id: 'clean',
+          name: 'clean',
+          description: undefined,
+          createTime: '1970-01-01T00:16:40.000Z',
+          isCurrent: true,
+          depth: 0,
+        },
+      ]);
+      expect(api.getProxmoxVirtualMachineSnapshots).toHaveBeenCalledWith('vm-1');
+    });
+
+    /**
+     * Verifies: reverting to the current snapshot uses actions/revert; any other snapshot reverts by name.
+     * Interacts with: generated revertProxmoxVirtualMachine and revertProxmoxVirtualMachineSnapshot stubs.
+     * Data: Vm 'vm-1'; snapshot 'before-lab'.
+     */
+    it('reverts to the current snapshot or a named one', () => {
+      const { service, api } = setup();
+      service.revertToCurrentSnapshot('vm-1');
+      service.revertToSnapshot('vm-1', 'before-lab');
+      expect(api.revertProxmoxVirtualMachine).toHaveBeenCalledWith('vm-1');
+      expect(api.revertProxmoxVirtualMachineSnapshot).toHaveBeenCalledWith(
+        'vm-1',
+        'before-lab',
+      );
+    });
+  });
+
+  describe('toVmSnapshots', () => {
+    /**
+     * Verifies: snapshots come out in tree order with their depth, siblings oldest first, and the synthetic 'current' entry is dropped.
+     * Interacts with: toVmSnapshots.
+     * Data: root 'base' with children 'b' (newer) and 'a' (older); 'a' has child 'a1'; 'current' under 'a1'.
+     */
+    it('orders snapshots as a tree', () => {
+      const result = toVmSnapshots([
+        { name: 'b', parent: 'base', snapTime: 30 },
+        { name: 'current', parent: 'a1' },
+        { name: 'a1', parent: 'a', snapTime: 25 },
+        { name: 'base', snapTime: 10 },
+        { name: 'a', parent: 'base', snapTime: 20 },
+      ]);
+      expect(result.map((s) => [s.name, s.depth, s.isCurrent])).toEqual([
+        ['base', 0, false],
+        ['a', 1, false],
+        ['a1', 2, true],
+        ['b', 1, false],
+      ]);
+    });
+
+    /**
+     * Verifies: without Proxmox's 'current' entry the Vm model's currentSnapshot marks the current one, and a snapshot whose parent is missing is listed at the root.
+     * Interacts with: toVmSnapshots.
+     * Data: 'orphan' whose parent 'gone' is not listed; currentSnapshot 'orphan'.
+     */
+    it('falls back to the model for the current snapshot', () => {
+      const result = toVmSnapshots([{ name: 'orphan', parent: 'gone' }], 'orphan');
+      expect(result).toEqual([
+        expect.objectContaining({ name: 'orphan', depth: 0, isCurrent: true }),
+      ]);
+      expect(result[0].createTime).toBeUndefined();
+    });
+
+    /**
+     * Verifies: a Vm running from no snapshot marks none current.
+     * Interacts with: toVmSnapshots.
+     * Data: 'clean', and a 'current' entry with no parent.
+     */
+    it('marks nothing current when the Vm is not on a snapshot', () => {
+      const result = toVmSnapshots([{ name: 'clean' }, { name: 'current' }]);
+      expect(result.map((s) => s.isCurrent)).toEqual([false]);
+    });
   });
 });
