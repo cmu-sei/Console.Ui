@@ -23,6 +23,7 @@ import {
 } from '@cmusei/crucible-common';
 import { HttpErrorResponse } from '@angular/common/http';
 import {
+  AppSystemPermission,
   AppViewPermission,
   ProxmoxService as ApiProxmoxService,
   ProxmoxVirtualMachine,
@@ -899,14 +900,15 @@ describe('OptionsBar2Component', () => {
     const canRevert: PermissionGrants = { view: [AppViewPermission.RevertVms] };
 
     /**
-     * Verifies: Snapshots is offered only with the RevertVms view permission, as in the vSphere bar.
+     * Verifies: Snapshots is offered with the RevertVms view or system permission, as in the vSphere bar and as vm.api authorizes.
      * Interacts with: the real UserPermissionsService over a stubbed getVmPermissions; the gear menu.
-     * Data: no grants, then RevertVms.
+     * Data: no grants, then RevertVms at view and at system level.
      */
     it.each<[PermissionGrants, boolean]>([
       [{}, false],
       [{ view: [AppViewPermission.ControlViewVms] }, false],
       [canRevert, true],
+      [{ system: [AppSystemPermission.RevertVms] }, true],
     ])('with grants %j shows Snapshots: %s', async (grants, shown) => {
       const { fixture } = await renderOptionsBar2({
         grants,
@@ -1036,6 +1038,12 @@ describe('OptionsBar2Component', () => {
       ['ISO storage only', {}, true, ['Mount ISO']],
       ['upload only', { view: [AppViewPermission.UploadVmFiles] }, false, ['Send File To VM']],
       ['download only', { view: [AppViewPermission.DownloadVmFiles] }, false, ['Download File From VM']],
+      [
+        'system upload and download',
+        { system: [AppSystemPermission.UploadVmFiles, AppSystemPermission.DownloadVmFiles] },
+        false,
+        ['Send File To VM', 'Download File From VM'],
+      ],
       ['everything', canTransfer, true, ['Send File To VM', 'Download File From VM', 'Mount ISO']],
     ])('with %s lists %j', async (_case, grants, canMountIso, items) => {
       const { fixture } = await renderOptionsBar2({

@@ -22,6 +22,7 @@ import {
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { HttpErrorResponse } from '@angular/common/http';
 import {
+  AppSystemPermission,
   AppViewPermission,
   ProxmoxVirtualMachine,
   Vm,
@@ -208,6 +209,7 @@ export class OptionsBar2Component implements OnInit {
   canRevertSnapshots$ = this.userPermissionsService.can(
     null,
     AppViewPermission.RevertVms,
+    AppSystemPermission.RevertVms,
   );
 
   public readonly hasSnapshot = computed(
@@ -222,11 +224,19 @@ export class OptionsBar2Component implements OnInit {
 
   // Same gates as the vSphere bar's Files items.
   public readonly canUploadVmFiles = toSignal(
-    this.userPermissionsService.can(null, AppViewPermission.UploadVmFiles),
+    this.userPermissionsService.can(
+      null,
+      AppViewPermission.UploadVmFiles,
+      AppSystemPermission.UploadVmFiles,
+    ),
     { initialValue: false },
   );
   public readonly canDownloadVmFiles = toSignal(
-    this.userPermissionsService.can(null, AppViewPermission.DownloadVmFiles),
+    this.userPermissionsService.can(
+      null,
+      AppViewPermission.DownloadVmFiles,
+      AppSystemPermission.DownloadVmFiles,
+    ),
     { initialValue: false },
   );
 
