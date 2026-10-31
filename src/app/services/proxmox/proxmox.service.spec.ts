@@ -3,7 +3,9 @@
 
 import { describe, it, expect, vi } from 'vitest';
 import { TestBed } from '@angular/core/testing';
-import { firstValueFrom, of } from 'rxjs';
+import { HttpErrorResponse } from '@angular/common/http';
+import { firstValueFrom, of, throwError } from 'rxjs';
+import { fileList } from '../../test-utils/file-list';
 import {
   ProxmoxService as ApiProxmoxService,
   ProxmoxVirtualMachine,
@@ -28,6 +30,8 @@ function setup() {
     ),
     revertProxmoxVirtualMachine: vi.fn(() => of('reverted')),
     revertProxmoxVirtualMachineSnapshot: vi.fn(() => of('reverted')),
+    uploadFileToProxmoxVirtualMachine: vi.fn(() => of('uploaded')),
+    downloadFileFromProxmoxVirtualMachine: vi.fn(() => of(new Blob(['data']))),
   } satisfies ApiStub<ApiProxmoxService>;
   const novnc = {
     sendCtrlAltDel: vi.fn(),
@@ -209,6 +213,59 @@ describe('ProxmoxService', () => {
     it('marks nothing current when the Vm is not on a snapshot', () => {
       const result = toVmSnapshots([{ name: 'clean' }, { name: 'current' }]);
       expect(result.map((s) => s.isCurrent)).toEqual([false]);
+    });
+  });
+
+  describe('file transfer', () => {
+    /**
+     * Verifies: uploadFiles() sends the directory and every picked file to the generated client.
+     * Interacts with: generated uploadFileToProxmoxVirtualMachine stub.
+     * Data: two files into '/tmp/'.
+     */
+    it('uploads the files into the directory', () => {
+      const { service, api } = setup();
+      const a = new File(['a'], 'a.txt');
+      const b = new File(['b'], 'b.bin');
+      service.uploadFiles('vm-1', '/tmp/', fileList(a, b));
+      expect(api.uploadFileToProxmoxVirtualMachine).toHaveBeenCalledWith('vm-1', '/tmp/', [a, b]);
+    });
+
+    /**
+     * Verifies: downloadFile() returns the guest file's blob.
+     * Interacts with: generated downloadFileFromProxmoxVirtualMachine stub.
+     * Data: '/etc/hosts'.
+     */
+    it('downloads a file as a blob', async () => {
+      const { service, api } = setup();
+      const blob = await firstValueFrom(service.downloadFile('vm-1', '/etc/hosts'));
+      expect(await blob.text()).toBe('data');
+      expect(api.downloadFileFromProxmoxVirtualMachine).toHaveBeenCalledWith('vm-1', '/etc/hosts');
+    });
+
+    /**
+     * Verifies: a failed download's Blob body is parsed back into ProblemDetails, so its title can be shown; a body that isn't JSON leaves the error as it was.
+     * Interacts with: generated downloadFileFromProxmoxVirtualMachine stub rejecting with an HttpErrorResponse.
+     * Data: a 400 whose Blob body is {"title":"No such file"}, then one whose body is 'oops'.
+     */
+    it('parses a failed download body', async () => {
+      const { service, api } = setup();
+      api.downloadFileFromProxmoxVirtualMachine.mockReturnValueOnce(
+        throwError(
+          () =>
+            new HttpErrorResponse({
+              status: 400,
+              error: new Blob([JSON.stringify({ title: 'No such file' })]),
+            }),
+        ),
+      );
+      const parsed = await firstValueFrom(service.downloadFile('vm-1', '/x')).catch((e) => e);
+      expect(parsed).toBeInstanceOf(HttpErrorResponse);
+      expect(parsed.status).toBe(400);
+      expect(parsed.error).toEqual({ title: 'No such file' });
+
+      const raw = new HttpErrorResponse({ status: 500, error: new Blob(['oops']) });
+      api.downloadFileFromProxmoxVirtualMachine.mockReturnValueOnce(throwError(() => raw));
+      expect(await firstValueFrom(service.downloadFile('vm-1', '/x')).catch((e) => e)).toBe(raw);
     });
   });
 });

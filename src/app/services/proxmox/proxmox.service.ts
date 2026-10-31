@@ -4,8 +4,9 @@
  */
 
 import { Injectable, inject } from '@angular/core';
-import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { HttpErrorResponse } from '@angular/common/http';
+import { from, Observable, throwError } from 'rxjs';
+import { catchError, map, switchMap } from 'rxjs/operators';
 import {
   ChangeProxmoxVirtualMachineNetwork,
   MountProxmoxVirtualMachineIso,
@@ -76,6 +77,35 @@ export class ProxmoxService {
     return this.apiProxmoxService.revertProxmoxVirtualMachineSnapshot(id, name);
   }
 
+  // Writes the files into `directory` (which must end in a path separator) through the QEMU guest
+  // agent. The API caps the size per file and answers 400 with the reason in the ProblemDetails title.
+  public uploadFiles(
+    id: string,
+    directory: string,
+    files: FileList,
+  ): Observable<string> {
+    return this.apiProxmoxService.uploadFileToProxmoxVirtualMachine(
+      id,
+      directory,
+      Array.from(files),
+    );
+  }
+
+  // Reads a file from the guest through the QEMU guest agent. A failed request's body arrives as a
+  // Blob too, since the request asks for one; it is parsed back into the ProblemDetails object so
+  // callers can read the reason the same way as for any other endpoint.
+  public downloadFile(id: string, path: string): Observable<Blob> {
+    return this.apiProxmoxService
+      .downloadFileFromProxmoxVirtualMachine(id, path)
+      .pipe(
+        catchError((error) =>
+          from(parseBlobError(error)).pipe(
+            switchMap((parsed) => throwError(() => parsed)),
+          ),
+        ),
+      );
+  }
+
   public sendCtrlAltDel() {
     this.novncService.sendCtrlAltDel();
   }
@@ -134,4 +164,26 @@ export function toVmSnapshots(
   visit(null, 0);
 
   return result;
+}
+
+async function parseBlobError(error: unknown): Promise<unknown> {
+  if (!(error instanceof HttpErrorResponse) || !(error.error instanceof Blob)) {
+    return error;
+  }
+
+  let body: unknown;
+  try {
+    const text = await error.error.text();
+    body = text ? JSON.parse(text) : null;
+  } catch {
+    return error;
+  }
+
+  return new HttpErrorResponse({
+    error: body,
+    headers: error.headers,
+    status: error.status,
+    statusText: error.statusText,
+    url: error.url ?? undefined,
+  });
 }

@@ -30,7 +30,13 @@ import { DialogService } from '../../services/dialog/dialog.service';
 import { ProxmoxService } from '../../services/proxmox/proxmox.service';
 import { PowerAction, VmService } from '../../state/vm/vm.service';
 import { VsphereService } from '../../state/vsphere/vsphere.service';
-import { OptionsBar2Component } from './options-bar2.component';
+import {
+  GUEST_AGENT_TOOLTIP,
+  OptionsBar2Component,
+  fileNameOf,
+  toDirectory,
+} from './options-bar2.component';
+import { FileUploadProgressDialogComponent } from '../shared/file-upload-progress-dialog/file-upload-progress-dialog.component';
 import { renderComponent } from '../../test-utils/render-component';
 import { ApiStub } from '../../test-utils/api-stub';
 import {
@@ -39,6 +45,8 @@ import {
 } from '../../test-utils/mock-permission-data.service';
 import { dialogRefStub, dismissedDialogRefStub } from '../../test-utils/dialog-refs';
 import { stubClipboard } from '../../test-utils/clipboard';
+import { fileList } from '../../test-utils/file-list';
+import { MatTooltipHarness } from '@angular/material/tooltip/testing';
 import {
   captureUnhandledRxErrors,
   flush,
@@ -103,6 +111,8 @@ async function renderOptionsBar2(
     ),
     revertToCurrentSnapshot: vi.fn<ProxmoxService['revertToCurrentSnapshot']>(() => of('ok')),
     revertToSnapshot: vi.fn<ProxmoxService['revertToSnapshot']>(() => of('ok')),
+    uploadFiles: vi.fn<ProxmoxService['uploadFiles']>(() => of('uploaded')),
+    downloadFile: vi.fn<ProxmoxService['downloadFile']>(() => of(new Blob(['127.0.0.1 localhost']))),
   } satisfies Pick<
     ProxmoxService,
     | 'getVm'
@@ -115,16 +125,24 @@ async function renderOptionsBar2(
     | 'getSnapshots'
     | 'revertToCurrentSnapshot'
     | 'revertToSnapshot'
+    | 'uploadFiles'
+    | 'downloadFile'
   >;
   const vsphere = {
     getVm: vi.fn<VsphereService['getVm']>(() => of(networkVm() as VsphereVirtualMachine)),
     changeNic: vi.fn(() => of({})),
   } satisfies Pick<VsphereService, 'getVm' | 'changeNic'>;
+  const progress = dialogRefStub<FileUploadProgressDialogComponent, void>();
   const dialogs = {
     mountIso: vi.fn<DialogService['mountIso']>(() => of(undefined)),
     sendText: vi.fn<DialogService['sendText']>(() => of(undefined)),
     selectSnapshot: vi.fn<DialogService['selectSnapshot']>(() => of(undefined)),
-  } satisfies Pick<DialogService, 'mountIso' | 'sendText' | 'selectSnapshot'>;
+    getFileUploadInfo: vi.fn<DialogService['getFileUploadInfo']>(() => of(undefined)),
+    uploadProgress: vi.fn<DialogService['uploadProgress']>(() => progress.dialogRef),
+  } satisfies Pick<
+    DialogService,
+    'mountIso' | 'sendText' | 'selectSnapshot' | 'getFileUploadInfo' | 'uploadProgress'
+  >;
   const confirm = vi.fn<CrucibleDialogService['confirm']>(() =>
     overrides.confirmation === 'dismissed'
       ? dismissedDialogRefStub<unknown, boolean>().dialogRef
@@ -165,6 +183,7 @@ async function renderOptionsBar2(
     proxmox,
     vsphere,
     dialogs,
+    progress,
     confirm,
     auth,
     snackBar,
@@ -246,8 +265,8 @@ describe('OptionsBar2Component', () => {
       expect(await menuTexts(fixture)).toEqual([
         'Keyboard',
         'Power',
+        'Files',
         'Network Cards',
-        'Mount ISO',
         'Dark Theme',
       ]);
     });
@@ -434,7 +453,7 @@ describe('OptionsBar2Component', () => {
       // The refreshed model the mount returns still allows mounting.
       proxmox.mountIso.mockReturnValue(of(networkVm({ canMountIso: true })));
 
-      await clickMenu(fixture, 'Mount ISO');
+      await clickMenu(fixture, 'Files', 'Mount ISO');
 
       expect(proxmox.getIsos).toHaveBeenCalledWith('vm-1');
       expect(proxmox.mountIso).toHaveBeenCalledWith('vm-1', 'local:iso/tools.iso');
@@ -442,7 +461,7 @@ describe('OptionsBar2Component', () => {
         duration: 5000,
         verticalPosition: 'top',
       });
-      expect(await (await findMenuItem(fixture, 'Mount ISO')).isDisabled()).toBe(false);
+      expect(await (await findMenuItem(fixture, 'Files', 'Mount ISO')).isDisabled()).toBe(false);
     });
 
     /**
@@ -455,9 +474,9 @@ describe('OptionsBar2Component', () => {
       // NEVER keeps the first listing in flight.
       proxmox.getIsos.mockReturnValue(NEVER);
 
-      await clickMenu(fixture, 'Mount ISO');
+      await clickMenu(fixture, 'Files', 'Mount ISO');
 
-      const item = await findMenuItem(fixture, 'Loading ISOs...');
+      const item = await findMenuItem(fixture, 'Files', 'Loading ISOs...');
       expect(await item.isDisabled()).toBe(true);
       expect(proxmox.getIsos).toHaveBeenCalledOnce();
     });
@@ -473,14 +492,14 @@ describe('OptionsBar2Component', () => {
       });
       proxmox.getIsos.mockReturnValueOnce(throwError(() => new Error('denied')));
 
-      await clickMenu(fixture, 'Mount ISO');
+      await clickMenu(fixture, 'Files', 'Mount ISO');
 
       expect(snackBar.open).toHaveBeenLastCalledWith(
         'Could not load ISOs: denied',
         'Close',
         expect.objectContaining({ duration: 10000 }),
       );
-      expect(await (await findMenuItem(fixture, 'Mount ISO')).isDisabled()).toBe(false);
+      expect(await (await findMenuItem(fixture, 'Files', 'Mount ISO')).isDisabled()).toBe(false);
     });
 
     /**
@@ -495,7 +514,7 @@ describe('OptionsBar2Component', () => {
       dialogs.mountIso.mockReturnValue(of({ filename: 'a.iso', mountValue: 'local:iso/a.iso' }));
       proxmox.mountIso.mockReturnValue(throwError(() => new Error('busy')));
 
-      await clickMenu(fixture, 'Mount ISO');
+      await clickMenu(fixture, 'Files', 'Mount ISO');
 
       expect(snackBar.open).toHaveBeenLastCalledWith(
         'Mount failed: busy',
@@ -511,7 +530,7 @@ describe('OptionsBar2Component', () => {
      */
     it('mounts nothing when the picker is dismissed', async () => {
       const { fixture, proxmox } = await renderOptionsBar2({ networkVm: isoVm() });
-      await clickMenu(fixture, 'Mount ISO');
+      await clickMenu(fixture, 'Files', 'Mount ISO');
       expect(proxmox.mountIso).not.toHaveBeenCalled();
     });
   });
@@ -937,6 +956,250 @@ describe('OptionsBar2Component', () => {
         'Close',
         expect.objectContaining({ duration: 10000 }),
       );
+    });
+  });
+
+  describe('files', () => {
+    const canTransfer: PermissionGrants = {
+      view: [AppViewPermission.UploadVmFiles, AppViewPermission.DownloadVmFiles],
+    };
+    const agentVm = (guestAgentRunning = true) =>
+      of(networkVm({ guestAgentRunning, canMountIso: true }));
+
+    function fileInput(fixture: Fixture): HTMLInputElement {
+      return fixture.nativeElement.querySelector('input[type="file"]');
+    }
+
+    function pickFiles(fixture: Fixture, ...files: File[]) {
+      const input = fileInput(fixture);
+      Object.defineProperty(input, 'files', { value: fileList(...files), configurable: true });
+      fireEvent.change(input);
+    }
+
+    /**
+     * Verifies: Files holds Send File To VM, Download File From VM and Mount ISO, each behind its own gate, as in the vSphere bar (no Enter VM Credentials: the guest agent needs none).
+     * Interacts with: the real UserPermissionsService over a stubbed getVmPermissions; ProxmoxService.getVm (canMountIso); the Files submenu.
+     * Data: the grants and canMountIso under test.
+     */
+    it.each<[string, PermissionGrants, boolean, string[] | null]>([
+      ['no grants, no ISO storage', {}, false, null],
+      ['ISO storage only', {}, true, ['Mount ISO']],
+      ['upload only', { view: [AppViewPermission.UploadVmFiles] }, false, ['Send File To VM']],
+      ['download only', { view: [AppViewPermission.DownloadVmFiles] }, false, ['Download File From VM']],
+      ['everything', canTransfer, true, ['Send File To VM', 'Download File From VM', 'Mount ISO']],
+    ])('with %s lists %j', async (_case, grants, canMountIso, items) => {
+      const { fixture } = await renderOptionsBar2({
+        grants,
+        networkVm: of(networkVm({ guestAgentRunning: true, canMountIso })),
+      });
+      if (items === null) {
+        expect(await menuTexts(fixture)).not.toContain('Files');
+      } else {
+        expect(await itemTexts(await openSubmenu(fixture, 'Files'))).toEqual(items);
+      }
+    });
+
+    /**
+     * Verifies: without a running guest agent the transfer items are disabled and explain why, while Mount ISO (no agent needed) stays enabled.
+     * Interacts with: ProxmoxService.getVm (guestAgentRunning); the Files submenu; MatTooltipHarness.
+     * Data: transfer grants; guestAgentRunning false, then true.
+     */
+    it.each([false, true])('gates transfers on the guest agent (running %s)', async (running) => {
+      const { fixture } = await renderOptionsBar2({ grants: canTransfer, networkVm: agentVm(running) });
+      const files = await openSubmenu(fixture, 'Files');
+      const [send] = await files.getItems({ text: 'Send File To VM' });
+      const [download] = await files.getItems({ text: 'Download File From VM' });
+      const [iso] = await files.getItems({ text: 'Mount ISO' });
+      expect(await send.isDisabled()).toBe(!running);
+      expect(await download.isDisabled()).toBe(!running);
+      expect(await iso.isDisabled()).toBe(false);
+
+      const tooltips = await TestbedHarnessEnvironment.documentRootLoader(fixture).getAllHarnesses(
+        MatTooltipHarness,
+      );
+      await tooltips[0].show();
+      if (running) {
+        expect(await tooltips[0].isOpen()).toBe(false);
+      } else {
+        expect(await tooltips[0].getTooltipText()).toBe(GUEST_AGENT_TOOLTIP);
+      }
+    });
+
+    /**
+     * Verifies: Send File To VM opens the file picker straight from the menu click.
+     * Interacts with: the Files submenu; the hidden file input's click().
+     * Data: transfer grants; agent running.
+     */
+    it('opens the file picker from Send File To VM', async () => {
+      const { fixture } = await renderOptionsBar2({ grants: canTransfer, networkVm: agentVm() });
+      const click = vi.spyOn(fileInput(fixture), 'click').mockImplementation(() => undefined);
+      await clickMenu(fixture, 'Files', 'Send File To VM');
+      expect(click).toHaveBeenCalledOnce();
+    });
+
+    /**
+     * Verifies: picked files are uploaded into the directory the user names (a separator added), with the progress dialog shown, then closed, and success reported.
+     * Interacts with: the file input's change event; DialogService.getFileUploadInfo/uploadProgress; ProxmoxService.uploadFiles; MatSnackBar.open.
+     * Data: 'notes.txt' into '/home/user'.
+     */
+    it('uploads the picked files into the named directory', async () => {
+      const { fixture, dialogs, proxmox, progress, snackBar } = await renderOptionsBar2({
+        grants: canTransfer,
+        networkVm: agentVm(),
+      });
+      dialogs.getFileUploadInfo.mockReturnValue(
+        of({ filepath: '/home/user', username: '', password: '' }),
+      );
+      const file = new File(['hi'], 'notes.txt');
+
+      pickFiles(fixture, file);
+
+      expect(dialogs.getFileUploadInfo).toHaveBeenCalledWith('VM Send File Settings', {
+        showCredentials: false,
+      });
+      expect(proxmox.uploadFiles).toHaveBeenCalledWith('vm-1', '/home/user/', expect.anything());
+      expect(Array.from(proxmox.uploadFiles.mock.calls[0][2])).toEqual([file]);
+      expect(progress.close).toHaveBeenCalledOnce();
+      expect(snackBar.open).toHaveBeenCalledWith('File Uploaded Successfully', 'Close', expect.anything());
+    });
+
+    /**
+     * Verifies: a path with no separator is asked for again, as the vSphere bar does.
+     * Interacts with: the file input's change event; DialogService.getFileUploadInfo; ProxmoxService.uploadFiles.
+     * Data: 'notes' first, then 'C:\\Users\\me'.
+     */
+    it('asks again for a relative path', async () => {
+      const { fixture, dialogs, proxmox } = await renderOptionsBar2({
+        grants: canTransfer,
+        networkVm: agentVm(),
+      });
+      dialogs.getFileUploadInfo
+        .mockReturnValueOnce(of({ filepath: 'notes', username: '', password: '' }))
+        .mockReturnValueOnce(of({ filepath: 'C:\\Users\\me', username: '', password: '' }));
+
+      pickFiles(fixture, new File(['hi'], 'notes.txt'));
+
+      expect(dialogs.getFileUploadInfo).toHaveBeenLastCalledWith(
+        'The file path must be an absolute path.',
+        { showCredentials: false },
+      );
+      expect(proxmox.uploadFiles).toHaveBeenCalledWith('vm-1', 'C:\\Users\\me\\', expect.anything());
+    });
+
+    /**
+     * Verifies: closing the path dialog uploads nothing and clears the selection.
+     * Interacts with: the file input; DialogService.getFileUploadInfo (undefined); ProxmoxService.uploadFiles.
+     * Data: dialog dismissed.
+     */
+    it('uploads nothing when the path dialog is closed', async () => {
+      const { fixture, proxmox, dialogs } = await renderOptionsBar2({
+        grants: canTransfer,
+        networkVm: agentVm(),
+      });
+      pickFiles(fixture, new File(['hi'], 'notes.txt'));
+      expect(dialogs.getFileUploadInfo).toHaveBeenCalledOnce();
+      expect(proxmox.uploadFiles).not.toHaveBeenCalled();
+    });
+
+    /**
+     * Verifies: the API's 400 reason (such as the guest agent's size cap) is shown to the user and the progress dialog closes.
+     * Interacts with: ProxmoxService.uploadFiles rejecting with an HttpErrorResponse; MatSnackBar.open.
+     * Data: 400 titled with the size cap message.
+     */
+    it("shows the API's reason for a refused upload", async () => {
+      const { fixture, dialogs, proxmox, progress, snackBar } = await renderOptionsBar2({
+        grants: canTransfer,
+        networkVm: agentVm(),
+      });
+      dialogs.getFileUploadInfo.mockReturnValue(of({ filepath: '/tmp/', username: '', password: '' }));
+      proxmox.uploadFiles.mockReturnValue(
+        throwError(
+          () => new HttpErrorResponse({ status: 400, error: { title: 'File exceeds 61440-byte limit' } }),
+        ),
+      );
+
+      pickFiles(fixture, new File(['big'], 'big.bin'));
+
+      expect(snackBar.open).toHaveBeenCalledWith(
+        'Error Uploading File: File exceeds 61440-byte limit',
+        'Close',
+        expect.objectContaining({ duration: 10000 }),
+      );
+      expect(progress.close).toHaveBeenCalledOnce();
+    });
+
+    /**
+     * Verifies: Download File From VM asks for the guest path and saves the returned blob under the file's own name.
+     * Interacts with: the Files submenu; DialogService.getFileUploadInfo; ProxmoxService.downloadFile; URL.createObjectURL and an anchor click (jsdom has neither download nor object URLs).
+     * Data: '/etc/hosts'.
+     */
+    it('saves a downloaded file', async () => {
+      const { fixture, dialogs, proxmox } = await renderOptionsBar2({
+        grants: canTransfer,
+        networkVm: agentVm(),
+      });
+      dialogs.getFileUploadInfo.mockReturnValue(of({ filepath: '/etc/hosts', username: '', password: '' }));
+      const createObjectURL = vi.fn(() => 'blob:hosts');
+      const revokeObjectURL = vi.fn();
+      vi.stubGlobal('URL', Object.assign(URL, { createObjectURL, revokeObjectURL }));
+      const saved: HTMLAnchorElement[] = [];
+      const click = vi
+        .spyOn(HTMLAnchorElement.prototype, 'click')
+        .mockImplementation(function (this: HTMLAnchorElement) {
+          saved.push(this);
+        });
+      try {
+        await clickMenu(fixture, 'Files', 'Download File From VM');
+
+        expect(dialogs.getFileUploadInfo).toHaveBeenCalledWith('Download File Settings', {
+          showCredentials: false,
+        });
+        expect(proxmox.downloadFile).toHaveBeenCalledWith('vm-1', '/etc/hosts');
+        expect(saved.map((a) => [a.href, a.download])).toEqual([['blob:hosts', 'hosts']]);
+        await vi.waitFor(() => expect(revokeObjectURL).toHaveBeenCalledWith('blob:hosts'));
+      } finally {
+        click.mockRestore();
+        vi.unstubAllGlobals();
+      }
+    });
+
+    /**
+     * Verifies: a failed download is reported with the API's reason.
+     * Interacts with: the Files submenu; ProxmoxService.downloadFile rejecting; MatSnackBar.open.
+     * Data: 400 titled 'No such file'.
+     */
+    it('reports a failed download', async () => {
+      const { fixture, dialogs, proxmox, snackBar } = await renderOptionsBar2({
+        grants: canTransfer,
+        networkVm: agentVm(),
+      });
+      dialogs.getFileUploadInfo.mockReturnValue(of({ filepath: '/nope', username: '', password: '' }));
+      proxmox.downloadFile.mockReturnValue(
+        throwError(() => new HttpErrorResponse({ status: 400, error: { title: 'No such file' } })),
+      );
+
+      await clickMenu(fixture, 'Files', 'Download File From VM');
+
+      expect(snackBar.open).toHaveBeenCalledWith(
+        'Error Downloading File: No such file',
+        'Close',
+        expect.objectContaining({ duration: 10000 }),
+      );
+    });
+
+    /**
+     * Verifies: toDirectory() keeps a trailing separator, adds the one the path uses, and rejects a bare name; fileNameOf() takes the last segment of either style.
+     * Interacts with: toDirectory, fileNameOf.
+     * Data: Linux and Windows paths.
+     */
+    it('normalizes paths', () => {
+      expect(toDirectory('/tmp/')).toBe('/tmp/');
+      expect(toDirectory('/tmp')).toBe('/tmp/');
+      expect(toDirectory('C:\\temp')).toBe('C:\\temp\\');
+      expect(toDirectory('temp')).toBeNull();
+      expect(fileNameOf('/var/log/syslog')).toBe('syslog');
+      expect(fileNameOf('C:\\a\\b.txt')).toBe('b.txt');
+      expect(fileNameOf('/var/log/')).toBe('download');
     });
   });
 });

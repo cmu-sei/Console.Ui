@@ -3,6 +3,14 @@ Copyright 2022 Carnegie Mellon University. All Rights Reserved.
 Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
 -->
 
+<!-- Outside the menus so the selection survives the menu closing. -->
+<input
+  #file
+  type="file"
+  multiple
+  style="display: none"
+  (change)="uploadFileToVm(file)"
+/>
 <div class="d-flex align-items-center justify-content-between">
   <div class="w-25 d-flex align-items-center justify-content-between">
     <div class="d-flex align-items-center">
@@ -55,18 +63,53 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
             </button>
           }
 
+          <!-- Files -->
+          @if (showFilesMenu()) {
+            <button mat-menu-item [matMenuTriggerFor]="fileMenu">Files</button>
+          }
+          <mat-menu #fileMenu="matMenu">
+            @if (canUploadVmFiles()) {
+              <div
+                [matTooltip]="guestAgentRunning() ? '' : guestAgentTooltip"
+                matTooltipPosition="after"
+              >
+                <button
+                  mat-menu-item
+                  [disabled]="!guestAgentRunning() || uploading()"
+                  (click)="file.click()"
+                >
+                  Send File To VM
+                </button>
+              </div>
+            }
+            @if (canDownloadVmFiles()) {
+              <div
+                [matTooltip]="guestAgentRunning() ? '' : guestAgentTooltip"
+                matTooltipPosition="after"
+              >
+                <button
+                  mat-menu-item
+                  [disabled]="!guestAgentRunning() || uploading()"
+                  (click)="downloadFileFromVm()"
+                >
+                  Download File From VM
+                </button>
+              </div>
+            }
+            @if (canMountIso()) {
+              <button
+                mat-menu-item
+                [disabled]="retrievingIsos()"
+                (click)="startIsoMount()"
+              >
+                {{ retrievingIsos() ? 'Loading ISOs...' : 'Mount ISO' }}
+              </button>
+            }
+          </mat-menu>
+
           @if (canAccessNicConfiguration() && networkMenuItems().length > 0) {
             <button mat-menu-item [matMenuTriggerFor]="networkMenu">
               Network Cards
-            </button>
-          }
-          @if (canMountIso()) {
-            <button
-              mat-menu-item
-              [disabled]="retrievingIsos()"
-              (click)="startIsoMount()"
-            >
-              {{ retrievingIsos() ? 'Loading ISOs...' : 'Mount ISO' }}
             </button>
           }
 

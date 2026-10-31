@@ -31,7 +31,15 @@ import {
   CrucibleDialogService,
   Theme,
 } from '@cmusei/crucible-common';
-import { catchError, filter, startWith, switchMap, take } from 'rxjs/operators';
+import {
+  catchError,
+  filter,
+  finalize,
+  map,
+  startWith,
+  switchMap,
+  take,
+} from 'rxjs/operators';
 import { MatIcon } from '@angular/material/icon';
 import { MatMenuTrigger, MatMenu, MatMenuItem } from '@angular/material/menu';
 import { MatButton, MatIconButton } from '@angular/material/button';
@@ -50,6 +58,9 @@ import { UserPermissionsService } from '../../services/user-permissions/user-per
 import { EMPTY, Observable, of } from 'rxjs';
 
 type NetworkVirtualMachine = ProxmoxVirtualMachine | VsphereVirtualMachine;
+
+// Tooltip on the controls that only work while the QEMU guest agent answers in the guest.
+export const GUEST_AGENT_TOOLTIP = 'Requires the QEMU guest agent';
 
 @Component({
   selector: 'app-options-bar2',
@@ -147,6 +158,31 @@ export class OptionsBar2Component {
   public readonly hasSnapshot = computed(
     () => this.proxmoxVm()?.hasSnapshot === true,
   );
+
+  public readonly guestAgentTooltip = GUEST_AGENT_TOOLTIP;
+
+  public readonly guestAgentRunning = computed(
+    () => this.proxmoxVm()?.guestAgentRunning === true,
+  );
+
+  // Same gates as the vSphere bar's Files items.
+  public readonly canUploadVmFiles = toSignal(
+    this.userPermissionsService.can(null, AppViewPermission.UploadVmFiles),
+    { initialValue: false },
+  );
+  public readonly canDownloadVmFiles = toSignal(
+    this.userPermissionsService.can(null, AppViewPermission.DownloadVmFiles),
+    { initialValue: false },
+  );
+
+  public readonly showFilesMenu = computed(
+    () =>
+      this.canUploadVmFiles() ||
+      this.canDownloadVmFiles() ||
+      this.canMountIso(),
+  );
+
+  public readonly uploading = signal(false);
 
   public readonly networkMenuItems = computed(() => {
     const cards = this.networkCards();
@@ -348,6 +384,96 @@ export class OptionsBar2Component {
       });
   }
 
+  // Runs after the user picked files from Send File To VM: asks where to put them, then uploads.
+  // The picker comes first so it opens straight from the menu click; browsers refuse to open a file
+  // picker that isn't a direct response to a user gesture.
+  public uploadFileToVm(fileSelector: HTMLInputElement) {
+    const vm = this.vmState();
+    const files = fileSelector.files;
+    if (!vm?.id || !files?.length) {
+      fileSelector.value = '';
+      return;
+    }
+
+    this.askForDirectory('VM Send File Settings')
+      .pipe(take(1))
+      .subscribe((directory) => {
+        if (!directory) {
+          fileSelector.value = '';
+          return;
+        }
+
+        const progressRef = this.dialogService.uploadProgress();
+        this.uploading.set(true);
+        this.proxmoxService
+          .uploadFiles(vm.id, directory, files)
+          .pipe(
+            take(1),
+            finalize(() => {
+              progressRef.close();
+              fileSelector.value = '';
+              this.uploading.set(false);
+            }),
+          )
+          .subscribe({
+            next: () => this.showMessage('File Uploaded Successfully'),
+            error: (error) =>
+              this.showMessage(
+                `Error Uploading File: ${apiErrorMessage(error)}`,
+                10000,
+              ),
+          });
+      });
+  }
+
+  public downloadFileFromVm() {
+    const vm = this.vmState();
+    if (!vm?.id) {
+      return;
+    }
+
+    this.dialogService
+      .getFileUploadInfo('Download File Settings', { showCredentials: false })
+      .pipe(
+        take(1),
+        filter((entered) => !!entered?.filepath),
+        switchMap((entered) =>
+          this.proxmoxService
+            .downloadFile(vm.id, entered.filepath)
+            .pipe(map((blob) => ({ blob, path: entered.filepath }))),
+        ),
+      )
+      .subscribe({
+        next: ({ blob, path }) => saveBlob(blob, fileNameOf(path)),
+        error: (error) =>
+          this.showMessage(
+            `Error Downloading File: ${apiErrorMessage(error)}`,
+            10000,
+          ),
+      });
+  }
+
+  // The API appends the uploaded file's name to this path, so it must be an absolute directory
+  // ending in a separator. Adds the separator the path already uses, and asks again for a path
+  // with none, as the vSphere bar does.
+  private askForDirectory(title: string): Observable<string | undefined> {
+    return this.dialogService
+      .getFileUploadInfo(title, { showCredentials: false })
+      .pipe(
+        take(1),
+        switchMap((entered) => {
+          const path = entered?.filepath?.trim();
+          if (!path) {
+            return of(undefined);
+          }
+          const directory = toDirectory(path);
+          return directory
+            ? of(directory)
+            : this.askForDirectory('The file path must be an absolute path.');
+        }),
+      );
+  }
+
   public ctrlAltDel() {
     this.vmService.sendCtrlAltDel(this.vm.id);
   }
@@ -468,4 +594,32 @@ export function apiErrorMessage(error: unknown): string {
     return error.error?.title || error.message;
   }
   return (error as Error)?.message ?? String(error);
+}
+
+// `path` with a trailing separator, or null when it has none to go by (a bare name).
+export function toDirectory(path: string): string | null {
+  if (path.endsWith('/') || path.endsWith('\\')) {
+    return path;
+  }
+  if (path.includes('\\')) {
+    return path + '\\';
+  }
+  if (path.includes('/')) {
+    return path + '/';
+  }
+  return null;
+}
+
+export function fileNameOf(path: string): string {
+  return path.split(/[\\/]/).pop() || 'download';
+}
+
+function saveBlob(blob: Blob, fileName: string) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = fileName;
+  link.click();
+  // Revoke on the next task: the click has started the download by then.
+  setTimeout(() => URL.revokeObjectURL(url));
 }
