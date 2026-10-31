@@ -1524,6 +1524,34 @@ describe('OptionsBar2Component', () => {
     });
   });
 
+  describe('Proxmox task states', () => {
+    const proxmoxTask = (state: string): NotificationData => ({
+      taskId: `t-${state}`,
+      taskName: 'VM 100 Rollback',
+      taskType: 'qmrollback',
+      broadcastTime: '',
+      progress: '',
+      state,
+    });
+
+    /**
+     * Verifies: finished Proxmox tasks, which the poller rebroadcasts with PVE's own status as the state, are not listed; a running one is, without a percentage PVE never reports.
+     * Interacts with: NotificationService.tasksInProgress.
+     * Data: tasks in state "OK", a PVE failure string, and "running", all with empty progress.
+     */
+    it('lists only unfinished tasks and omits an empty percentage', async () => {
+      const { fixture, tasksInProgress } = await renderOptionsBar2();
+      tasksInProgress.next([proxmoxTask('OK'), proxmoxTask('start failed: QEMU exited with code 1')]);
+      fixture.detectChanges();
+      expect(screen.queryByText(/VM 100 Rollback/)).not.toBeInTheDocument();
+
+      tasksInProgress.next([proxmoxTask('running')]);
+      fixture.detectChanges();
+      const heading = screen.getByRole('heading', { name: /VM 100 Rollback/ });
+      expect(heading.textContent?.replace(/\s+/g, ' ').trim()).toBe('VM 100 Rollback ...');
+    });
+  });
+
   describe('Shutdown OS', () => {
     /**
      * Verifies: Shutdown OS stays enabled whatever the guest agent reports, because PVE falls back to an ACPI shutdown when the VM has no agent configured.

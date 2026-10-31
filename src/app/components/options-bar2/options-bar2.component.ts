@@ -131,10 +131,15 @@ export class OptionsBar2Component implements OnInit {
   }
 
   // Task progress vm.api broadcasts on the progress hub for this Vm (power, revert, ...). As in the
-  // vSphere bar, an empty broadcast leaves the last list in place, and finished tasks are hidden.
+  // vSphere bar, an empty broadcast leaves the last list in place. Only unfinished tasks are shown:
+  // the Proxmox poller rebroadcasts PVE's recent tasks, finished ones included, with PVE's own
+  // status ("OK", or the failure text) as the state, never vSphere's "success".
+  private static readonly unfinishedStates = new Set(['running', 'queued']);
   private readonly tasks = signal<NotificationData[]>([]);
   public readonly tasksInProgress = computed(() =>
-    this.tasks().filter((task) => task.state !== 'success'),
+    this.tasks().filter((task) =>
+      OptionsBar2Component.unfinishedStates.has(task.state),
+    ),
   );
 
   constructor() {
