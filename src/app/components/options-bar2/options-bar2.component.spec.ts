@@ -610,20 +610,23 @@ describe('OptionsBar2Component', () => {
       expect(apiProxmox.powerOnProxmoxVirtualMachine).not.toHaveBeenCalled();
     });
 
-    const confirmed: Array<[PowerAction, ProxmoxPowerMethod, string]> = [
-      [PowerAction.PowerOff, 'powerOffProxmoxVirtualMachine', 'Power off "Alpha"? The guest OS will not be shut down cleanly.'],
-      [PowerAction.Reboot, 'rebootProxmoxVirtualMachine', 'Reboot "Alpha"?'],
-      [PowerAction.Shutdown, 'shutdownProxmoxVirtualMachine', 'Shut down the guest OS on "Alpha"?'],
+    const confirmed: Array<[PowerAction, ProxmoxPowerMethod, string, string]> = [
+      [PowerAction.PowerOff, 'powerOffProxmoxVirtualMachine', 'Power off "Alpha"? The guest OS will not be shut down cleanly.', 'Power Off'],
+      [PowerAction.Reboot, 'rebootProxmoxVirtualMachine', 'Reboot "Alpha"?', 'Reboot'],
+      [PowerAction.Shutdown, 'shutdownProxmoxVirtualMachine', 'Shut down the guest OS on "Alpha"?', 'Shutdown OS'],
     ];
 
     /**
      * Verifies: disruptive power actions ask first, and run only once confirmed.
-     * Interacts with: the Power submenu item named for the action; CrucibleDialogService.confirm stub; real VmService over the generated ProxmoxService.
+     * Interacts with: the Power submenu item for the action; CrucibleDialogService.confirm stub; real VmService over the generated ProxmoxService.
      * Data: the action under test, confirmed.
      */
-    it.each(confirmed)('confirms %s before sending it', async (action, endpoint, message) => {
-      const ctx = await renderOptionsBar2({ confirmation: true });
-      await clickMenu(ctx.fixture, 'Power', action);
+    it.each(confirmed)('confirms %s before sending it', async (action, endpoint, message, label) => {
+      const ctx = await renderOptionsBar2({
+        confirmation: true,
+        networkVm: of(networkVm({ guestAgentRunning: true })),
+      });
+      await clickMenu(ctx.fixture, 'Power', label);
       expect(ctx.confirm).toHaveBeenCalledWith({
         title: `Confirm ${action}`,
         message,
@@ -1511,5 +1514,32 @@ describe('OptionsBar2Component', () => {
       fixture.detectChanges();
       expect(screen.getByText('Revert ... 40%')).toBeInTheDocument();
     });
+  });
+
+  describe('Shutdown OS', () => {
+    /**
+     * Verifies: Shutdown OS stays enabled whatever the guest agent reports, because PVE falls back to an ACPI shutdown when the VM has no agent configured.
+     * Interacts with: ProxmoxService.getVm (guestAgentRunning); the Power submenu.
+     * Data: guestAgentRunning false, true, and absent (an API without the field).
+     */
+    it.each<[boolean | undefined]>([[false], [true], [undefined]])(
+      'is enabled with guestAgentRunning %s',
+      async (guestAgentRunning) => {
+        const { fixture } = await renderOptionsBar2({
+          networkVm: of(networkVm({ guestAgentRunning })),
+        });
+        const power = await openSubmenu(fixture, 'Power');
+        const items = await power.getItems();
+        const states = await Promise.all(
+          items.map(async (item) => [await item.getText(), await item.isDisabled()]),
+        );
+        expect(states).toEqual([
+          ['Power On', false],
+          ['Power Off', false],
+          ['Reboot', false],
+          ['Shutdown OS', false],
+        ]);
+      },
+    );
   });
 });
