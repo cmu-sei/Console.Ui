@@ -57,4 +57,9 @@ export class ProxmoxService {
   public sendClipboardText(text: string) {
     this.novncService.sendClipboardText(text);
   }
+
+  // Types the text into the guest as key presses. False when the console is not connected.
+  public sendText(text: string): boolean {
+    return this.novncService.sendText(text);
+  }
 }

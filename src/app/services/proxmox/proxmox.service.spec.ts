@@ -24,7 +24,8 @@ function setup() {
   const novnc = {
     sendCtrlAltDel: vi.fn(),
     sendClipboardText: vi.fn(),
-  } satisfies Pick<NoVNCService, 'sendCtrlAltDel' | 'sendClipboardText'>;
+    sendText: vi.fn(() => true),
+  } satisfies Pick<NoVNCService, 'sendCtrlAltDel' | 'sendClipboardText' | 'sendText'>;
   TestBed.configureTestingModule({
     providers: [
       { provide: NoVNCService, useValue: novnc },
@@ -104,5 +105,18 @@ describe('ProxmoxService', () => {
     const { service, novnc } = setup();
     service.sendClipboardText('hello');
     expect(novnc.sendClipboardText).toHaveBeenCalledWith('hello');
+  });
+
+  /**
+   * Verifies: typed text goes to the noVNC client, and its connected/not-connected answer is passed back.
+   * Interacts with: NoVNCService stub.
+   * Data: text 'hello'; the client answering true, then false.
+   */
+  it('types text through noVNC', () => {
+    const { service, novnc } = setup();
+    expect(service.sendText('hello')).toBe(true);
+    expect(novnc.sendText).toHaveBeenCalledWith('hello');
+    novnc.sendText.mockReturnValue(false);
+    expect(service.sendText('hello')).toBe(false);
   });
 });

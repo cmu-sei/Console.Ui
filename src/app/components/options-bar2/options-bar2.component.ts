@@ -31,7 +31,7 @@ import {
 import { catchError, filter, startWith, switchMap, take } from 'rxjs/operators';
 import { MatIcon } from '@angular/material/icon';
 import { MatMenuTrigger, MatMenu, MatMenuItem } from '@angular/material/menu';
-import { MatIconButton } from '@angular/material/button';
+import { MatButton, MatIconButton } from '@angular/material/button';
 import {
   MatSlideToggleChange,
   MatSlideToggleModule,
@@ -54,6 +54,7 @@ type NetworkVirtualMachine = ProxmoxVirtualMachine | VsphereVirtualMachine;
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     MatIconButton,
+    MatButton,
     MatMenuTrigger,
     MatIcon,
     MatMenu,
@@ -306,6 +307,47 @@ export class OptionsBar2Component {
 
   public sendClipboardText() {
     this.vmService.sendClipboardText(this.vm.id);
+  }
+
+  public sendInputString() {
+    this.dialogService
+      .sendText('Enter Text to Send')
+      .pipe(take(1))
+      .subscribe((enteredText) => {
+        if (enteredText?.textToSend) {
+          this.paste(enteredText.textToSend, enteredText.timeout);
+        }
+      });
+  }
+
+  // Types the local clipboard into the guest. When the browser won't hand the clipboard over
+  // (permission refused, or no Clipboard API), falls back to the Send Text dialog, as the vSphere
+  // bar does.
+  public async pasteFromClipboard() {
+    let clip: string;
+    try {
+      clip = await navigator.clipboard.readText();
+    } catch {
+      this.sendInputString();
+      return;
+    }
+    await this.paste(clip);
+  }
+
+  // Same pacing as the vSphere bar: each line is typed and followed by Enter, then a pause of
+  // `timeoutStr` ms (the Send Text dialog's paste speed) before the next line.
+  public async paste(text: string, timeoutStr: string = '50') {
+    const timeout = parseInt(timeoutStr);
+    for (const line of text.split('\n')) {
+      if (!this.proxmoxService.sendText(line + '\n')) {
+        this.showMessage(
+          'Send Text failed: the console is not connected',
+          10000,
+        );
+        return;
+      }
+      await new Promise((r) => setTimeout(r, timeout));
+    }
   }
 
   public powerOn() {

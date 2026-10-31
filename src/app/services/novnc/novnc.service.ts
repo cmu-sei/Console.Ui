@@ -5,6 +5,8 @@
 
 import { Injectable } from '@angular/core';
 import RFB from '@novnc/novnc/lib/rfb.js';
+import KeyTable from '@novnc/novnc/lib/input/keysym.js';
+import keysyms from '@novnc/novnc/lib/input/keysymdef.js';
 
 @Injectable({
   providedIn: 'root',
@@ -68,6 +70,58 @@ export class NoVNCService {
 
   public sendClipboardText(text: string) {
     this.rfb.clipboardPasteFrom(text);
+  }
+
+  /**
+   * Types text into the guest as key presses, one keysym per character. A line break (\n, \r\n
+   * or \r) is sent as Enter and a tab as Tab; other control characters are dropped. Returns false,
+   * sending nothing, when there is no connected client.
+   *
+   * The guest maps keysyms through its own keyboard layout, so characters its layout cannot
+   * produce are lost there, the same caveat as WMKS sendInputString.
+   */
+  public sendText(text: string): boolean {
+    if (!this.rfb) {
+      return false;
+    }
+
+    for (const keysym of NoVNCService.keysymsFor(text)) {
+      this.rfb.sendKey(keysym, null);
+    }
+
+    return true;
+  }
+
+  /**
+   * The X11 keysyms that type `text`. Iterates code points rather than UTF-16 units so characters
+   * outside the BMP are not split, and uses noVNC's own Unicode-to-keysym table: Latin-1 maps
+   * one-to-one, the legacy keysym ranges (Latin-2 through Greek, Cyrillic, ...) come from its
+   * table, and anything else falls back to the Unicode keysym range (0x01000000 + code point).
+   */
+  public static keysymsFor(text: string): number[] {
+    const result: number[] = [];
+    const normalized = text.replace(/\r\n?/g, '\n');
+
+    for (const character of normalized) {
+      if (character === '\n') {
+        result.push(KeyTable.XK_Return);
+        continue;
+      }
+      if (character === '\t') {
+        result.push(KeyTable.XK_Tab);
+        continue;
+      }
+
+      const codePoint = character.codePointAt(0);
+      // C0 controls, DEL and C1 controls have no printable keysym.
+      if (codePoint < 0x20 || (codePoint >= 0x7f && codePoint < 0xa0)) {
+        continue;
+      }
+
+      result.push(keysyms.lookup(codePoint));
+    }
+
+    return result;
   }
 
   public updateBackground(backgroundColor: string) {

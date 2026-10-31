@@ -7,7 +7,7 @@ import { TestbedHarnessEnvironment } from '@angular/cdk/testing/testbed';
 import { MatMenuHarness } from '@angular/material/menu/testing';
 import { MatSlideToggleHarness } from '@angular/material/slide-toggle/testing';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { screen } from '@testing-library/angular';
+import { fireEvent, screen } from '@testing-library/angular';
 import userEvent from '@testing-library/user-event';
 import { NEVER, Observable, of, throwError } from 'rxjs';
 import {
@@ -86,9 +86,16 @@ async function renderOptionsBar2(
     mountIso: vi.fn<ProxmoxService['mountIso']>(() => of(networkVm())),
     sendCtrlAltDel: vi.fn<ProxmoxService['sendCtrlAltDel']>(),
     sendClipboardText: vi.fn<ProxmoxService['sendClipboardText']>(),
+    sendText: vi.fn<ProxmoxService['sendText']>(() => true),
   } satisfies Pick<
     ProxmoxService,
-    'getVm' | 'changeNic' | 'getIsos' | 'mountIso' | 'sendCtrlAltDel' | 'sendClipboardText'
+    | 'getVm'
+    | 'changeNic'
+    | 'getIsos'
+    | 'mountIso'
+    | 'sendCtrlAltDel'
+    | 'sendClipboardText'
+    | 'sendText'
   >;
   const vsphere = {
     getVm: vi.fn<VsphereService['getVm']>(() => of(networkVm() as VsphereVirtualMachine)),
@@ -96,7 +103,8 @@ async function renderOptionsBar2(
   } satisfies Pick<VsphereService, 'getVm' | 'changeNic'>;
   const dialogs = {
     mountIso: vi.fn<DialogService['mountIso']>(() => of(undefined)),
-  } satisfies Pick<DialogService, 'mountIso'>;
+    sendText: vi.fn<DialogService['sendText']>(() => of(undefined)),
+  } satisfies Pick<DialogService, 'mountIso' | 'sendText'>;
   const confirm = vi.fn<CrucibleDialogService['confirm']>(() =>
     overrides.confirmation === 'dismissed'
       ? dismissedDialogRefStub<unknown, boolean>().dialogRef
@@ -659,6 +667,141 @@ describe('OptionsBar2Component', () => {
     it('shows the Vm name', async () => {
       await renderOptionsBar2();
       expect(screen.getByText('Alpha')).toBeInTheDocument();
+    });
+  });
+
+  describe('send text', () => {
+    /**
+     * Verifies: the Keyboard menu offers Send Text next to the existing items.
+     * Interacts with: the Keyboard submenu (MatMenuHarness).
+     * Data: interactive console.
+     */
+    it('offers Send Text in the Keyboard menu', async () => {
+      const { fixture } = await renderOptionsBar2();
+      expect(await itemTexts(await openSubmenu(fixture, 'Keyboard'))).toEqual([
+        'Send Ctrl-Alt-Del',
+        'Send Text',
+        'Paste to Clipboard',
+      ]);
+    });
+
+    /**
+     * Verifies: Keyboard > Send Text types each line of the dialog's text into the guest, followed by Enter, as the vSphere bar does.
+     * Interacts with: the Keyboard submenu; DialogService.sendText; the app ProxmoxService.sendText.
+     * Data: 'one\ntwo' at paste speed '0'.
+     */
+    it('types Send Text line by line', async () => {
+      const { fixture, dialogs, proxmox } = await renderOptionsBar2();
+      dialogs.sendText.mockReturnValue(of({ textToSend: 'one\ntwo', timeout: '0' }));
+
+      await clickMenu(fixture, 'Keyboard', 'Send Text');
+
+      expect(dialogs.sendText).toHaveBeenCalledWith('Enter Text to Send');
+      await vi.waitFor(() =>
+        expect(proxmox.sendText.mock.calls).toEqual([['one\n'], ['two\n']]),
+      );
+    });
+
+    /**
+     * Verifies: lines are paced by the paste speed chosen in the dialog.
+     * Interacts with: the Keyboard submenu; DialogService.sendText; ProxmoxService.sendText.
+     * Data: 'one\ntwo' at paste speed '200'.
+     * Why: fake timers, installed after the menu opens, show the second line waits for the delay.
+     */
+    it('waits the paste speed between lines', async () => {
+      const { fixture, dialogs, proxmox } = await renderOptionsBar2();
+      dialogs.sendText.mockReturnValue(of({ textToSend: 'one\ntwo', timeout: '200' }));
+      await openSubmenu(fixture, 'Keyboard');
+      vi.useFakeTimers();
+      try {
+        fireEvent.click(screen.getByRole('menuitem', { name: 'Send Text' }));
+        expect(proxmox.sendText.mock.calls).toEqual([['one\n']]);
+        await vi.advanceTimersByTimeAsync(199);
+        expect(proxmox.sendText).toHaveBeenCalledOnce();
+        await vi.advanceTimersByTimeAsync(1);
+        expect(proxmox.sendText.mock.calls).toEqual([['one\n'], ['two\n']]);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    /**
+     * Verifies: a cancelled or empty Send Text dialog types nothing.
+     * Interacts with: the Keyboard submenu; DialogService.sendText; ProxmoxService.sendText.
+     * Data: dialog closed without a result, and with empty text.
+     */
+    it.each([undefined, { textToSend: '', timeout: '50' }])(
+      'types nothing for dialog result %j',
+      async (result) => {
+        const { fixture, dialogs, proxmox } = await renderOptionsBar2();
+        dialogs.sendText.mockReturnValue(of(result));
+        await clickMenu(fixture, 'Keyboard', 'Send Text');
+        expect(proxmox.sendText).not.toHaveBeenCalled();
+      },
+    );
+
+    /**
+     * Verifies: with no connected console the first line is refused, the rest are skipped, and the user is told.
+     * Interacts with: the Keyboard submenu; ProxmoxService.sendText returning false; MatSnackBar.open.
+     * Data: 'one\ntwo'.
+     */
+    it('reports a console that is not connected', async () => {
+      const { fixture, dialogs, proxmox, snackBar } = await renderOptionsBar2();
+      dialogs.sendText.mockReturnValue(of({ textToSend: 'one\ntwo', timeout: '0' }));
+      proxmox.sendText.mockReturnValue(false);
+
+      await clickMenu(fixture, 'Keyboard', 'Send Text');
+
+      await vi.waitFor(() =>
+        expect(snackBar.open).toHaveBeenCalledWith(
+          'Send Text failed: the console is not connected',
+          'Close',
+          expect.objectContaining({ duration: 10000 }),
+        ),
+      );
+      expect(proxmox.sendText).toHaveBeenCalledOnce();
+    });
+
+    /**
+     * Verifies: the toolbar Paste button types the local clipboard into the guest.
+     * Interacts with: user-event click on Paste; stubbed navigator.clipboard.readText; ProxmoxService.sendText.
+     * Data: clipboard 'ls -la'.
+     */
+    it('types the clipboard from the toolbar Paste button', async () => {
+      const user = userEvent.setup();
+      const { proxmox } = await renderOptionsBar2();
+      stubClipboard('ls -la');
+
+      await user.click(screen.getByRole('button', { name: /^Paste/ }));
+
+      await vi.waitFor(() => expect(proxmox.sendText).toHaveBeenCalledWith('ls -la\n'));
+    });
+
+    /**
+     * Verifies: when the clipboard can't be read the toolbar Paste button opens the Send Text dialog instead.
+     * Interacts with: user-event click on Paste; stubbed navigator.clipboard.readText rejecting; DialogService.sendText.
+     * Data: clipboard permission denied.
+     */
+    it('falls back to the Send Text dialog when the clipboard is unavailable', async () => {
+      const user = userEvent.setup();
+      const { dialogs, proxmox } = await renderOptionsBar2();
+      const { readText } = stubClipboard();
+      readText.mockRejectedValue(new Error('denied'));
+
+      await user.click(screen.getByRole('button', { name: /^Paste/ }));
+
+      await vi.waitFor(() => expect(dialogs.sendText).toHaveBeenCalledWith('Enter Text to Send'));
+      expect(proxmox.sendText).not.toHaveBeenCalled();
+    });
+
+    /**
+     * Verifies: a read-only console has no toolbar Paste button.
+     * Interacts with: the readOnly input; the rendered toolbar.
+     * Data: readOnly true.
+     */
+    it('hides the toolbar when read-only', async () => {
+      await renderOptionsBar2({ readOnly: true });
+      expect(screen.queryByRole('button', { name: /^Paste/ })).not.toBeInTheDocument();
     });
   });
 });

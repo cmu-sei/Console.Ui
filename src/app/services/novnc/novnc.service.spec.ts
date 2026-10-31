@@ -13,6 +13,7 @@ type RfbStub = Pick<
   | 'sendCtrlAltDel'
   | 'clipboardPasteFrom'
   | 'addEventListener'
+  | 'sendKey'
 >;
 
 function rfbStub(): RfbStub {
@@ -23,6 +24,7 @@ function rfbStub(): RfbStub {
     sendCtrlAltDel: vi.fn(),
     clipboardPasteFrom: vi.fn(),
     addEventListener: vi.fn(),
+    sendKey: vi.fn(),
   };
 }
 
@@ -128,5 +130,55 @@ describe('NoVNCService', () => {
       'securityfailure',
       'clipboard',
     ]);
+  });
+
+  describe('typing text', () => {
+    const ENTER = 0xff0d;
+    const TAB = 0xff09;
+
+    /**
+     * Verifies: sendText() presses one keysym per character, with Enter for a newline, and reports it was sent.
+     * Interacts with: the seeded RFB client's sendKey (keysym, null code, press and release).
+     * Data: 'Hi!\n'.
+     */
+    it('types each character as a key press', () => {
+      const { service, rfb } = withClient();
+      expect(service.sendText('Hi!\n')).toBe(true);
+      expect(vi.mocked(rfb.sendKey).mock.calls).toEqual([
+        [0x48, null],
+        [0x69, null],
+        [0x21, null],
+        [ENTER, null],
+      ]);
+    });
+
+    /**
+     * Verifies: without a client nothing is typed and sendText() says so.
+     * Interacts with: NoVNCService with no RFB client.
+     * Data: 'hello'.
+     */
+    it('types nothing without a client', () => {
+      expect(new NoVNCService().sendText('hello')).toBe(false);
+    });
+
+    /**
+     * Verifies: characters map to X11 keysyms: ASCII and Latin-1 one-to-one, legacy ranges from noVNC's table, everything else to the Unicode keysym range; line breaks and tabs become Enter and Tab; other control characters are dropped.
+     * Interacts with: NoVNCService.keysymsFor (noVNC's keysymdef lookup).
+     * Data: the text under test.
+     * Why: console-forge sends charCodeAt() as the keysym, which is only right for Latin-1; these pin the cases where that differs.
+     */
+    it.each<[string, string, number[]]>([
+      ['ASCII', 'a Z~', [0x61, 0x20, 0x5a, 0x7e]],
+      ['Latin-1', 'é£ÿ', [0xe9, 0xa3, 0xff]],
+      ['Latin-2 (keysym table)', 'ł', [0x1b3]],
+      ['Greek (keysym table)', 'α', [0x7e1]],
+      ['Euro sign (keysym table)', '€', [0x20ac]],
+      ['astral plane (Unicode keysym)', '😀', [0x0100_0000 + 0x1f600]],
+      ['LF, CRLF and CR', 'a\nb\r\nc\rd', [0x61, ENTER, 0x62, ENTER, 0x63, ENTER, 0x64]],
+      ['tab', '\t', [TAB]],
+      ['other controls dropped', '\u0000\u001b\u007f\u0085x', [0x78]],
+    ])('maps %s', (_case, text, expected) => {
+      expect(NoVNCService.keysymsFor(text)).toEqual(expected);
+    });
   });
 });
