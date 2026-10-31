@@ -9,7 +9,10 @@ import { MatSlideToggleHarness } from '@angular/material/slide-toggle/testing';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { fireEvent, screen } from '@testing-library/angular';
 import userEvent from '@testing-library/user-event';
-import { NEVER, Observable, of, throwError } from 'rxjs';
+import { BehaviorSubject, NEVER, Observable, of, throwError } from 'rxjs';
+import { Router } from '@angular/router';
+import { getDefaultNormalizer } from '@testing-library/angular';
+import { SignalRService } from '../../services/signalr/signalr.service';
 import {
   ComnAuthQuery,
   ComnAuthService,
@@ -34,6 +37,7 @@ import {
   GUEST_AGENT_TOOLTIP,
   OptionsBar2Component,
   fileNameOf,
+  formatConnectedUsers,
   toDirectory,
 } from './options-bar2.component';
 import { FileUploadProgressDialogComponent } from '../shared/file-upload-progress-dialog/file-upload-progress-dialog.component';
@@ -74,6 +78,7 @@ async function renderOptionsBar2(
   overrides: {
     vm?: Vm;
     readOnly?: boolean;
+    allowReadOnlyToggle?: boolean;
     networkVm?: Observable<ProxmoxVirtualMachine>;
     // 'dismissed': the confirm dialog closes without an answer (Esc, backdrop).
     confirmation?: boolean | 'dismissed';
@@ -157,9 +162,15 @@ async function renderOptionsBar2(
   const crucibleDialog = { confirm } satisfies Pick<CrucibleDialogService, 'confirm'>;
   const auth = { setUserTheme: vi.fn() } satisfies Pick<ComnAuthService, 'setUserTheme'>;
   const snackBar = { open: vi.fn() } satisfies Pick<MatSnackBar, 'open'>;
+  const currentVmUsers$ = new BehaviorSubject<string[]>([]);
+  const signalr = { currentVmUsers$ } satisfies Pick<SignalRService, 'currentVmUsers$'>;
 
   const rendered = await renderComponent(OptionsBar2Component, {
-    inputs: { vm, readOnly: overrides.readOnly ?? false },
+    inputs: {
+      vm,
+      readOnly: overrides.readOnly ?? false,
+      allowReadOnlyToggle: overrides.allowReadOnlyToggle ?? false,
+    },
     providers: [
       VmService,
       { provide: ApiProxmoxService, useValue: apiProxmox },
@@ -174,6 +185,7 @@ async function renderOptionsBar2(
         useValue: { userTheme$: of(Theme.LIGHT) } satisfies Pick<ComnAuthQuery, 'userTheme$'>,
       },
       { provide: MatSnackBar, useValue: snackBar },
+      { provide: SignalRService, useValue: signalr },
       ...(overrides.grants ? permissionDataProviders(overrides.grants) : []),
     ],
   });
@@ -193,6 +205,7 @@ async function renderOptionsBar2(
     confirm,
     auth,
     snackBar,
+    currentVmUsers$,
   };
 }
 
@@ -1352,6 +1365,98 @@ describe('OptionsBar2Component', () => {
       const { proxmox } = await renderOptionsBar2();
       await user.click(screen.getByRole('button', { name: /^Ctrl-Alt-Del/ }));
       expect(proxmox.sendCtrlAltDel).toHaveBeenCalledOnce();
+    });
+  });
+
+  describe('read-only', () => {
+    /**
+     * Verifies: the Read Only switch is offered exactly when the page allows toggling (the user holds a Vm control permission).
+     * Interacts with: the allowReadOnlyToggle input; the gear menu.
+     * Data: allowReadOnlyToggle false, then true.
+     */
+    it.each([false, true])('offers Read Only when allowReadOnlyToggle is %s', async (allowReadOnlyToggle) => {
+      const { fixture } = await renderOptionsBar2({ allowReadOnlyToggle, readOnly: true });
+      expect((await menuTexts(fixture)).includes('Read Only')).toBe(allowReadOnlyToggle);
+    });
+
+    /**
+     * Verifies: the switch shows the current state and flipping it navigates to readOnly=false, which the page turns into the readOnly input (and noVNC viewOnly).
+     * Interacts with: MatSlideToggleHarness in the menu overlay; real VmService.setReadOnly; the real Router.
+     * Data: allowReadOnlyToggle true; readOnly true, switched off.
+     */
+    it('flips read-only through VmService.setReadOnly', async () => {
+      const { fixture } = await renderOptionsBar2({ allowReadOnlyToggle: true, readOnly: true });
+      await menu(fixture);
+      const toggle = await TestbedHarnessEnvironment.documentRootLoader(fixture).getHarness(
+        MatSlideToggleHarness.with({ label: 'Read Only' }),
+      );
+      expect(await toggle.isChecked()).toBe(true);
+
+      await toggle.toggle();
+      await fixture.whenStable();
+
+      expect(fixture.debugElement.injector.get(Router).url).toBe('/?readOnly=false');
+    });
+
+    /**
+     * Verifies: the Vm name is labelled "(Read Only)" exactly when read-only.
+     * Interacts with: the readOnly input; the rendered Vm name.
+     * Data: Vm 'Alpha'; the readOnly value under test.
+     */
+    it.each<[boolean, string]>([
+      [true, 'Alpha (Read Only)'],
+      [false, 'Alpha'],
+    ])('labels the Vm when readOnly is %s as %j', async (readOnly, label) => {
+      await renderOptionsBar2({ readOnly });
+      expect(screen.getByText(label, { exact: true })).toBeInTheDocument();
+    });
+  });
+
+  describe('connected users', () => {
+    /**
+     * Verifies: the connected-users label lists the users, with one name per line in its tooltip.
+     * Interacts with: SignalRService.currentVmUsers$; the rendered label and its title attribute.
+     * Data: alice and bob.
+     */
+    it('lists the connected users', async () => {
+      const { fixture, currentVmUsers$ } = await renderOptionsBar2();
+      currentVmUsers$.next(['alice', 'bob']);
+      fixture.detectChanges();
+
+      expect(screen.getByText('Connected: alice, bob')).toBeInTheDocument();
+      const keepNewlines = getDefaultNormalizer({ collapseWhitespace: false });
+      expect(screen.getByTitle('alice\nbob', { normalizer: keepNewlines })).toHaveTextContent(
+        'Connected: alice, bob',
+      );
+    });
+
+    /**
+     * Verifies: nobody connected, or a read-only console, shows no label, as in the vSphere bar.
+     * Interacts with: SignalRService.currentVmUsers$; the readOnly input.
+     * Data: no users; then alice on a read-only console.
+     */
+    it.each<[string, string[], boolean]>([
+      ['nobody connected', [], false],
+      ['a read-only console', ['alice'], true],
+    ])('shows no label for %s', async (_case, users, readOnly) => {
+      const { fixture, currentVmUsers$ } = await renderOptionsBar2({ readOnly });
+      currentVmUsers$.next(users);
+      fixture.detectChanges();
+      expect(screen.queryByText(/Connected:/)).not.toBeInTheDocument();
+    });
+
+    /**
+     * Verifies: past two users the label counts the rest.
+     * Interacts with: formatConnectedUsers.
+     * Data: none, one, three and four users.
+     */
+    it.each<[string[], string]>([
+      [[], ''],
+      [['alice'], 'Connected: alice'],
+      [['a', 'b', 'c'], 'Connected: a, b and 1 other'],
+      [['a', 'b', 'c', 'd'], 'Connected: a, b and 2 others'],
+    ])('formats %j as %j', (users, label) => {
+      expect(formatConnectedUsers(users)).toBe(label);
     });
   });
 });

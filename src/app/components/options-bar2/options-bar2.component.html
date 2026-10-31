@@ -22,13 +22,31 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
       >
         <mat-icon svgIcon="gear" />
       </button>
-      <span class="ms-1">{{ vm?.name }}</span>
+      <span class="ms-1"
+        >{{ vm?.name }}{{ readOnly() ? ' (Read Only)' : '' }}</span
+      >
       <mat-menu #mainMenu="matMenu">
         <button mat-menu-item (click)="fullscreen()">Fullscreen</button>
         @if (inFrame) {
           <button mat-menu-item (click)="openInTab()">Open In New Tab</button>
         }
         <button mat-menu-item (click)="reconnect()">Reconnect</button>
+
+        @if (allowReadOnlyToggle()) {
+          <button mat-menu-item (click)="$event.stopPropagation()">
+            <mat-slide-toggle
+              labelPosition="before"
+              color="primary"
+              [checked]="readOnly()"
+              (click)="$event.stopPropagation()"
+              (change)="toggleReadOnly($event)"
+            >
+              <mat-label class="mat-mdc-menu-item-text me-2"
+                >Read Only</mat-label
+              >
+            </mat-slide-toggle>
+          </button>
+        }
 
         <button mat-menu-item (click)="$event.stopPropagation()">
           <mat-slide-toggle
@@ -221,5 +239,11 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
     </div>
   }
 
-  <div class="w-25"></div>
+  <div class="w-25">
+    @if (showConnectedUsers()) {
+      <div [title]="connectedUsersTooltip()">
+        <span class="connected-users">{{ connectedUsersLabel() }}</span>
+      </div>
+    }
+  </div>
 </div>

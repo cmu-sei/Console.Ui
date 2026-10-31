@@ -55,6 +55,7 @@ import { DialogService } from '../../services/dialog/dialog.service';
 import { IsoFile, IsoResult } from '../../models/vm/iso-result';
 import { VsphereService } from '../../state/vsphere/vsphere.service';
 import { UserPermissionsService } from '../../services/user-permissions/user-permissions.service';
+import { SignalRService } from '../../services/signalr/signalr.service';
 import { EMPTY, Observable, of } from 'rxjs';
 
 type NetworkVirtualMachine = ProxmoxVirtualMachine | VsphereVirtualMachine;
@@ -90,6 +91,7 @@ export class OptionsBar2Component {
   private vsphereService = inject(VsphereService);
   private dialogService = inject(DialogService);
   private userPermissionsService = inject(UserPermissionsService);
+  private signalrService = inject(SignalRService);
 
   // Generic Options Bar - Will eventually replace OptionsBarComponent
 
@@ -124,6 +126,26 @@ export class OptionsBar2Component {
   }
 
   readonly readOnly = input(false);
+  // Set by the console page from the user's Vm control permissions (UserPermissionsService).
+  readonly allowReadOnlyToggle = input(false);
+
+  // Everyone with this Vm's console open, from the Vm presence hub the console page joins.
+  private readonly currentVmUsers = toSignal(
+    this.signalrService.currentVmUsers$,
+    { initialValue: [] as string[] },
+  );
+
+  public readonly showConnectedUsers = computed(
+    () => !this.readOnly() && (this.currentVmUsers()?.length ?? 0) > 0,
+  );
+
+  public readonly connectedUsersLabel = computed(() =>
+    formatConnectedUsers(this.currentVmUsers()),
+  );
+
+  public readonly connectedUsersTooltip = computed(() =>
+    (this.currentVmUsers() ?? []).join('\n'),
+  );
 
   theme$ = this.authQuery.userTheme$;
 
@@ -628,6 +650,11 @@ export class OptionsBar2Component {
     });
   }
 
+  // Navigates to ?readOnly=..., which the console page turns back into the readOnly input.
+  toggleReadOnly(event: MatSlideToggleChange) {
+    this.vmService.setReadOnly(event.checked);
+  }
+
   toggleTheme(event: MatSlideToggleChange) {
     const theme = event.checked ? Theme.DARK : Theme.LIGHT;
     this.authService.setUserTheme(theme);
@@ -677,4 +704,20 @@ function inIframe(): boolean {
   } catch {
     return true;
   }
+}
+
+const MAX_CONNECTED_USERS_SHOWN = 2;
+
+// "Connected: alice, bob" or "Connected: alice, bob and 3 others", the vSphere bar's label.
+export function formatConnectedUsers(
+  users: string[] | null | undefined,
+): string {
+  if (!users?.length) {
+    return '';
+  }
+  const shown = users.slice(0, MAX_CONNECTED_USERS_SHOWN).join(', ');
+  const rest = users.length - MAX_CONNECTED_USERS_SHOWN;
+  return rest > 0
+    ? `Connected: ${shown} and ${rest} ${rest === 1 ? 'other' : 'others'}`
+    : `Connected: ${shown}`;
 }
