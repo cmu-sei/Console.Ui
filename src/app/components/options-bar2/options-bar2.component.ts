@@ -7,13 +7,18 @@ import {
   Component,
   ChangeDetectionStrategy,
   Input,
+  OnInit,
   computed,
   linkedSignal,
   signal,
   inject,
   input,
 } from '@angular/core';
-import { toObservable, toSignal } from '@angular/core/rxjs-interop';
+import {
+  takeUntilDestroyed,
+  toObservable,
+  toSignal,
+} from '@angular/core/rxjs-interop';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { HttpErrorResponse } from '@angular/common/http';
 import {
@@ -56,6 +61,8 @@ import { IsoFile, IsoResult } from '../../models/vm/iso-result';
 import { VsphereService } from '../../state/vsphere/vsphere.service';
 import { UserPermissionsService } from '../../services/user-permissions/user-permissions.service';
 import { SignalRService } from '../../services/signalr/signalr.service';
+import { NotificationService } from '../../services/notification/notification.service';
+import { NotificationData } from '../../models/notification/notification-model';
 import { EMPTY, Observable, of } from 'rxjs';
 
 type NetworkVirtualMachine = ProxmoxVirtualMachine | VsphereVirtualMachine;
@@ -81,7 +88,7 @@ export const GUEST_AGENT_TOOLTIP = 'Requires the QEMU guest agent';
     MatTooltip,
   ],
 })
-export class OptionsBar2Component {
+export class OptionsBar2Component implements OnInit {
   private vmService = inject(VmService);
   private authService = inject(ComnAuthService);
   private authQuery = inject(ComnAuthQuery);
@@ -92,6 +99,7 @@ export class OptionsBar2Component {
   private dialogService = inject(DialogService);
   private userPermissionsService = inject(UserPermissionsService);
   private signalrService = inject(SignalRService);
+  private notificationService = inject(NotificationService);
 
   // Generic Options Bar - Will eventually replace OptionsBarComponent
 
@@ -119,6 +127,31 @@ export class OptionsBar2Component {
   @Input()
   set vm(value: Vm | null | undefined) {
     this.vmState.set(value ?? null);
+  }
+
+  // Task progress vm.api broadcasts on the progress hub for this Vm (power, revert, ...). As in the
+  // vSphere bar, an empty broadcast leaves the last list in place, and finished tasks are hidden.
+  private readonly tasks = signal<NotificationData[]>([]);
+  public readonly tasksInProgress = computed(() =>
+    this.tasks().filter((task) => task.state !== 'success'),
+  );
+
+  constructor() {
+    this.notificationService.tasksInProgress
+      .pipe(takeUntilDestroyed())
+      .subscribe((data) => {
+        if (data?.length) {
+          this.tasks.set(data);
+        }
+      });
+  }
+
+  ngOnInit() {
+    const id = this.vmState()?.id;
+    if (id) {
+      // A failed connection is logged by the service, which has already handled the rejection.
+      this.notificationService.connectToProgressHub(id);
+    }
   }
 
   get vm(): Vm | null {

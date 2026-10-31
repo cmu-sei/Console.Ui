@@ -208,6 +208,12 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
         }
       </mat-menu>
     </div>
+
+    @for (task of tasksInProgress(); track task.taskId) {
+      <span>
+        <h1 class="fs-6">{{ task.taskName }} ... {{ task.progress }}%</h1>
+      </span>
+    }
   </div>
 
   @if (!readOnly()) {

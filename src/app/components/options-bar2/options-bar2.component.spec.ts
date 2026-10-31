@@ -13,6 +13,8 @@ import { BehaviorSubject, NEVER, Observable, of, throwError } from 'rxjs';
 import { Router } from '@angular/router';
 import { getDefaultNormalizer } from '@testing-library/angular';
 import { SignalRService } from '../../services/signalr/signalr.service';
+import { NotificationService } from '../../services/notification/notification.service';
+import { NotificationData } from '../../models/notification/notification-model';
 import {
   ComnAuthQuery,
   ComnAuthService,
@@ -164,6 +166,12 @@ async function renderOptionsBar2(
   const snackBar = { open: vi.fn() } satisfies Pick<MatSnackBar, 'open'>;
   const currentVmUsers$ = new BehaviorSubject<string[]>([]);
   const signalr = { currentVmUsers$ } satisfies Pick<SignalRService, 'currentVmUsers$'>;
+  const tasksInProgress = new BehaviorSubject<NotificationData[]>([]);
+  const notifications = {
+    tasksInProgress,
+    // The hub connection is not under test; a never-settling promise keeps it inert.
+    connectToProgressHub: vi.fn(() => new Promise<void>(() => undefined)),
+  } satisfies Pick<NotificationService, 'tasksInProgress' | 'connectToProgressHub'>;
 
   const rendered = await renderComponent(OptionsBar2Component, {
     inputs: {
@@ -186,6 +194,7 @@ async function renderOptionsBar2(
       },
       { provide: MatSnackBar, useValue: snackBar },
       { provide: SignalRService, useValue: signalr },
+      { provide: NotificationService, useValue: notifications },
       ...(overrides.grants ? permissionDataProviders(overrides.grants) : []),
     ],
   });
@@ -206,6 +215,8 @@ async function renderOptionsBar2(
     auth,
     snackBar,
     currentVmUsers$,
+    notifications,
+    tasksInProgress,
   };
 }
 
@@ -1457,6 +1468,48 @@ describe('OptionsBar2Component', () => {
       [['a', 'b', 'c', 'd'], 'Connected: a, b and 2 others'],
     ])('formats %j as %j', (users, label) => {
       expect(formatConnectedUsers(users)).toBe(label);
+    });
+  });
+
+  describe('task progress', () => {
+    const running: NotificationData = {
+      taskId: 't1',
+      taskName: 'Revert',
+      taskType: 'Snapshot',
+      broadcastTime: '',
+      progress: '40',
+      state: 'running',
+    };
+
+    /**
+     * Verifies: the bar joins the progress hub for this Vm and lists in-flight tasks until they succeed, as the vSphere bar does.
+     * Interacts with: NotificationService.connectToProgressHub spy and tasksInProgress subject.
+     * Data: one running task at 40%, then the same task succeeded.
+     */
+    it('lists in-progress tasks from the progress hub', async () => {
+      const { fixture, notifications, tasksInProgress } = await renderOptionsBar2();
+      expect(notifications.connectToProgressHub).toHaveBeenCalledWith('vm-1');
+
+      tasksInProgress.next([running]);
+      fixture.detectChanges();
+      expect(screen.getByText('Revert ... 40%')).toBeInTheDocument();
+
+      tasksInProgress.next([{ ...running, state: 'success' }]);
+      fixture.detectChanges();
+      expect(screen.queryByText(/Revert \.\.\./)).not.toBeInTheDocument();
+    });
+
+    /**
+     * Verifies: an empty broadcast leaves the last list showing (the vSphere bar's behavior).
+     * Interacts with: NotificationService.tasksInProgress.
+     * Data: a running task, then an empty list.
+     */
+    it('keeps the last list on an empty broadcast', async () => {
+      const { fixture, tasksInProgress } = await renderOptionsBar2();
+      tasksInProgress.next([running]);
+      tasksInProgress.next([]);
+      fixture.detectChanges();
+      expect(screen.getByText('Revert ... 40%')).toBeInTheDocument();
     });
   });
 });
