@@ -113,6 +113,9 @@ async function renderOptionsBar2(
     revertToSnapshot: vi.fn<ProxmoxService['revertToSnapshot']>(() => of('ok')),
     uploadFiles: vi.fn<ProxmoxService['uploadFiles']>(() => of('uploaded')),
     downloadFile: vi.fn<ProxmoxService['downloadFile']>(() => of(new Blob(['127.0.0.1 localhost']))),
+    fullscreen: vi.fn<ProxmoxService['fullscreen']>(() => true),
+    reconnect: vi.fn<ProxmoxService['reconnect']>(),
+    getGuestClipboard: vi.fn<ProxmoxService['getGuestClipboard']>(() => 'guest text'),
   } satisfies Pick<
     ProxmoxService,
     | 'getVm'
@@ -127,6 +130,9 @@ async function renderOptionsBar2(
     | 'revertToSnapshot'
     | 'uploadFiles'
     | 'downloadFile'
+    | 'fullscreen'
+    | 'reconnect'
+    | 'getGuestClipboard'
   >;
   const vsphere = {
     getVm: vi.fn<VsphereService['getVm']>(() => of(networkVm() as VsphereVirtualMachine)),
@@ -241,7 +247,7 @@ async function findMenuItem(fixture: Fixture, ...path: MenuText[]) {
 describe('OptionsBar2Component', () => {
   describe('read-only lockout', () => {
     /**
-     * Verifies: a read-only Proxmox console offers only the theme switch.
+     * Verifies: a read-only Proxmox console offers only the viewing controls and the theme switch, as the vSphere bar does.
      * Interacts with: the readOnly input; the gear menu (MatMenuHarness).
      * Data: readOnly true; a Vm that could mount ISOs and change networks.
      */
@@ -250,7 +256,7 @@ describe('OptionsBar2Component', () => {
         readOnly: true,
         networkVm: of(networkVm({ canMountIso: true })),
       });
-      expect(await menuTexts(fixture)).toEqual(['Dark Theme']);
+      expect(await menuTexts(fixture)).toEqual(['Fullscreen', 'Reconnect', 'Dark Theme']);
     });
 
     /**
@@ -263,11 +269,14 @@ describe('OptionsBar2Component', () => {
         networkVm: of(networkVm({ canMountIso: true })),
       });
       expect(await menuTexts(fixture)).toEqual([
-        'Keyboard',
+        'Fullscreen',
+        'Reconnect',
+        'Dark Theme',
         'Power',
         'Files',
+        'Keyboard',
         'Network Cards',
-        'Dark Theme',
+        'Clipboard',
       ]);
     });
 
@@ -280,7 +289,14 @@ describe('OptionsBar2Component', () => {
       const { fixture } = await renderOptionsBar2({
         networkVm: of(networkVm({ canAccessNicConfiguration: false })),
       });
-      expect(await menuTexts(fixture)).toEqual(['Keyboard', 'Power', 'Dark Theme']);
+      expect(await menuTexts(fixture)).toEqual([
+        'Fullscreen',
+        'Reconnect',
+        'Dark Theme',
+        'Power',
+        'Keyboard',
+        'Clipboard',
+      ]);
     });
   });
 
@@ -332,7 +348,14 @@ describe('OptionsBar2Component', () => {
       const { fixture } = await renderOptionsBar2({
         networkVm: throwError(() => new Error('nope')),
       });
-      expect(await menuTexts(fixture)).toEqual(['Keyboard', 'Power', 'Dark Theme']);
+      expect(await menuTexts(fixture)).toEqual([
+        'Fullscreen',
+        'Reconnect',
+        'Dark Theme',
+        'Power',
+        'Keyboard',
+        'Clipboard',
+      ]);
     });
   });
 
@@ -1200,6 +1223,135 @@ describe('OptionsBar2Component', () => {
       expect(fileNameOf('/var/log/syslog')).toBe('syslog');
       expect(fileNameOf('C:\\a\\b.txt')).toBe('b.txt');
       expect(fileNameOf('/var/log/')).toBe('download');
+    });
+  });
+
+  describe('console controls', () => {
+    /**
+     * Verifies: Fullscreen asks noVNC for fullscreen, and says so when the browser can't.
+     * Interacts with: the Fullscreen item; ProxmoxService.fullscreen; MatSnackBar.open.
+     * Data: fullscreen available, then not.
+     */
+    it('goes fullscreen', async () => {
+      const { fixture, proxmox, snackBar } = await renderOptionsBar2();
+      await clickMenu(fixture, 'Fullscreen');
+      expect(proxmox.fullscreen).toHaveBeenCalledOnce();
+      expect(snackBar.open).not.toHaveBeenCalled();
+
+      proxmox.fullscreen.mockReturnValue(false);
+      await clickMenu(fixture, 'Fullscreen');
+      expect(snackBar.open).toHaveBeenCalledWith('Fullscreen is not available', 'Close', expect.anything());
+    });
+
+    /**
+     * Verifies: Reconnect asks noVNC for a fresh connection, read-only or not.
+     * Interacts with: the Reconnect item; ProxmoxService.reconnect.
+     * Data: readOnly true.
+     */
+    it('reconnects', async () => {
+      const { fixture, proxmox } = await renderOptionsBar2({ readOnly: true });
+      await clickMenu(fixture, 'Reconnect');
+      expect(proxmox.reconnect).toHaveBeenCalledOnce();
+    });
+
+    /**
+     * Verifies: inside an iframe Open In New Tab is offered and opens the current address.
+     * Interacts with: window.top (replaced so the bar sees itself framed); window.open spy; the gear menu.
+     * Data: a framed console.
+     */
+    it('offers Open In New Tab when framed', async () => {
+      Object.defineProperty(window, 'top', { value: {}, configurable: true });
+      const open = vi.spyOn(window, 'open').mockReturnValue(null);
+      try {
+        const { fixture } = await renderOptionsBar2();
+        await clickMenu(fixture, 'Open In New Tab');
+        expect(open).toHaveBeenCalledWith(window.location.href);
+      } finally {
+        open.mockRestore();
+        Reflect.deleteProperty(window, 'top');
+      }
+    });
+
+    /**
+     * Verifies: the toolbar Copy button and Clipboard > Copy put the guest's last copied text on the local clipboard.
+     * Interacts with: user-event click on Copy; the Clipboard submenu; ProxmoxService.getGuestClipboard; stubbed navigator.clipboard.writeText; MatSnackBar.open.
+     * Data: guest clipboard 'guest text'.
+     */
+    it('copies the guest clipboard', async () => {
+      const user = userEvent.setup();
+      const { fixture, snackBar } = await renderOptionsBar2();
+      const { writeText } = stubClipboard();
+
+      await user.click(screen.getByRole('button', { name: /^Copy/ }));
+      await vi.waitFor(() => expect(writeText).toHaveBeenCalledWith('guest text'));
+      expect(snackBar.open).toHaveBeenCalledWith('Copied Virtual Machine Clipboard', 'Ok', expect.anything());
+
+      await clickMenu(fixture, 'Clipboard', 'Copy');
+      await vi.waitFor(() => expect(writeText).toHaveBeenCalledTimes(2));
+    });
+
+    /**
+     * Verifies: with nothing copied in the guest, Copy reports the vSphere bar's failure message.
+     * Interacts with: the toolbar Copy button; ProxmoxService.getGuestClipboard (null); MatSnackBar.open.
+     */
+    it('reports a guest that sent no clipboard', async () => {
+      const user = userEvent.setup();
+      const { proxmox, snackBar } = await renderOptionsBar2();
+      const { writeText } = stubClipboard();
+      proxmox.getGuestClipboard.mockReturnValue(null);
+
+      await user.click(screen.getByRole('button', { name: /^Copy/ }));
+
+      expect(snackBar.open).toHaveBeenCalledWith(
+        'Copy from VM failed!  Contact an Administrator to verify the Virtual machine is configured properly.',
+        'Close',
+        expect.objectContaining({ duration: 10000 }),
+      );
+      expect(writeText).not.toHaveBeenCalled();
+    });
+
+    /**
+     * Verifies: when the browser refuses the clipboard write, the text is shown for a manual Ctrl+C.
+     * Interacts with: the toolbar Copy button; stubbed writeText rejecting; CrucibleDialogService.confirm.
+     */
+    it('shows the text when the local clipboard refuses it', async () => {
+      const user = userEvent.setup();
+      const { confirm } = await renderOptionsBar2();
+      stubClipboard().writeText.mockRejectedValue(new Error('denied'));
+
+      await user.click(screen.getByRole('button', { name: /^Copy/ }));
+
+      await vi.waitFor(() =>
+        expect(confirm).toHaveBeenCalledWith(
+          expect.objectContaining({
+            title: 'Select text and press Ctrl+C to copy to your local clipboard:',
+            message: 'guest text',
+          }),
+        ),
+      );
+    });
+
+    /**
+     * Verifies: Clipboard > Paste types the local clipboard, like the toolbar Paste button.
+     * Interacts with: the Clipboard submenu; stubbed readText; ProxmoxService.sendText.
+     * Data: clipboard 'pwd'.
+     */
+    it('pastes from the Clipboard menu', async () => {
+      const { fixture, proxmox } = await renderOptionsBar2();
+      stubClipboard('pwd');
+      await clickMenu(fixture, 'Clipboard', 'Paste');
+      await vi.waitFor(() => expect(proxmox.sendText).toHaveBeenCalledWith('pwd\n'));
+    });
+
+    /**
+     * Verifies: the toolbar Ctrl-Alt-Del button sends the key combination.
+     * Interacts with: user-event click; real VmService; ProxmoxService.sendCtrlAltDel.
+     */
+    it('sends Ctrl-Alt-Del from the toolbar', async () => {
+      const user = userEvent.setup();
+      const { proxmox } = await renderOptionsBar2();
+      await user.click(screen.getByRole('button', { name: /^Ctrl-Alt-Del/ }));
+      expect(proxmox.sendCtrlAltDel).toHaveBeenCalledOnce();
     });
   });
 });

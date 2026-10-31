@@ -106,6 +106,18 @@ export class ProxmoxService {
       );
   }
 
+  public fullscreen(): boolean {
+    return this.novncService.enterFullscreen();
+  }
+
+  public reconnect() {
+    this.novncService.requestReconnect();
+  }
+
+  public getGuestClipboard(): string | null {
+    return this.novncService.getGuestClipboard();
+  }
+
   public sendCtrlAltDel() {
     this.novncService.sendCtrlAltDel();
   }

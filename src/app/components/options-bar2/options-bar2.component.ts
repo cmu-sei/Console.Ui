@@ -474,6 +474,53 @@ export class OptionsBar2Component {
       );
   }
 
+  // In an iframe (Player's view), Open In New Tab is offered as in the vSphere bar.
+  public readonly inFrame = inIframe();
+
+  public fullscreen() {
+    if (!this.proxmoxService.fullscreen()) {
+      this.showMessage('Fullscreen is not available');
+    }
+  }
+
+  public openInTab() {
+    window.open(window.location.href);
+  }
+
+  public reconnect() {
+    this.proxmoxService.reconnect();
+  }
+
+  // Hands the text the guest last copied to the local clipboard. noVNC is only told about guest
+  // copies as they happen (and Proxmox only sends them with a VNC clipboard set up on the Vm), so
+  // there is nothing to fetch on demand the way WMKS grab() does.
+  public async copyVmClipboard() {
+    const text = this.proxmoxService.getGuestClipboard();
+    if (!text) {
+      this.snackBar.open(
+        'Copy from VM failed!  Contact an Administrator to verify the Virtual machine is configured properly.',
+        'Close',
+        { duration: 10000, verticalPosition: 'top' },
+      );
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(text);
+      this.snackBar.open('Copied Virtual Machine Clipboard', 'Ok', {
+        duration: 2000,
+        verticalPosition: 'top',
+      });
+    } catch {
+      this.crucibleDialogService.confirm({
+        title: 'Select text and press Ctrl+C to copy to your local clipboard:',
+        message: text,
+        confirmText: 'OK',
+        cancelText: '',
+      });
+    }
+  }
+
   public ctrlAltDel() {
     this.vmService.sendCtrlAltDel(this.vm.id);
   }
@@ -622,4 +669,12 @@ function saveBlob(blob: Blob, fileName: string) {
   link.click();
   // Revoke on the next task: the click has started the download by then.
   setTimeout(() => URL.revokeObjectURL(url));
+}
+
+function inIframe(): boolean {
+  try {
+    return window.self !== window.top;
+  } catch {
+    return true;
+  }
 }

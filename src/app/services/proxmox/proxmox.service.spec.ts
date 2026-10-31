@@ -37,7 +37,18 @@ function setup() {
     sendCtrlAltDel: vi.fn(),
     sendClipboardText: vi.fn(),
     sendText: vi.fn(() => true),
-  } satisfies Pick<NoVNCService, 'sendCtrlAltDel' | 'sendClipboardText' | 'sendText'>;
+    enterFullscreen: vi.fn(() => true),
+    requestReconnect: vi.fn(),
+    getGuestClipboard: vi.fn(() => 'copied'),
+  } satisfies Pick<
+    NoVNCService,
+    | 'sendCtrlAltDel'
+    | 'sendClipboardText'
+    | 'sendText'
+    | 'enterFullscreen'
+    | 'requestReconnect'
+    | 'getGuestClipboard'
+  >;
   TestBed.configureTestingModule({
     providers: [
       { provide: NoVNCService, useValue: novnc },
@@ -267,5 +278,18 @@ describe('ProxmoxService', () => {
       api.downloadFileFromProxmoxVirtualMachine.mockReturnValueOnce(throwError(() => raw));
       expect(await firstValueFrom(service.downloadFile('vm-1', '/x')).catch((e) => e)).toBe(raw);
     });
+  });
+
+  /**
+   * Verifies: fullscreen, reconnect and the guest clipboard are all handled by noVNC.
+   * Interacts with: NoVNCService stub.
+   */
+  it('passes console controls to noVNC', () => {
+    const { service, novnc } = setup();
+    expect(service.fullscreen()).toBe(true);
+    service.reconnect();
+    expect(service.getGuestClipboard()).toBe('copied');
+    expect(novnc.enterFullscreen).toHaveBeenCalledOnce();
+    expect(novnc.requestReconnect).toHaveBeenCalledOnce();
   });
 });

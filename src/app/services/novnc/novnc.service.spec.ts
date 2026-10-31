@@ -1,7 +1,7 @@
 // Copyright 2026 Carnegie Mellon University. All Rights Reserved.
 // Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
 
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, onTestFinished } from 'vitest';
 import RFB from '@novnc/novnc/lib/rfb.js';
 import { NoVNCService } from './novnc.service';
 
@@ -14,6 +14,7 @@ type RfbStub = Pick<
   | 'clipboardPasteFrom'
   | 'addEventListener'
   | 'sendKey'
+  | 'scaleViewport'
 >;
 
 function rfbStub(): RfbStub {
@@ -25,6 +26,7 @@ function rfbStub(): RfbStub {
     clipboardPasteFrom: vi.fn(),
     addEventListener: vi.fn(),
     sendKey: vi.fn(),
+    scaleViewport: true,
   };
 }
 
@@ -179,6 +181,97 @@ describe('NoVNCService', () => {
       ['other controls dropped', '\u0000\u001b\u007f\u0085x', [0x78]],
     ])('maps %s', (_case, text, expected) => {
       expect(NoVNCService.keysymsFor(text)).toEqual(expected);
+    });
+  });
+
+  describe('console controls', () => {
+    function seedScreen(service: NoVNCService) {
+      const screen = document.createElement('div');
+      const requestFullscreen = vi.fn(() => Promise.resolve());
+      screen.requestFullscreen = requestFullscreen;
+      (service as unknown as { screen: HTMLElement }).screen = screen;
+      return { screen, requestFullscreen };
+    }
+
+    function setFullscreenElement(element: Element | null) {
+      Object.defineProperty(document, 'fullscreenElement', {
+        value: element,
+        configurable: true,
+      });
+      onTestFinished(() => {
+        Reflect.deleteProperty(document, 'fullscreenElement');
+      });
+    }
+
+    /**
+     * Verifies: enterFullscreen() makes the console screen fullscreen, and reports false when there is no screen yet.
+     * Interacts with: the seeded screen element's requestFullscreen.
+     * Data: a fresh service, then one with a screen.
+     */
+    it('makes the screen fullscreen', () => {
+      expect(new NoVNCService().enterFullscreen()).toBe(false);
+      const { service } = withClient();
+      const { requestFullscreen } = seedScreen(service);
+      expect(service.enterFullscreen()).toBe(true);
+      expect(requestFullscreen).toHaveBeenCalledOnce();
+    });
+
+    /**
+     * Verifies: leaving fullscreen recomputes the client's scale (toggling scaleViewport), and entering it does not.
+     * Interacts with: document fullscreenchange events; the seeded client's scaleViewport setter.
+     * Why: noVNC can keep the fullscreen scale after exit, which offsets the pointer.
+     */
+    it('rescales after leaving fullscreen', () => {
+      const { service, rfb } = withClient();
+      const { screen } = seedScreen(service);
+      const writes: boolean[] = [];
+      Object.defineProperty(rfb, 'scaleViewport', {
+        get: () => true,
+        set: (value: boolean) => writes.push(value),
+      });
+
+      setFullscreenElement(screen);
+      document.dispatchEvent(new Event('fullscreenchange'));
+      expect(writes).toEqual([]);
+
+      setFullscreenElement(null);
+      document.dispatchEvent(new Event('fullscreenchange'));
+      expect(writes).toEqual([false, true]);
+    });
+
+    /**
+     * Verifies: requestReconnect() is announced to subscribers (NovncComponent), and isConnected() follows the client.
+     * Interacts with: reconnectRequests$; the seeded client.
+     */
+    it('announces reconnect requests and reports the connection', () => {
+      const { service } = withClient();
+      const requests = vi.fn();
+      service.reconnectRequests$.subscribe(requests);
+      service.requestReconnect();
+      expect(requests).toHaveBeenCalledOnce();
+      expect(service.isConnected()).toBe(true);
+      service.disconnect();
+      expect(service.isConnected()).toBe(false);
+    });
+
+    /**
+     * Verifies: the guest's last clipboard text is kept for Copy, and forgotten on disconnect.
+     * Interacts with: the seeded client's 'clipboard' listener (as startClient registers it).
+     * Data: guest copies 'first' then 'second'.
+     */
+    it('keeps the last guest clipboard text until disconnect', () => {
+      const { service, rfb } = withClient();
+      expect(service.getGuestClipboard()).toBeNull();
+      (service as unknown as { trackGuestClipboard(): void }).trackGuestClipboard();
+      const [[event, onClipboard]] = vi.mocked(rfb.addEventListener).mock.calls as unknown as [
+        [string, (e: { detail: { text: string } }) => void],
+      ];
+      expect(event).toBe('clipboard');
+      onClipboard({ detail: { text: 'first' } });
+      onClipboard({ detail: { text: 'second' } });
+      expect(service.getGuestClipboard()).toBe('second');
+      service.disconnect();
+      expect(service.getGuestClipboard()).toBeNull();
     });
   });
 });

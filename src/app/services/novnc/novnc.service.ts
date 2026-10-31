@@ -4,6 +4,7 @@
  */
 
 import { Injectable } from '@angular/core';
+import { Subject } from 'rxjs';
 import RFB from '@novnc/novnc/lib/rfb.js';
 import KeyTable from '@novnc/novnc/lib/input/keysym.js';
 import keysyms from '@novnc/novnc/lib/input/keysymdef.js';
@@ -13,8 +14,20 @@ import keysyms from '@novnc/novnc/lib/input/keysymdef.js';
 })
 export class NoVNCService {
   private rfb: RFB;
+  private screen: HTMLElement | null = null;
+  private guestClipboard: string | null = null;
+  private fullscreen = false;
 
-  constructor() {}
+  private reconnectRequestsSubject = new Subject<void>();
+  // NovncComponent owns the connection lifecycle, so a user's Reconnect is handed to it.
+  public readonly reconnectRequests$ =
+    this.reconnectRequestsSubject.asObservable();
+
+  constructor() {
+    document.addEventListener('fullscreenchange', () =>
+      this.onFullscreenChange(),
+    );
+  }
 
   startClient(
     url: string,
@@ -23,8 +36,11 @@ export class NoVNCService {
     readOnly: boolean,
     backgroundColor: string,
   ) {
+    this.screen = document.getElementById(elementId);
+    this.guestClipboard = null;
+
     // Creating a new RFB object will start a new connection
-    this.rfb = new RFB(document.getElementById(elementId), url, {
+    this.rfb = new RFB(this.screen, url, {
       credentials: {
         password: ticket,
       },
@@ -33,6 +49,53 @@ export class NoVNCService {
     this.rfb.background = backgroundColor;
     this.rfb.viewOnly = readOnly;
     this.rfb.scaleViewport = true;
+    this.trackGuestClipboard();
+  }
+
+  private trackGuestClipboard() {
+    this.rfb.addEventListener('clipboard', (e) => {
+      this.guestClipboard = e.detail.text;
+    });
+  }
+
+  public isConnected(): boolean {
+    return !!this.rfb;
+  }
+
+  public requestReconnect() {
+    this.reconnectRequestsSubject.next();
+  }
+
+  /**
+   * The text the guest last put on its clipboard during this connection, or null if it sent none.
+   * noVNC only hears about guest copies as they happen, so this is what Copy can hand over.
+   */
+  public getGuestClipboard(): string | null {
+    return this.guestClipboard;
+  }
+
+  // Shows the console screen fullscreen. False when there is no screen or the browser refuses.
+  public enterFullscreen(): boolean {
+    if (document.fullscreenElement) {
+      return true;
+    }
+    if (!this.screen?.requestFullscreen) {
+      return false;
+    }
+    this.screen.requestFullscreen().catch(() => undefined);
+    return true;
+  }
+
+  // noVNC can be left with the fullscreen scale after leaving fullscreen, which puts the pointer
+  // somewhere other than where the user clicks. Recomputing the scale on exit avoids that.
+  private onFullscreenChange() {
+    const isFullscreen =
+      !!this.screen && document.fullscreenElement === this.screen;
+    if (this.fullscreen && !isFullscreen && this.rfb) {
+      this.rfb.scaleViewport = false;
+      this.rfb.scaleViewport = true;
+    }
+    this.fullscreen = isFullscreen;
   }
 
   public disconnect() {
@@ -40,6 +103,7 @@ export class NoVNCService {
       this.rfb.disconnect();
       this.rfb = null;
     }
+    this.guestClipboard = null;
   }
 
   public setViewOnly(viewOnly: boolean) {

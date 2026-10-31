@@ -24,20 +24,27 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
       </button>
       <span class="ms-1">{{ vm?.name }}</span>
       <mat-menu #mainMenu="matMenu">
-        @if (!readOnly()) {
-          <button mat-menu-item [matMenuTriggerFor]="keyboardMenu">
-            Keyboard
-          </button>
-          <mat-menu #keyboardMenu="matMenu">
-            <button mat-menu-item (click)="ctrlAltDel()">
-              Send Ctrl-Alt-Del
-            </button>
-            <button mat-menu-item (click)="sendInputString()">Send Text</button>
-            <button mat-menu-item (click)="sendClipboardText()">
-              Paste to Clipboard
-            </button>
-          </mat-menu>
+        <button mat-menu-item (click)="fullscreen()">Fullscreen</button>
+        @if (inFrame) {
+          <button mat-menu-item (click)="openInTab()">Open In New Tab</button>
+        }
+        <button mat-menu-item (click)="reconnect()">Reconnect</button>
 
+        <button mat-menu-item (click)="$event.stopPropagation()">
+          <mat-slide-toggle
+            labelPosition="before"
+            color="primary"
+            [checked]="(theme$ | async) === 'dark-theme'"
+            (click)="$event.stopPropagation()"
+            (change)="toggleTheme($event)"
+          >
+            <mat-label class="mat-mdc-menu-item-text me-2"
+              >Dark Theme</mat-label
+            >
+          </mat-slide-toggle>
+        </button>
+
+        @if (!readOnly()) {
           <!-- Power -->
           <button mat-menu-item [matMenuTriggerFor]="powerMenu">Power</button>
           <mat-menu #powerMenu="matMenu">
@@ -107,6 +114,19 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
             }
           </mat-menu>
 
+          <button mat-menu-item [matMenuTriggerFor]="keyboardMenu">
+            Keyboard
+          </button>
+          <mat-menu #keyboardMenu="matMenu">
+            <button mat-menu-item (click)="ctrlAltDel()">
+              Send Ctrl-Alt-Del
+            </button>
+            <button mat-menu-item (click)="sendInputString()">Send Text</button>
+            <button mat-menu-item (click)="sendClipboardText()">
+              Paste to Clipboard
+            </button>
+          </mat-menu>
+
           @if (canAccessNicConfiguration() && networkMenuItems().length > 0) {
             <button mat-menu-item [matMenuTriggerFor]="networkMenu">
               Network Cards
@@ -158,21 +178,16 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
               </mat-menu>
             }
           </mat-menu>
-        }
 
-        <button mat-menu-item (click)="$event.stopPropagation()">
-          <mat-slide-toggle
-            labelPosition="before"
-            color="primary"
-            [checked]="(theme$ | async) === 'dark-theme'"
-            (click)="$event.stopPropagation()"
-            (change)="toggleTheme($event)"
-          >
-            <mat-label class="mat-mdc-menu-item-text me-2"
-              >Dark Theme</mat-label
-            >
-          </mat-slide-toggle>
-        </button>
+          <!-- Clipboard -->
+          <button mat-menu-item [matMenuTriggerFor]="clipboardMenu">
+            Clipboard
+          </button>
+          <mat-menu #clipboardMenu="matMenu">
+            <button mat-menu-item (click)="copyVmClipboard()">Copy</button>
+            <button mat-menu-item (click)="pasteFromClipboard()">Paste</button>
+          </mat-menu>
+        }
       </mat-menu>
     </div>
   </div>
@@ -181,11 +196,27 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
     <div class="w-50 d-flex justify-content-center gap-3">
       <button
         mat-stroked-button
+        title="Copy from Virtual Machine's clipboard"
+        (click)="copyVmClipboard()"
+      >
+        Copy
+        <mat-icon svgIcon="ic_clipboard_copy" />
+      </button>
+      <button
+        mat-stroked-button
         title="Paste into the Virtual Machine"
         (click)="pasteFromClipboard()"
       >
         Paste
         <mat-icon svgIcon="ic_clipboard_paste" />
+      </button>
+      <button
+        mat-stroked-button
+        title="Send Ctrl-Alt-Del to the Virtual Machine"
+        (click)="ctrlAltDel()"
+      >
+        Ctrl-Alt-Del
+        <mat-icon svgIcon="keyboard" />
       </button>
     </div>
   }
