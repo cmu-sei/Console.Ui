@@ -13,15 +13,14 @@ export class ErrorService implements ErrorHandler {
 
   handleError(err: any) {
     const messageService = this.injector.get(SystemMessageService);
-    // Http failure response for (unknown url): 0 Unknown Error
     if (err instanceof HttpErrorResponse) {
-      const apiError = <HttpErrorResponse>err.error;
-      if (apiError.name !== undefined) {
+      // The body is null for an empty response (a 401 from JwtBearer), a string for an HTML error
+      // page, or JSON; only JSON can name the error.
+      const apiError = err.error;
+      if (apiError?.name !== undefined && apiError?.name !== null) {
         messageService.displayMessage(apiError.name, apiError.message);
-      } else if (
-        err.message ===
-        'Http failure response for (unknown url): 0 Unknown Error'
-      ) {
+      } else if (err.status === 0) {
+        // Http failure response for (unknown url): 0 Unknown Error
         messageService.displayMessage(
           'VM API Error',
           'The VM Console API could not be reached.',
@@ -29,14 +28,17 @@ export class ErrorService implements ErrorHandler {
       } else {
         messageService.displayMessage(err.statusText, err.message);
       }
-    } else if (err.message.startsWith('Uncaught (in promise)')) {
-      if (err.rejection.message === 'Network Error') {
+    } else if (
+      typeof err?.message === 'string' &&
+      err.message.startsWith('Uncaught (in promise)')
+    ) {
+      if (err.rejection?.message === 'Network Error') {
         messageService.displayMessage(
           'Identity Server Error',
           'The Identity Server could not be reached for user authentication.',
         );
       } else {
-        console.log(err.rejection.message);
+        console.log(err.rejection?.message ?? err.rejection);
       }
     } else {
       console.log(err);

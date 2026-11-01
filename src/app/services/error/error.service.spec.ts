@@ -79,16 +79,35 @@ describe('ErrorService', () => {
   });
 
   /**
-   * Verifies: an HTTP error with no response body crashes the error handler.
-   * Interacts with: ErrorService.handleError.
-   * Data: HttpErrorResponse 401 with error null (an empty body, as JwtBearer sends).
+   * Verifies: an HTTP error whose body is empty or not JSON is shown by status text instead of crashing the handler.
+   * Interacts with: SystemMessageService.displayMessage spy.
+   * Data: a 401 with error null (an empty body, as JwtBearer sends) and a 413 with an HTML string body.
    */
-  it('throws on an HTTP error with no body', () => {
+  it.each<[string, number, string, unknown]>([
+    ['no body', 401, 'Unauthorized', null],
+    ['an HTML body', 413, 'Payload Too Large', '<html><body>413</body></html>'],
+  ])('shows an HTTP error with %s by status text', (_label, status, statusText, error) => {
     const { service, messages } = setup();
-    expect(() =>
-      service.handleError(new HttpErrorResponse({ status: 401, error: null })),
-    ).toThrow(TypeError);
-    expect(messages.displayMessage).not.toHaveBeenCalled();
+    const err = new HttpErrorResponse({ status, statusText, url: 'https://vm-api.test/api/x', error });
+
+    expect(() => service.handleError(err)).not.toThrow();
+    expect(messages.displayMessage).toHaveBeenCalledWith(statusText, err.message);
+  });
+
+  /**
+   * Verifies: any status-0 failure is explained as an unreachable API, whatever url HttpClient reports.
+   * Interacts with: SystemMessageService.displayMessage spy.
+   * Data: HttpErrorResponse status 0 with a url (CORS or connection refused on a known endpoint).
+   */
+  it('explains an unreachable API that has a url', () => {
+    const { service, messages } = setup();
+    service.handleError(
+      new HttpErrorResponse({ status: 0, statusText: 'Unknown Error', url: 'https://vm-api.test/api/vms/1', error: null }),
+    );
+    expect(messages.displayMessage).toHaveBeenCalledWith(
+      'VM API Error',
+      'The VM Console API could not be reached.',
+    );
   });
 
   /**
@@ -133,15 +152,24 @@ describe('ErrorService', () => {
   });
 
   /**
-   * Verifies: a thrown value without a message (not an Error) crashes the error handler.
-   * Interacts with: ErrorService.handleError.
-   * Data: the thrown value under test.
+   * Verifies: a thrown value without a message (not an Error) is logged instead of crashing the handler.
+   * Interacts with: console.log spy; SystemMessageService.displayMessage spy.
+   * Data: the thrown value under test, and an unhandled rejection that rejected with a non-Error.
    */
   it.each<[string, unknown]>([
     ['a thrown string', 'boom'],
     ['a plain object', { status: 404 }],
-  ])('throws on %s', (_label, thrown) => {
+    ['null', null],
+  ])('logs %s without crashing', (_label, thrown) => {
+    const { service, messages } = setup();
+    expect(() => service.handleError(thrown)).not.toThrow();
+    expect(vi.mocked(console.log).mock.calls).toEqual([[thrown]]);
+    expect(messages.displayMessage).not.toHaveBeenCalled();
+  });
+
+  it('logs an unhandled rejection with no Error without crashing', () => {
     const { service } = setup();
-    expect(() => service.handleError(thrown)).toThrow(TypeError);
+    const err = Object.assign(new Error('Uncaught (in promise): undefined'), { rejection: undefined });
+    expect(() => service.handleError(err)).not.toThrow();
   });
 });
