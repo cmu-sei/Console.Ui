@@ -19,9 +19,12 @@ function setup() {
 
 // What zone.js hands the ErrorHandler for an unhandled promise rejection.
 function uncaughtInPromise(rejection: Error) {
-  return Object.assign(new Error(`Uncaught (in promise): ${rejection.message}`), {
-    rejection,
-  });
+  return Object.assign(
+    new Error(`Uncaught (in promise): ${rejection.message}`),
+    {
+      rejection,
+    },
+  );
 }
 
 describe('ErrorService', () => {
@@ -42,7 +45,10 @@ describe('ErrorService', () => {
         error: { name: 'Forbidden', message: 'No access' },
       }),
     );
-    expect(messages.displayMessage).toHaveBeenCalledWith('Forbidden', 'No access');
+    expect(messages.displayMessage).toHaveBeenCalledWith(
+      'Forbidden',
+      'No access',
+    );
   });
 
   /**
@@ -53,7 +59,11 @@ describe('ErrorService', () => {
   it('explains an unreachable API', () => {
     const { service, messages } = setup();
     service.handleError(
-      new HttpErrorResponse({ status: 0, statusText: 'Unknown Error', error: {} }),
+      new HttpErrorResponse({
+        status: 0,
+        statusText: 'Unknown Error',
+        error: {},
+      }),
     );
     expect(messages.displayMessage).toHaveBeenCalledWith(
       'VM API Error',
@@ -75,7 +85,10 @@ describe('ErrorService', () => {
       error: {},
     });
     service.handleError(err);
-    expect(messages.displayMessage).toHaveBeenCalledWith('Server Error', err.message);
+    expect(messages.displayMessage).toHaveBeenCalledWith(
+      'Server Error',
+      err.message,
+    );
   });
 
   /**
@@ -86,13 +99,24 @@ describe('ErrorService', () => {
   it.each<[string, number, string, unknown]>([
     ['no body', 401, 'Unauthorized', null],
     ['an HTML body', 413, 'Payload Too Large', '<html><body>413</body></html>'],
-  ])('shows an HTTP error with %s by status text', (_label, status, statusText, error) => {
-    const { service, messages } = setup();
-    const err = new HttpErrorResponse({ status, statusText, url: 'https://vm-api.test/api/x', error });
+  ])(
+    'shows an HTTP error with %s by status text',
+    (_label, status, statusText, error) => {
+      const { service, messages } = setup();
+      const err = new HttpErrorResponse({
+        status,
+        statusText,
+        url: 'https://vm-api.test/api/x',
+        error,
+      });
 
-    expect(() => service.handleError(err)).not.toThrow();
-    expect(messages.displayMessage).toHaveBeenCalledWith(statusText, err.message);
-  });
+      expect(() => service.handleError(err)).not.toThrow();
+      expect(messages.displayMessage).toHaveBeenCalledWith(
+        statusText,
+        err.message,
+      );
+    },
+  );
 
   /**
    * Verifies: any status-0 failure is explained as an unreachable API, whatever url HttpClient reports.
@@ -102,11 +126,108 @@ describe('ErrorService', () => {
   it('explains an unreachable API that has a url', () => {
     const { service, messages } = setup();
     service.handleError(
-      new HttpErrorResponse({ status: 0, statusText: 'Unknown Error', url: 'https://vm-api.test/api/vms/1', error: null }),
+      new HttpErrorResponse({
+        status: 0,
+        statusText: 'Unknown Error',
+        url: 'https://vm-api.test/api/vms/1',
+        error: null,
+      }),
     );
     expect(messages.displayMessage).toHaveBeenCalledWith(
       'VM API Error',
       'The VM Console API could not be reached.',
+    );
+  });
+
+  /**
+   * Verifies: a ProblemDetails body is shown with its title as the reason, never its detail (which can hold a stack trace).
+   * Interacts with: SystemMessageService.displayMessage spy.
+   * Data: a 403 ProblemDetails, and a 500 whose detail is a stack trace.
+   */
+  it.each<[string, number, string, object, string]>([
+    [
+      'a 403',
+      403,
+      'Forbidden',
+      {
+        title: 'You do not have permission to download files from this vm.',
+        status: 403,
+      },
+      'You do not have permission to download files from this vm.',
+    ],
+    [
+      'a 500 with a stack trace',
+      500,
+      'Internal Server Error',
+      {
+        title: 'Value cannot be null.',
+        status: 500,
+        detail: 'System.ArgumentNullException ... at Player.Vm.Api',
+      },
+      'Value cannot be null.',
+    ],
+  ])(
+    'shows the title of %s ProblemDetails',
+    (_label, status, statusText, error, shown) => {
+      const { service, messages } = setup();
+      service.handleError(
+        new HttpErrorResponse({
+          status,
+          statusText,
+          url: 'https://vm-api.test/api/x',
+          error,
+        }),
+      );
+      expect(messages.displayMessage).toHaveBeenCalledWith(statusText, shown);
+    },
+  );
+
+  /**
+   * Verifies: a Blob error body (a request that asked for a Blob, like Download File) is read, and its ProblemDetails title shown; a Blob that isn't JSON falls back to the status text.
+   * Interacts with: SystemMessageService.displayMessage spy.
+   * Data: a 400 whose body is a JSON ProblemDetails Blob, and a 502 whose body is an HTML Blob.
+   */
+  it('reads a ProblemDetails Blob body', async () => {
+    const { service, messages } = setup();
+    const body = new Blob(
+      [
+        JSON.stringify({
+          title: 'The file path must be an absolute path.',
+          status: 400,
+        }),
+      ],
+      { type: 'application/problem+json' },
+    );
+    service.handleError(
+      new HttpErrorResponse({
+        status: 400,
+        statusText: 'Bad Request',
+        url: 'https://vm-api.test/api/x',
+        error: body,
+      }),
+    );
+    await vi.waitFor(() =>
+      expect(messages.displayMessage).toHaveBeenCalledWith(
+        'Bad Request',
+        'The file path must be an absolute path.',
+      ),
+    );
+  });
+
+  it('falls back to the status text for a Blob body that is not JSON', async () => {
+    const { service, messages } = setup();
+    const err = new HttpErrorResponse({
+      status: 502,
+      statusText: 'Bad Gateway',
+      url: 'https://vm-api.test/api/x',
+      error: new Blob(['<html>502</html>'], { type: 'text/html' }),
+    });
+    service.handleError(err);
+    await vi.waitFor(() =>
+      expect(messages.displayMessage).toHaveBeenCalledWith(
+        'Bad Gateway',
+        err.message,
+      ),
     );
   });
 
@@ -169,7 +290,9 @@ describe('ErrorService', () => {
 
   it('logs an unhandled rejection with no Error without crashing', () => {
     const { service } = setup();
-    const err = Object.assign(new Error('Uncaught (in promise): undefined'), { rejection: undefined });
+    const err = Object.assign(new Error('Uncaught (in promise): undefined'), {
+      rejection: undefined,
+    });
     expect(() => service.handleError(err)).not.toThrow();
   });
 });
