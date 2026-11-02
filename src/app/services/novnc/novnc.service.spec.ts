@@ -3,7 +3,7 @@
 
 import { describe, it, expect, vi, onTestFinished } from 'vitest';
 import RFB from '@novnc/novnc/lib/rfb.js';
-import { NoVNCService } from './novnc.service';
+import { NoVNCService, RESIZE_VERIFY_TIMEOUT_MS } from './novnc.service';
 
 type RfbStub = Pick<
   RFB,
@@ -19,6 +19,13 @@ type RfbStub = Pick<
 > & {
   _supportsSetDesktopSize: boolean;
   _handleExtendedDesktopSize: () => boolean;
+  _requestRemoteResize: () => void;
+  _screenSize: () => { w: number; h: number };
+  _fbWidth: number;
+  _fbHeight: number;
+  _FBU: { x: number; y: number };
+  // The console's size, which _screenSize reports (noVNC measures its screen element).
+  screen: { w: number; h: number };
 };
 
 function rfbStub(): RfbStub {
@@ -38,6 +45,16 @@ function rfbStub(): RfbStub {
       this._supportsSetDesktopSize = true;
       return true;
     },
+    // Sending SetDesktopSize is not under test; the service only listens for it.
+    _requestRemoteResize: () => undefined,
+    _screenSize(this: RfbStub) {
+      return this.screen;
+    },
+    // A guest at 1024x768 in a console of the same size, so nothing needs resizing by default.
+    _fbWidth: 1024,
+    _fbHeight: 768,
+    _FBU: { x: 0, y: 0 },
+    screen: { w: 1024, h: 768 },
   };
 }
 
@@ -441,6 +458,195 @@ describe('NoVNCService', () => {
       service.setViewOnly(true);
       expect(rfb.resizeSession).toBe(false);
       expect(rfb.scaleViewport).toBe(true);
+    });
+
+    describe('when the guest does not follow', () => {
+      function useFakeTimers() {
+        vi.useFakeTimers();
+        onTestFinished(() => {
+          vi.useRealTimers();
+        });
+      }
+
+      // A connection whose server offers resize, in a console bigger than the guest's 1024x768.
+      function matchingClient() {
+        const service = new NoVNCService();
+        const notices = vi.fn();
+        service.resizeFallback$.subscribe(notices);
+        const rfb = connectClient(service);
+        serverOffersResize(rfb);
+        rfb.screen = { w: 1280.6, h: 800.2 };
+        return { service, rfb, notices };
+      }
+
+      /**
+       * Verifies: a Match Window Size request that leaves the framebuffer unchanged for the timeout falls back to Scale to Fit, marks resize unsupported for the connection, and announces it once; the user's choice is kept.
+       * Interacts with: setResolutionMode; the stub's _fbWidth/_fbHeight and _screenSize; resizeFallback$; fake timers.
+       * Data: guest stays 1024x768 in a 1280x800 console; RESIZE_VERIFY_TIMEOUT_MS.
+       * Why: QEMU with std VGA advertises ExtendedDesktopSize and ignores the request, so only the outcome shows it.
+       */
+      it('falls back to scaling when the framebuffer does not change', () => {
+        useFakeTimers();
+        const { service, rfb, notices } = matchingClient();
+        expect(RESIZE_VERIFY_TIMEOUT_MS).toBe(3000);
+        service.setResolutionMode('match');
+        expect(rfb.resizeSession).toBe(true);
+
+        vi.advanceTimersByTime(RESIZE_VERIFY_TIMEOUT_MS - 1);
+        expect(service.activeResolution()).toBe('match');
+        expect(notices).not.toHaveBeenCalled();
+
+        vi.advanceTimersByTime(1);
+        expect(service.activeResolution()).toBe('scale');
+        expect(service.resizeSupported()).toBe(false);
+        expect(service.resolutionMode()).toBe('match');
+        expect(rfb.scaleViewport).toBe(true);
+        expect(rfb.resizeSession).toBe(false);
+        expect(notices).toHaveBeenCalledOnce();
+      });
+
+      /**
+       * Verifies: once fallen back, the verdict sticks for the connection: a re-check, another request or more time neither re-enables Match Window Size nor repeats the notice.
+       * Interacts with: refreshResizeSupport; the wrapped _requestRemoteResize; resizeFallback$.
+       * Data: the fallback above, then a re-check, a request and another timeout.
+       */
+      it('announces the fallback once per connection', () => {
+        useFakeTimers();
+        const { service, rfb, notices } = matchingClient();
+        service.setResolutionMode('match');
+        vi.advanceTimersByTime(RESIZE_VERIFY_TIMEOUT_MS);
+
+        service.refreshResizeSupport();
+        rfb._requestRemoteResize();
+        service.setResolutionMode('match');
+        vi.advanceTimersByTime(RESIZE_VERIFY_TIMEOUT_MS);
+        expect(service.resizeSupported()).toBe(false);
+        expect(rfb.resizeSession).toBe(false);
+        expect(notices).toHaveBeenCalledOnce();
+      });
+
+      /**
+       * Verifies: a guest whose framebuffer changes after the request stays on Match Window Size.
+       * Interacts with: setResolutionMode; the stub's framebuffer size; fake timers.
+       * Data: guest resizes from 1024x768 to 1280x800 before the timeout.
+       */
+      it('keeps matching when the framebuffer changes', () => {
+        useFakeTimers();
+        const { service, rfb, notices } = matchingClient();
+        service.setResolutionMode('match');
+        vi.advanceTimersByTime(500);
+        rfb._fbWidth = 1280;
+        rfb._fbHeight = 800;
+
+        vi.advanceTimersByTime(RESIZE_VERIFY_TIMEOUT_MS);
+        expect(service.activeResolution()).toBe('match');
+        expect(service.resizeSupported()).toBe(true);
+        expect(rfb.resizeSession).toBe(true);
+        expect(notices).not.toHaveBeenCalled();
+      });
+
+      /**
+       * Verifies: a request for the size the guest already has is not taken as a failure.
+       * Interacts with: setResolutionMode; _screenSize floored as noVNC sends it; fake timers.
+       * Data: guest 1024x768 in a 1024.4x768.9 console.
+       */
+      it('does not fail a request for the current size', () => {
+        useFakeTimers();
+        const { service, rfb, notices } = matchingClient();
+        rfb.screen = { w: 1024.4, h: 768.9 };
+        service.setResolutionMode('match');
+
+        vi.advanceTimersByTime(RESIZE_VERIFY_TIMEOUT_MS * 2);
+        expect(service.activeResolution()).toBe('match');
+        expect(notices).not.toHaveBeenCalled();
+      });
+
+      /**
+       * Verifies: a window resize while matched is checked too: noVNC's request goes through the wrapped _requestRemoteResize, and a guest that followed the first size but not the next falls back. The timeout is overridable.
+       * Interacts with: the wrapped _requestRemoteResize (noVNC's debounced resize handler calls it); resizeVerifyTimeoutMs.
+       * Data: resizeVerifyTimeoutMs 100; guest follows to 1280x800, then ignores 1600x900.
+       */
+      it('checks a window resize while matched', () => {
+        useFakeTimers();
+        const { service, rfb, notices } = matchingClient();
+        service.resizeVerifyTimeoutMs = 100;
+        service.setResolutionMode('match');
+        rfb._fbWidth = 1280;
+        rfb._fbHeight = 800;
+        vi.advanceTimersByTime(100);
+        expect(service.activeResolution()).toBe('match');
+
+        rfb.screen = { w: 1600, h: 900 };
+        rfb._requestRemoteResize();
+        vi.advanceTimersByTime(99);
+        expect(service.activeResolution()).toBe('match');
+        vi.advanceTimersByTime(1);
+        expect(service.activeResolution()).toBe('scale');
+        expect(notices).toHaveBeenCalledOnce();
+      });
+
+      /**
+       * Verifies: an ExtendedDesktopSize reply to this client's request with a rejecting status (1 prohibited, 2 out of resources, 3 invalid layout) falls back at once, without waiting for the timeout.
+       * Interacts with: the wrapped _handleExtendedDesktopSize reading _FBU (x = 1, this client asked; y = status).
+       * Data: status 1, 2 and 3 after Match Window Size.
+       */
+      it.each([1, 2, 3])('treats ExtendedDesktopSize status %i as unsupported', (status) => {
+        const { service, rfb, notices } = matchingClient();
+        service.setResolutionMode('match');
+        rfb._FBU = { x: 1, y: status };
+        serverOffersResize(rfb);
+        expect(service.resizeSupported()).toBe(false);
+        expect(service.activeResolution()).toBe('scale');
+        expect(rfb.resizeSession).toBe(false);
+        expect(notices).toHaveBeenCalledOnce();
+      });
+
+      /**
+       * Verifies: status 4 ("request forwarded"), and replies the client didn't ask for, are not rejections.
+       * Interacts with: the wrapped _handleExtendedDesktopSize reading _FBU.
+       * Data: x 1 / y 4, and x 2 (another client's request) / y 1.
+       * Why: QEMU answers every SetDesktopSize it passes to the display adapter with status 4, including on guests that do resize.
+       */
+      it.each([
+        [1, 4],
+        [2, 1],
+      ])('does not treat reason %i status %i as unsupported', (x, y) => {
+        const { service, rfb, notices } = matchingClient();
+        service.setResolutionMode('match');
+        rfb._FBU = { x, y };
+        serverOffersResize(rfb);
+        expect(service.activeResolution()).toBe('match');
+        expect(notices).not.toHaveBeenCalled();
+      });
+
+      /**
+       * Verifies: a new connection forgets the previous one's verdict: support comes back once the new server offers it and the kept choice is re-applied; a check pending from the old connection does not fire against the new one.
+       * Interacts with: disconnect(); configureClient on a second client; fake timers.
+       * Data: fallback on the first connection; a pending check on a second, then a third connection.
+       */
+      it('resets the verdict on reconnect', () => {
+        useFakeTimers();
+        const { service, rfb, notices } = matchingClient();
+        service.setResolutionMode('match');
+        vi.advanceTimersByTime(RESIZE_VERIFY_TIMEOUT_MS);
+        expect(rfb.resizeSession).toBe(false);
+
+        service.disconnect();
+        const next = connectClient(service);
+        serverOffersResize(next);
+        expect(service.resizeSupported()).toBe(true);
+        expect(next.scaleViewport).toBe(false);
+        expect(next.resizeSession).toBe(true);
+
+        next.screen = { w: 1280, h: 800 };
+        next._requestRemoteResize();
+        service.disconnect();
+        const third = connectClient(service);
+        serverOffersResize(third);
+        vi.advanceTimersByTime(RESIZE_VERIFY_TIMEOUT_MS);
+        expect(service.activeResolution()).toBe('match');
+        expect(notices).toHaveBeenCalledOnce();
+      });
     });
 
     /**

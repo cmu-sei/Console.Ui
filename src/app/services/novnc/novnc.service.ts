@@ -16,12 +16,38 @@ import keysyms from '@novnc/novnc/lib/input/keysymdef.js';
  */
 export type ResolutionMode = 'scale' | 'match';
 
-// The noVNC internals used to learn whether the server accepts SetDesktopSize. Not public API, so
-// both are read defensively and may be missing in another noVNC version.
+/**
+ * How long a resize request has to change the guest's framebuffer before the console concludes the
+ * guest can't resize and goes back to scaling. QEMU accepts SetDesktopSize whatever the display
+ * adapter, so a std VGA guest only shows it by never changing size.
+ */
+export const RESIZE_VERIFY_TIMEOUT_MS = 3000;
+
+// ExtendedDesktopSize status codes (RFB 7.8.2), the rect's y when its x is 1 (this client asked):
+// 1 prohibited, 2 out of resources, 3 invalid layout. QEMU answers every request with 4, "request
+// forwarded" to the display adapter, which says nothing about whether the guest will follow.
+const RESIZE_REJECTED_STATUSES = new Set([1, 2, 3]);
+
+// The noVNC internals used to learn whether the server accepts SetDesktopSize and whether the guest
+// followed a request. Not public API, so all are read defensively and may be missing in another
+// noVNC version.
 interface RfbResizeInternals {
   // Set once the server has sent an ExtendedDesktopSize rect (lib/rfb.js, _handleExtendedDesktopSize).
   _supportsSetDesktopSize?: boolean;
   _handleExtendedDesktopSize?: (...args: unknown[]) => boolean;
+  // Sends SetDesktopSize for _screenSize(), floored, when resizeSession is on (lib/rfb.js).
+  _requestRemoteResize?: (...args: unknown[]) => unknown;
+  _screenSize?: () => { w: number; h: number };
+  // The guest framebuffer size, updated by _resize when the server reports a new size.
+  _fbWidth?: number;
+  _fbHeight?: number;
+  // The rect being handled; for ExtendedDesktopSize x is the reason and y the status.
+  _FBU?: { x?: number; y?: number };
+}
+
+interface Size {
+  w: number;
+  h: number;
 }
 
 @Injectable({
@@ -53,6 +79,17 @@ export class NoVNCService {
       ? 'match'
       : 'scale',
   );
+
+  // Set for the connection when the guest showed it can't resize: it rejected a request, or a
+  // request left its framebuffer unchanged. Overrides what the server advertised.
+  private resizeRejected = false;
+  private resizeCheck: ReturnType<typeof setTimeout> | null = null;
+  // Overridable so tests need not wait the real timeout.
+  public resizeVerifyTimeoutMs = RESIZE_VERIFY_TIMEOUT_MS;
+
+  private resizeFallbackSubject = new Subject<void>();
+  // Fires once each time Match Window Size falls back to scaling because the guest didn't resize.
+  public readonly resizeFallback$ = this.resizeFallbackSubject.asObservable();
 
   private reconnectRequestsSubject = new Subject<void>();
   // NovncComponent owns the connection lifecycle, so a user's Reconnect is handed to it.
@@ -90,7 +127,7 @@ export class NoVNCService {
   private configureClient(readOnly: boolean) {
     this.rfb.viewOnly = readOnly;
     this.viewOnlySignal.set(readOnly);
-    this.resizeSupportedSignal.set(false);
+    this.resetResizeVerdict();
     this.applyResolution();
     this.trackResizeSupport();
     this.trackGuestClipboard();
@@ -99,23 +136,117 @@ export class NoVNCService {
   // noVNC raises no event when it learns the server can resize: it just sets _supportsSetDesktopSize
   // on the first ExtendedDesktopSize rect, which arrives after 'connect'. Wrapping that handler on
   // this client is the earliest hook; 'connect' is checked as well in case the handler is renamed.
+  // The same rect carries the server's answer to this client's resize requests, so a rejection is
+  // picked up there too.
   private trackResizeSupport() {
     const rfb = this.rfb as unknown as RfbResizeInternals;
     const handler = rfb._handleExtendedDesktopSize;
     if (typeof handler === 'function') {
       rfb._handleExtendedDesktopSize = (...args: unknown[]) => {
         const handled = handler.apply(rfb, args);
+        if (handled && this.rfb === (rfb as unknown as RFB)) {
+          const update = rfb._FBU;
+          if (update?.x === 1 && RESIZE_REJECTED_STATUSES.has(update.y ?? 0)) {
+            this.fallBackToScaling();
+          }
+        }
         this.refreshResizeSupport();
         return handled;
       };
     }
+    // Every resize request goes through here: the resizeSession setter, and noVNC's debounced
+    // window-resize handler.
+    const request = rfb._requestRemoteResize;
+    if (typeof request === 'function') {
+      rfb._requestRemoteResize = (...args: unknown[]) => {
+        const result = request.apply(rfb, args);
+        if (this.rfb === (rfb as unknown as RFB)) {
+          this.verifyResize();
+        }
+        return result;
+      };
+    }
     this.rfb.addEventListener('connect', () => this.refreshResizeSupport());
+  }
+
+  private framebufferSize(): Size | null {
+    const rfb = this.rfb as unknown as RfbResizeInternals;
+    const w = rfb?._fbWidth;
+    const h = rfb?._fbHeight;
+    return typeof w === 'number' && typeof h === 'number' ? { w, h } : null;
+  }
+
+  // The size noVNC asks for: its screen element's size, floored as _requestRemoteResize sends it.
+  private requestedSize(): Size | null {
+    const rfb = this.rfb as unknown as RfbResizeInternals;
+    if (typeof rfb?._screenSize !== 'function') {
+      return null;
+    }
+    const size = rfb._screenSize();
+    return { w: Math.floor(size.w), h: Math.floor(size.h) };
+  }
+
+  // A server can advertise resize while the guest can't follow (QEMU with std VGA), and nothing
+  // reports that: the framebuffer just stays the size it was. So after each request under Match
+  // Window Size, a framebuffer that hasn't changed within the timeout means the guest can't resize.
+  // A request for the size the guest already has changes nothing and proves nothing.
+  private verifyResize() {
+    this.cancelResizeCheck();
+    if (this.activeResolution() !== 'match') {
+      return;
+    }
+    const before = this.framebufferSize();
+    const requested = this.requestedSize();
+    if (
+      !before ||
+      !requested ||
+      (requested.w === before.w && requested.h === before.h)
+    ) {
+      return;
+    }
+    this.resizeCheck = setTimeout(() => {
+      this.resizeCheck = null;
+      const now = this.framebufferSize();
+      if (now && now.w === before.w && now.h === before.h) {
+        this.fallBackToScaling();
+      }
+    }, this.resizeVerifyTimeoutMs);
+  }
+
+  private cancelResizeCheck() {
+    if (this.resizeCheck !== null) {
+      clearTimeout(this.resizeCheck);
+      this.resizeCheck = null;
+    }
+  }
+
+  // Marks resize unsupported for this connection, scales instead, and says so once. The user's
+  // choice is kept, so a new connection tries it again.
+  private fallBackToScaling() {
+    this.cancelResizeCheck();
+    if (this.resizeRejected) {
+      return;
+    }
+    const wasMatching = this.activeResolution() === 'match';
+    this.resizeRejected = true;
+    this.resizeSupportedSignal.set(false);
+    this.applyResolution();
+    if (wasMatching) {
+      this.resizeFallbackSubject.next();
+    }
+  }
+
+  private resetResizeVerdict() {
+    this.cancelResizeCheck();
+    this.resizeRejected = false;
+    this.resizeSupportedSignal.set(false);
   }
 
   // Re-reads whether the server can resize, and applies the chosen mode if that changed.
   public refreshResizeSupport() {
     const supported =
       !!this.rfb &&
+      !this.resizeRejected &&
       (this.rfb as unknown as RfbResizeInternals)._supportsSetDesktopSize ===
         true;
     if (supported !== this.resizeSupportedSignal()) {
@@ -139,7 +270,11 @@ export class NoVNCService {
     if (this.activeResolution() === 'match') {
       this.rfb.scaleViewport = false;
       this.rfb.resizeSession = true;
+      // noVNC sends the request from the resizeSession setter, which verifyResize also hears
+      // through the _requestRemoteResize wrapper; checking here as well covers a noVNC without it.
+      this.verifyResize();
     } else {
+      this.cancelResizeCheck();
       this.rfb.resizeSession = false;
       this.rfb.scaleViewport = true;
     }
@@ -204,7 +339,7 @@ export class NoVNCService {
       this.rfb = null;
     }
     this.guestClipboard = null;
-    this.resizeSupportedSignal.set(false);
+    this.resetResizeVerdict();
   }
 
   public setViewOnly(viewOnly: boolean) {

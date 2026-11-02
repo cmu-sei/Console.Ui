@@ -9,7 +9,7 @@ import { MatSlideToggleHarness } from '@angular/material/slide-toggle/testing';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { fireEvent, screen } from '@testing-library/angular';
 import userEvent from '@testing-library/user-event';
-import { BehaviorSubject, NEVER, Observable, of, throwError } from 'rxjs';
+import { BehaviorSubject, NEVER, Observable, Subject, of, throwError } from 'rxjs';
 import { Router } from '@angular/router';
 import { signal } from '@angular/core';
 import { ResolutionMode } from '../../services/novnc/novnc.service';
@@ -42,6 +42,7 @@ import {
   COPY_FROM_VM_FAILED_MESSAGE,
   GUEST_AGENT_TOOLTIP,
   OptionsBar2Component,
+  RESIZE_FALLBACK_MESSAGE,
   RESIZE_READ_ONLY_TOOLTIP,
   RESIZE_UNSUPPORTED_TOOLTIP,
   VNC_CLIPBOARD_TOOLTIP,
@@ -110,7 +111,9 @@ async function renderOptionsBar2(
   const apiVsphere = {
     powerOnVsphereVirtualMachine: vi.fn(() => of('submitted')),
   } satisfies ApiStub<ApiVsphereService>;
+  const resizeFallback$ = new Subject<void>();
   const proxmox = {
+    resizeFallback$,
     getVm: vi.fn<ProxmoxService['getVm']>(() => overrides.networkVm ?? of(networkVm())),
     changeNic: vi.fn<ProxmoxService['changeNic']>(() =>
       of(networkVm({ networkCards: { ...networkVm().networkCards, currentNetworks: { net0: 'vmbr1' } } })),
@@ -158,6 +161,7 @@ async function renderOptionsBar2(
     | 'resizeSupported'
     | 'setResolutionMode'
     | 'refreshResizeSupport'
+    | 'resizeFallback$'
   >;
   const vsphere = {
     getVm: vi.fn<VsphereService['getVm']>(() => of(networkVm() as VsphereVirtualMachine)),
@@ -226,6 +230,7 @@ async function renderOptionsBar2(
     apiProxmox,
     apiVsphere,
     proxmox,
+    resizeFallback$,
     vsphere,
     dialogs,
     progress,
@@ -1569,6 +1574,21 @@ describe('OptionsBar2Component', () => {
       const tooltip = await resolutionTooltip(fixture);
       await tooltip.show();
       expect(await tooltip.getTooltipText()).toBe(text);
+    });
+
+    /**
+     * Verifies: when Match Window Size falls back to scaling because the guest kept its resolution, the bar says so once in a snackbar.
+     * Interacts with: ProxmoxService.resizeFallback$; MatSnackBar.open (through showMessage).
+     * Data: one fallback notice.
+     */
+    it('says once that it went back to scaling', async () => {
+      const { resizeFallback$, snackBar } = await renderOptionsBar2();
+      resizeFallback$.next();
+      expect(snackBar.open).toHaveBeenCalledOnce();
+      expect(snackBar.open).toHaveBeenCalledWith(RESIZE_FALLBACK_MESSAGE, 'Close', {
+        duration: 10000,
+        verticalPosition: 'top',
+      });
     });
   });
 

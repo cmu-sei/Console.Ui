@@ -117,6 +117,8 @@ export class ProxmoxService {
   // The resolution mode in effect on the console, and whether the server can resize the guest.
   public readonly activeResolution = this.novncService.activeResolution;
   public readonly resizeSupported = this.novncService.resizeSupported;
+  // Fires when Match Window Size fell back to scaling because the guest didn't resize.
+  public readonly resizeFallback$ = this.novncService.resizeFallback$;
 
   public setResolutionMode(mode: ResolutionMode) {
     this.novncService.setResolutionMode(mode);

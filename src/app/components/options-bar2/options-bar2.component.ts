@@ -86,6 +86,11 @@ export const RESIZE_UNSUPPORTED_TOOLTIP =
 export const RESIZE_READ_ONLY_TOOLTIP =
   "A read-only console can't change this VM's resolution";
 
+// Shown once when Match Window Size was chosen but the guest kept its resolution, so the console
+// went back to scaling.
+export const RESIZE_FALLBACK_MESSAGE =
+  "This VM didn't change resolution, so the console is scaling to fit instead.";
+
 // Shown when Copy is enabled but nothing has come over the VNC clipboard yet: the guest side of that
 // is spice-vdagent, which the Vm's config cannot tell us about.
 export const COPY_FROM_VM_FAILED_MESSAGE =
@@ -170,6 +175,9 @@ export class OptionsBar2Component implements OnInit {
           this.tasks.set(data);
         }
       });
+    this.proxmoxService.resizeFallback$
+      .pipe(takeUntilDestroyed())
+      .subscribe(() => this.showMessage(RESIZE_FALLBACK_MESSAGE, 10000));
   }
 
   ngOnInit() {
