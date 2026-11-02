@@ -11,6 +11,8 @@ import { fireEvent, screen } from '@testing-library/angular';
 import userEvent from '@testing-library/user-event';
 import { BehaviorSubject, NEVER, Observable, of, throwError } from 'rxjs';
 import { Router } from '@angular/router';
+import { signal } from '@angular/core';
+import { ResolutionMode } from '../../services/novnc/novnc.service';
 import { getDefaultNormalizer } from '@testing-library/angular';
 import { SignalRService } from '../../services/signalr/signalr.service';
 import { NotificationService } from '../../services/notification/notification.service';
@@ -40,6 +42,8 @@ import {
   COPY_FROM_VM_FAILED_MESSAGE,
   GUEST_AGENT_TOOLTIP,
   OptionsBar2Component,
+  RESIZE_READ_ONLY_TOOLTIP,
+  RESIZE_UNSUPPORTED_TOOLTIP,
   VNC_CLIPBOARD_TOOLTIP,
   fileNameOf,
   formatConnectedUsers,
@@ -89,6 +93,9 @@ async function renderOptionsBar2(
     confirmation?: boolean | 'dismissed';
     // When given, the real UserPermissionsService is primed with these grants.
     grants?: PermissionGrants;
+    // Whether the VNC server accepts resize requests (NoVNCService.resizeSupported).
+    resizeSupported?: boolean;
+    activeResolution?: ResolutionMode;
   } = {},
 ) {
   const vm = overrides.vm ?? PROXMOX_VM;
@@ -126,6 +133,10 @@ async function renderOptionsBar2(
     fullscreen: vi.fn<ProxmoxService['fullscreen']>(() => true),
     reconnect: vi.fn<ProxmoxService['reconnect']>(),
     getGuestClipboard: vi.fn<ProxmoxService['getGuestClipboard']>(() => 'guest text'),
+    activeResolution: signal<ResolutionMode>(overrides.activeResolution ?? 'scale'),
+    resizeSupported: signal(overrides.resizeSupported ?? true),
+    setResolutionMode: vi.fn<ProxmoxService['setResolutionMode']>(),
+    refreshResizeSupport: vi.fn<ProxmoxService['refreshResizeSupport']>(),
   } satisfies Pick<
     ProxmoxService,
     | 'getVm'
@@ -143,6 +154,10 @@ async function renderOptionsBar2(
     | 'fullscreen'
     | 'reconnect'
     | 'getGuestClipboard'
+    | 'activeResolution'
+    | 'resizeSupported'
+    | 'setResolutionMode'
+    | 'refreshResizeSupport'
   >;
   const vsphere = {
     getVm: vi.fn<VsphereService['getVm']>(() => of(networkVm() as VsphereVirtualMachine)),
@@ -274,16 +289,16 @@ async function findMenuItem(fixture: Fixture, ...path: MenuText[]) {
 describe('OptionsBar2Component', () => {
   describe('read-only lockout', () => {
     /**
-     * Verifies: a read-only Proxmox console offers only the viewing controls and the theme switch, as the vSphere bar does.
+     * Verifies: a read-only Proxmox console offers only the viewing controls, the theme switch and Resolution (which can still scale).
      * Interacts with: the readOnly input; the gear menu (MatMenuHarness).
      * Data: readOnly true; a Vm that could mount ISOs and change networks.
      */
-    it('offers only the theme when read-only', async () => {
+    it('offers only viewing controls when read-only', async () => {
       const { fixture } = await renderOptionsBar2({
         readOnly: true,
         networkVm: of(networkVm({ canMountIso: true })),
       });
-      expect(await menuTexts(fixture)).toEqual(['Fullscreen', 'Reconnect', 'Dark Theme']);
+      expect(await menuTexts(fixture)).toEqual(['Fullscreen', 'Reconnect', 'Dark Theme', 'Resolution']);
     });
 
     /**
@@ -299,6 +314,7 @@ describe('OptionsBar2Component', () => {
         'Fullscreen',
         'Reconnect',
         'Dark Theme',
+        'Resolution',
         'Power',
         'Files',
         'Keyboard',
@@ -320,6 +336,7 @@ describe('OptionsBar2Component', () => {
         'Fullscreen',
         'Reconnect',
         'Dark Theme',
+        'Resolution',
         'Power',
         'Keyboard',
         'Clipboard',
@@ -379,6 +396,7 @@ describe('OptionsBar2Component', () => {
         'Fullscreen',
         'Reconnect',
         'Dark Theme',
+        'Resolution',
         'Power',
         'Keyboard',
         'Clipboard',
@@ -1477,6 +1495,80 @@ describe('OptionsBar2Component', () => {
       const { proxmox } = await renderOptionsBar2();
       await user.click(screen.getByRole('button', { name: /^Ctrl-Alt-Del/ }));
       expect(proxmox.sendCtrlAltDel).toHaveBeenCalledOnce();
+    });
+  });
+
+  describe('resolution', () => {
+    async function resolutionTooltip(fixture: Fixture) {
+      return TestbedHarnessEnvironment.documentRootLoader(fixture).getHarness(
+        MatTooltipHarness.with({ ancestor: '.mat-mdc-menu-panel' }),
+      );
+    }
+
+    /**
+     * Verifies: Resolution sits where the vSphere bar has it, directly above Power, and offers Scale to Fit and Match Window Size with a check on the one in effect.
+     * Interacts with: the gear menu and Resolution submenu (MatMenuHarness); ProxmoxService.activeResolution.
+     * Data: activeResolution 'scale', then 'match'.
+     */
+    it.each<[ResolutionMode, string[]]>([
+      ['scale', ['✔ Scale to Fit', 'Match Window Size']],
+      ['match', ['Scale to Fit', '✔ Match Window Size']],
+    ])('marks the active mode (%s)', async (activeResolution, expected) => {
+      const { fixture } = await renderOptionsBar2({ activeResolution });
+      const texts = await menuTexts(fixture);
+      expect(texts[texts.indexOf('Resolution') + 1]).toBe('Power');
+      await (await menu(fixture)).close();
+      expect(await itemTexts(await openSubmenu(fixture, 'Resolution'))).toEqual(expected);
+    });
+
+    /**
+     * Verifies: each item sets its mode through ProxmoxService, and opening the submenu re-reads server support.
+     * Interacts with: the Resolution submenu; ProxmoxService.setResolutionMode and refreshResizeSupport.
+     * Data: resize supported; Match Window Size then Scale to Fit clicked.
+     */
+    it('sets the chosen mode', async () => {
+      const { fixture, proxmox } = await renderOptionsBar2();
+      await clickMenu(fixture, 'Resolution', 'Match Window Size');
+      expect(proxmox.setResolutionMode).toHaveBeenLastCalledWith('match');
+      expect(proxmox.refreshResizeSupport).toHaveBeenCalled();
+      await clickMenu(fixture, 'Resolution', /Scale to Fit/);
+      expect(proxmox.setResolutionMode).toHaveBeenLastCalledWith('scale');
+    });
+
+    /**
+     * Verifies: with a server that can resize and an interactive console, Match Window Size is enabled with no tooltip.
+     * Interacts with: the Resolution submenu; MatTooltipHarness on its wrapper.
+     * Data: resizeSupported true; readOnly false.
+     */
+    it('enables Match Window Size when the server can resize', async () => {
+      const { fixture } = await renderOptionsBar2();
+      const match = await findMenuItem(fixture, 'Resolution', 'Match Window Size');
+      expect(await match.isDisabled()).toBe(false);
+      const tooltip = await resolutionTooltip(fixture);
+      await tooltip.show();
+      expect(await tooltip.isOpen()).toBe(false);
+    });
+
+    /**
+     * Verifies: Match Window Size is disabled and says why when the server can't resize the guest, or when the console is read-only; Scale to Fit stays available.
+     * Interacts with: the resizeSupported signal and readOnly input; the Resolution submenu; MatTooltipHarness on the wrapper.
+     * Data: unsupported (interactive and read-only, the adapter reason wins), and supported but read-only.
+     * Why: the Files items use the same disabled-with-wrapper-tooltip pattern; a disabled button gets no hover events itself.
+     */
+    it.each<[string, boolean, boolean, string]>([
+      ['unsupported', false, false, RESIZE_UNSUPPORTED_TOOLTIP],
+      ['unsupported and read-only', false, true, RESIZE_UNSUPPORTED_TOOLTIP],
+      ['read-only', true, true, RESIZE_READ_ONLY_TOOLTIP],
+    ])('disables Match Window Size when %s', async (_, resizeSupported, readOnly, text) => {
+      const { fixture } = await renderOptionsBar2({ resizeSupported, readOnly });
+      const resolution = await openSubmenu(fixture, 'Resolution');
+      const [scale] = await resolution.getItems({ text: /Scale to Fit/ });
+      const [match] = await resolution.getItems({ text: 'Match Window Size' });
+      expect(await scale.isDisabled()).toBe(false);
+      expect(await match.isDisabled()).toBe(true);
+      const tooltip = await resolutionTooltip(fixture);
+      await tooltip.show();
+      expect(await tooltip.getTooltipText()).toBe(text);
     });
   });
 

@@ -62,6 +62,39 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
           </mat-slide-toggle>
         </button>
 
+        <!-- Resolution: where the vSphere bar has it, above Power. Shown on read-only consoles too,
+             which can still scale. -->
+        <button
+          mat-menu-item
+          [matMenuTriggerFor]="resolutionMenu"
+          (menuOpened)="refreshResizeSupport()"
+        >
+          Resolution
+        </button>
+        <mat-menu #resolutionMenu="matMenu">
+          <button mat-menu-item (click)="scaleToFit()">
+            @if (activeResolution() === 'scale') {
+              <span>&#10004;</span>
+            }
+            Scale to Fit
+          </button>
+          <div
+            [matTooltip]="matchWindowSizeTooltip()"
+            matTooltipPosition="after"
+          >
+            <button
+              mat-menu-item
+              [disabled]="!!matchWindowSizeTooltip()"
+              (click)="matchWindowSize()"
+            >
+              @if (activeResolution() === 'match') {
+                <span>&#10004;</span>
+              }
+              Match Window Size
+            </button>
+          </div>
+        </mat-menu>
+
         @if (!readOnly()) {
           <!-- Power -->
           <button mat-menu-item [matMenuTriggerFor]="powerMenu">Power</button>

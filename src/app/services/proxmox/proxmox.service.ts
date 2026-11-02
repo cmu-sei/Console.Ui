@@ -16,7 +16,7 @@ import {
   VmSnapshot,
 } from '../../generated/vm-api';
 import { IsoResult } from '../../models/vm/iso-result';
-import { NoVNCService } from '../novnc/novnc.service';
+import { NoVNCService, ResolutionMode } from '../novnc/novnc.service';
 
 @Injectable({
   providedIn: 'root',
@@ -112,6 +112,18 @@ export class ProxmoxService {
 
   public reconnect() {
     this.novncService.requestReconnect();
+  }
+
+  // The resolution mode in effect on the console, and whether the server can resize the guest.
+  public readonly activeResolution = this.novncService.activeResolution;
+  public readonly resizeSupported = this.novncService.resizeSupported;
+
+  public setResolutionMode(mode: ResolutionMode) {
+    this.novncService.setResolutionMode(mode);
+  }
+
+  public refreshResizeSupport() {
+    this.novncService.refreshResizeSupport();
   }
 
   public getGuestClipboard(): string | null {

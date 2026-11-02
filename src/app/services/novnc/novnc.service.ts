@@ -3,11 +3,26 @@
  * Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
  */
 
-import { Injectable } from '@angular/core';
+import { Injectable, computed, signal } from '@angular/core';
 import { Subject } from 'rxjs';
 import RFB from '@novnc/novnc/lib/rfb.js';
 import KeyTable from '@novnc/novnc/lib/input/keysym.js';
 import keysyms from '@novnc/novnc/lib/input/keysymdef.js';
+
+/**
+ * How the guest display is fitted to the console window. 'scale' scales the guest's own resolution
+ * to fit; 'match' asks the guest to change its resolution to the window (SetDesktopSize), which
+ * only works where the VNC server supports it and the guest's display adapter can resize.
+ */
+export type ResolutionMode = 'scale' | 'match';
+
+// The noVNC internals used to learn whether the server accepts SetDesktopSize. Not public API, so
+// both are read defensively and may be missing in another noVNC version.
+interface RfbResizeInternals {
+  // Set once the server has sent an ExtendedDesktopSize rect (lib/rfb.js, _handleExtendedDesktopSize).
+  _supportsSetDesktopSize?: boolean;
+  _handleExtendedDesktopSize?: (...args: unknown[]) => boolean;
+}
 
 @Injectable({
   providedIn: 'root',
@@ -17,6 +32,27 @@ export class NoVNCService {
   private screen: HTMLElement | null = null;
   private guestClipboard: string | null = null;
   private fullscreen = false;
+
+  private readonly resolutionModeSignal = signal<ResolutionMode>('scale');
+  // The user's choice, kept for the life of the page; reconnects and read-only switches reapply it.
+  public readonly resolutionMode = this.resolutionModeSignal.asReadonly();
+
+  private readonly resizeSupportedSignal = signal(false);
+  // Whether the connected server accepts resize requests. Unknown, so false, until it says so after
+  // connecting; reset for each new connection.
+  public readonly resizeSupported = this.resizeSupportedSignal.asReadonly();
+
+  private readonly viewOnlySignal = signal(false);
+
+  // The mode actually applied: 'match' needs a server that can resize and a console that is not
+  // view-only (noVNC never sends a resize from a view-only client).
+  public readonly activeResolution = computed<ResolutionMode>(() =>
+    this.resolutionModeSignal() === 'match' &&
+    this.resizeSupportedSignal() &&
+    !this.viewOnlySignal()
+      ? 'match'
+      : 'scale',
+  );
 
   private reconnectRequestsSubject = new Subject<void>();
   // NovncComponent owns the connection lifecycle, so a user's Reconnect is handed to it.
@@ -47,9 +83,66 @@ export class NoVNCService {
     });
 
     this.rfb.background = backgroundColor;
+    this.configureClient(readOnly);
+  }
+
+  // Everything startClient sets up on a new client after constructing it.
+  private configureClient(readOnly: boolean) {
     this.rfb.viewOnly = readOnly;
-    this.rfb.scaleViewport = true;
+    this.viewOnlySignal.set(readOnly);
+    this.resizeSupportedSignal.set(false);
+    this.applyResolution();
+    this.trackResizeSupport();
     this.trackGuestClipboard();
+  }
+
+  // noVNC raises no event when it learns the server can resize: it just sets _supportsSetDesktopSize
+  // on the first ExtendedDesktopSize rect, which arrives after 'connect'. Wrapping that handler on
+  // this client is the earliest hook; 'connect' is checked as well in case the handler is renamed.
+  private trackResizeSupport() {
+    const rfb = this.rfb as unknown as RfbResizeInternals;
+    const handler = rfb._handleExtendedDesktopSize;
+    if (typeof handler === 'function') {
+      rfb._handleExtendedDesktopSize = (...args: unknown[]) => {
+        const handled = handler.apply(rfb, args);
+        this.refreshResizeSupport();
+        return handled;
+      };
+    }
+    this.rfb.addEventListener('connect', () => this.refreshResizeSupport());
+  }
+
+  // Re-reads whether the server can resize, and applies the chosen mode if that changed.
+  public refreshResizeSupport() {
+    const supported =
+      !!this.rfb &&
+      (this.rfb as unknown as RfbResizeInternals)._supportsSetDesktopSize ===
+        true;
+    if (supported !== this.resizeSupportedSignal()) {
+      this.resizeSupportedSignal.set(supported);
+      this.applyResolution();
+    }
+  }
+
+  public setResolutionMode(mode: ResolutionMode) {
+    this.resolutionModeSignal.set(mode);
+    this.applyResolution();
+  }
+
+  // noVNC's own UI treats scaling and remote resizing as one either/or setting: when the guest
+  // matches the window there is nothing to scale. Scaling is turned off first so the resize
+  // request (sent as soon as resizeSession is set) measures the unscaled screen.
+  private applyResolution() {
+    if (!this.rfb) {
+      return;
+    }
+    if (this.activeResolution() === 'match') {
+      this.rfb.scaleViewport = false;
+      this.rfb.resizeSession = true;
+    } else {
+      this.rfb.resizeSession = false;
+      this.rfb.scaleViewport = true;
+    }
   }
 
   private trackGuestClipboard() {
@@ -87,11 +180,18 @@ export class NoVNCService {
   }
 
   // noVNC can be left with the fullscreen scale after leaving fullscreen, which puts the pointer
-  // somewhere other than where the user clicks. Recomputing the scale on exit avoids that.
+  // somewhere other than where the user clicks. Recomputing the scale on exit avoids that. When the
+  // guest matches the window there is no scale to fix, and noVNC's own resize observer asks the
+  // guest for the new size.
   private onFullscreenChange() {
     const isFullscreen =
       !!this.screen && document.fullscreenElement === this.screen;
-    if (this.fullscreen && !isFullscreen && this.rfb) {
+    if (
+      this.fullscreen &&
+      !isFullscreen &&
+      this.rfb &&
+      this.activeResolution() === 'scale'
+    ) {
       this.rfb.scaleViewport = false;
       this.rfb.scaleViewport = true;
     }
@@ -104,11 +204,14 @@ export class NoVNCService {
       this.rfb = null;
     }
     this.guestClipboard = null;
+    this.resizeSupportedSignal.set(false);
   }
 
   public setViewOnly(viewOnly: boolean) {
+    this.viewOnlySignal.set(viewOnly);
     if (this.rfb) {
       this.rfb.viewOnly = viewOnly;
+      this.applyResolution();
     }
   }
 

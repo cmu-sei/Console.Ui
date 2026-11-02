@@ -76,6 +76,16 @@ export const GUEST_AGENT_TOOLTIP = 'Requires the QEMU guest agent';
 export const VNC_CLIPBOARD_TOOLTIP =
   'Copy from the VM needs the VNC clipboard (clipboard=vnc) enabled on this VM';
 
+// Tooltip on Match Window Size where the server never offered to resize the guest display (QEMU's
+// default std VGA, for one; virtio-gpu with a guest driver can).
+export const RESIZE_UNSUPPORTED_TOOLTIP =
+  "This VM's display adapter can't change resolution from the console";
+
+// Tooltip on Match Window Size on a read-only console, whose viewer must not resize the guest for
+// whoever is driving it.
+export const RESIZE_READ_ONLY_TOOLTIP =
+  "A read-only console can't change this VM's resolution";
+
 // Shown when Copy is enabled but nothing has come over the VNC clipboard yet: the guest side of that
 // is spice-vdagent, which the Vm's config cannot tell us about.
 export const COPY_FROM_VM_FAILED_MESSAGE =
@@ -238,6 +248,30 @@ export class OptionsBar2Component implements OnInit {
   );
 
   public readonly vncClipboardTooltip = VNC_CLIPBOARD_TOOLTIP;
+
+  public readonly activeResolution = this.proxmoxService.activeResolution;
+
+  // Why Match Window Size is unavailable, or '' when it can be chosen.
+  public readonly matchWindowSizeTooltip = computed(() => {
+    if (!this.proxmoxService.resizeSupported()) {
+      return RESIZE_UNSUPPORTED_TOOLTIP;
+    }
+    return this.readOnly() ? RESIZE_READ_ONLY_TOOLTIP : '';
+  });
+
+  public scaleToFit() {
+    this.proxmoxService.setResolutionMode('scale');
+  }
+
+  public matchWindowSize() {
+    this.proxmoxService.setResolutionMode('match');
+  }
+
+  // Support is normally picked up as the server reports it; checking again on open covers a noVNC
+  // whose internals no longer give that hook.
+  public refreshResizeSupport() {
+    this.proxmoxService.refreshResizeSupport();
+  }
 
   // Copy can only return what QEMU passes out over VNC, which it does only with clipboard=vnc.
   public readonly vncClipboardEnabled = computed(

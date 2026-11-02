@@ -15,7 +15,11 @@ type RfbStub = Pick<
   | 'addEventListener'
   | 'sendKey'
   | 'scaleViewport'
->;
+  | 'resizeSession'
+> & {
+  _supportsSetDesktopSize: boolean;
+  _handleExtendedDesktopSize: () => boolean;
+};
 
 function rfbStub(): RfbStub {
   return {
@@ -27,6 +31,13 @@ function rfbStub(): RfbStub {
     addEventListener: vi.fn(),
     sendKey: vi.fn(),
     scaleViewport: true,
+    resizeSession: false,
+    _supportsSetDesktopSize: false,
+    // As in noVNC: an ExtendedDesktopSize rect from the server marks it as able to resize.
+    _handleExtendedDesktopSize(this: RfbStub) {
+      this._supportsSetDesktopSize = true;
+      return true;
+    },
   };
 }
 
@@ -240,6 +251,28 @@ describe('NoVNCService', () => {
     });
 
     /**
+     * Verifies: leaving fullscreen while the guest matches the window leaves scaling off and the resize session on.
+     * Interacts with: document fullscreenchange events; the seeded client's scaleViewport and resizeSession.
+     * Data: server offers resize; Match Window Size chosen; fullscreen entered and left.
+     * Why: the scale fix-up toggles scaleViewport, which would switch scaling back on under Match Window Size.
+     */
+    it('keeps Match Window Size after leaving fullscreen', () => {
+      const { service, rfb } = withClient();
+      const { screen } = seedScreen(service);
+      rfb._handleExtendedDesktopSize();
+      service.refreshResizeSupport();
+      service.setResolutionMode('match');
+
+      setFullscreenElement(screen);
+      document.dispatchEvent(new Event('fullscreenchange'));
+      setFullscreenElement(null);
+      document.dispatchEvent(new Event('fullscreenchange'));
+
+      expect(rfb.scaleViewport).toBe(false);
+      expect(rfb.resizeSession).toBe(true);
+    });
+
+    /**
      * Verifies: requestReconnect() is announced to subscribers (NovncComponent), and isConnected() follows the client.
      * Interacts with: reconnectRequests$; the seeded client.
      */
@@ -272,6 +305,161 @@ describe('NoVNCService', () => {
       expect(service.getGuestClipboard()).toBe('second');
       service.disconnect();
       expect(service.getGuestClipboard()).toBeNull();
+    });
+  });
+
+  describe('resolution', () => {
+    type Internals = {
+      rfb: RfbStub | null;
+      configureClient(readOnly: boolean): void;
+    };
+
+    // What startClient does after constructing RFB, against a stub client.
+    function connectClient(service: NoVNCService, readOnly = false) {
+      const rfb = rfbStub();
+      const internals = service as unknown as Internals;
+      internals.rfb = rfb;
+      internals.configureClient(readOnly);
+      return rfb;
+    }
+
+    // The server's ExtendedDesktopSize rect, as noVNC's message loop dispatches it.
+    function serverOffersResize(rfb: RfbStub) {
+      rfb._handleExtendedDesktopSize();
+    }
+
+    /**
+     * Verifies: a new client scales to fit, with no resize support until the server offers it.
+     * Interacts with: configureClient (startClient's setup); the stub client's scaleViewport and resizeSession.
+     * Data: a fresh connection.
+     */
+    it('scales to fit by default', () => {
+      const service = new NoVNCService();
+      const rfb = connectClient(service);
+      expect(rfb.scaleViewport).toBe(true);
+      expect(rfb.resizeSession).toBe(false);
+      expect(service.resizeSupported()).toBe(false);
+      expect(service.activeResolution()).toBe('scale');
+    });
+
+    /**
+     * Verifies: support is picked up from noVNC's ExtendedDesktopSize handling (wrapped on the instance), and Match Window Size then turns scaling off and resizeSession on; Scale to Fit reverses it.
+     * Interacts with: the wrapped _handleExtendedDesktopSize; _supportsSetDesktopSize; setResolutionMode.
+     * Data: server offers resize; 'match' then 'scale'.
+     */
+    it('matches the window once the server can resize', () => {
+      const service = new NoVNCService();
+      const rfb = connectClient(service);
+      serverOffersResize(rfb);
+      expect(service.resizeSupported()).toBe(true);
+
+      service.setResolutionMode('match');
+      expect(service.activeResolution()).toBe('match');
+      expect(rfb.scaleViewport).toBe(false);
+      expect(rfb.resizeSession).toBe(true);
+
+      service.setResolutionMode('scale');
+      expect(rfb.scaleViewport).toBe(true);
+      expect(rfb.resizeSession).toBe(false);
+    });
+
+    /**
+     * Verifies: Match Window Size chosen before support is known keeps scaling, and is applied as soon as the server offers resize.
+     * Interacts with: setResolutionMode; the wrapped ExtendedDesktopSize handler.
+     * Data: 'match' chosen, then server offers resize.
+     */
+    it('applies a match chosen before the server offered resize', () => {
+      const service = new NoVNCService();
+      const rfb = connectClient(service);
+      service.setResolutionMode('match');
+      expect(service.resolutionMode()).toBe('match');
+      expect(service.activeResolution()).toBe('scale');
+      expect(rfb.scaleViewport).toBe(true);
+
+      serverOffersResize(rfb);
+      expect(rfb.scaleViewport).toBe(false);
+      expect(rfb.resizeSession).toBe(true);
+    });
+
+    /**
+     * Verifies: a server that never offers resize leaves the console scaling, even after the connect event or a manual re-check.
+     * Interacts with: the 'connect' listener configureClient registers; refreshResizeSupport.
+     * Data: 'match' chosen; connect fires with _supportsSetDesktopSize false.
+     */
+    it('keeps scaling when the server cannot resize', () => {
+      const service = new NoVNCService();
+      const rfb = connectClient(service);
+      service.setResolutionMode('match');
+      const connect = vi
+        .mocked(rfb.addEventListener)
+        .mock.calls.find(([event]) => event === 'connect')![1] as () => void;
+      connect();
+      service.refreshResizeSupport();
+      expect(service.resizeSupported()).toBe(false);
+      expect(rfb.scaleViewport).toBe(true);
+      expect(rfb.resizeSession).toBe(false);
+    });
+
+    /**
+     * Verifies: a reconnect resets support for the new server, keeps the user's choice, and re-applies it once the new connection offers resize.
+     * Interacts with: disconnect(); configureClient on a second client.
+     * Data: match on the first connection; a second connection that offers resize.
+     */
+    it('keeps the choice across a reconnect', () => {
+      const service = new NoVNCService();
+      serverOffersResize(connectClient(service));
+      service.setResolutionMode('match');
+
+      service.disconnect();
+      expect(service.resizeSupported()).toBe(false);
+
+      const next = connectClient(service);
+      expect(next.scaleViewport).toBe(true);
+      serverOffersResize(next);
+      expect(service.resolutionMode()).toBe('match');
+      expect(next.scaleViewport).toBe(false);
+      expect(next.resizeSession).toBe(true);
+    });
+
+    /**
+     * Verifies: a view-only console never resizes the guest: it scales while read-only, both from the start and when switched, and the choice returns when read-only is lifted.
+     * Interacts with: configureClient(readOnly); setViewOnly.
+     * Data: read-only connection with match chosen; then read-only off and on again.
+     */
+    it('scales while read-only', () => {
+      const service = new NoVNCService();
+      const rfb = connectClient(service, true);
+      serverOffersResize(rfb);
+      service.setResolutionMode('match');
+      expect(service.activeResolution()).toBe('scale');
+      expect(rfb.resizeSession).toBe(false);
+
+      service.setViewOnly(false);
+      expect(rfb.resizeSession).toBe(true);
+      expect(rfb.scaleViewport).toBe(false);
+
+      service.setViewOnly(true);
+      expect(rfb.resizeSession).toBe(false);
+      expect(rfb.scaleViewport).toBe(true);
+    });
+
+    /**
+     * Verifies: support detection tolerates a noVNC without the internals it reads: no hook, no flag, nothing thrown.
+     * Interacts with: configureClient and refreshResizeSupport against a client missing _handleExtendedDesktopSize and _supportsSetDesktopSize.
+     * Data: a stub with both removed.
+     */
+    it('tolerates a noVNC without the resize internals', () => {
+      const service = new NoVNCService();
+      const rfb = rfbStub() as Partial<RfbStub>;
+      delete rfb._handleExtendedDesktopSize;
+      delete rfb._supportsSetDesktopSize;
+      const internals = service as unknown as Internals;
+      internals.rfb = rfb as RfbStub;
+      expect(() => {
+        internals.configureClient(false);
+        service.refreshResizeSupport();
+      }).not.toThrow();
+      expect(service.resizeSupported()).toBe(false);
     });
   });
 });
