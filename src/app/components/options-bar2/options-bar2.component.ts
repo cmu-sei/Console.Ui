@@ -455,10 +455,7 @@ export class OptionsBar2Component implements OnInit {
         },
         error: (error) => {
           this.retrievingIsos.set(false);
-          this.showMessage(
-            `Could not load ISOs: ${apiErrorMessage(error)}`,
-            10000,
-          );
+          this.showMessage(failureMessage('Could not load ISOs', error), 10000);
         },
       });
   }
@@ -483,10 +480,7 @@ export class OptionsBar2Component implements OnInit {
               this.showMessage(`Mounted ${iso.filename}`);
             },
             error: (error) =>
-              this.showMessage(
-                `Mount failed: ${apiErrorMessage(error)}`,
-                10000,
-              ),
+              this.showMessage(failureMessage('Mount failed', error), 10000),
           });
       });
   }
@@ -515,7 +509,7 @@ export class OptionsBar2Component implements OnInit {
       .subscribe({
         next: () => this.showMessage('Revert Successful'),
         error: (error) =>
-          this.showMessage(`Revert Failed: ${apiErrorMessage(error)}`, 10000),
+          this.showMessage(failureMessage('Revert Failed', error), 10000),
       });
   }
 
@@ -554,7 +548,7 @@ export class OptionsBar2Component implements OnInit {
             next: () => this.showMessage('File Uploaded Successfully'),
             error: (error) =>
               this.showMessage(
-                `Error Uploading File: ${apiErrorMessage(error)}`,
+                failureMessage('Error Uploading File', error),
                 10000,
               ),
           });
@@ -582,7 +576,7 @@ export class OptionsBar2Component implements OnInit {
         next: ({ blob, path }) => saveBlob(blob, fileNameOf(path)),
         error: (error) =>
           this.showMessage(
-            `Error Downloading File: ${apiErrorMessage(error)}`,
+            failureMessage('Error Downloading File', error),
             10000,
           ),
       });
@@ -751,10 +745,7 @@ export class OptionsBar2Component implements OnInit {
       .subscribe({
         next: () => this.showMessage(`${action} submitted`),
         error: (error) =>
-          this.showMessage(
-            `${action} failed: ${apiErrorMessage(error)}`,
-            10000,
-          ),
+          this.showMessage(failureMessage(`${action} failed`, error), 10000),
       });
   }
 
@@ -783,6 +774,16 @@ export function apiErrorMessage(error: unknown): string {
     return error.error?.title || error.message;
   }
   return (error as Error)?.message ?? String(error);
+}
+
+// The console's own context, then the reason. vm.api already names the operation in a Proxmox
+// failure ("Power On failed: VM 100 already running"), so such a reason is shown on its own rather
+// than as "Power On failed: Power On failed: ...".
+export function failureMessage(context: string, error: unknown): string {
+  const reason = apiErrorMessage(error);
+  return /^[a-z][a-z ]* failed: /i.test(reason)
+    ? reason
+    : `${context}: ${reason}`;
 }
 
 // `path` with a trailing separator, or null when it has none to go by (a bare name).

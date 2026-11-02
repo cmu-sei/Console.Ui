@@ -695,7 +695,7 @@ describe('OptionsBar2Component', () => {
     });
 
     /**
-     * Verifies: an HTTP failure of a power action shows vm.api's ProblemDetails title, not the HTTP client's "Http failure response for ..." text.
+     * Verifies: an HTTP failure of a power action shows vm.api's ProblemDetails title, not the HTTP client's "Http failure response for ..." text, and doesn't repeat the "Reboot failed:" the title already starts with.
      * Interacts with: Power > Reboot; the generated ProxmoxService rejecting with an HttpErrorResponse; MatSnackBar.open.
      * Data: a 400 whose title is Proxmox's reboot timeout with the Power Off hint.
      */
@@ -716,7 +716,31 @@ describe('OptionsBar2Component', () => {
       );
       await clickMenu(fixture, 'Power', 'Reboot');
       expect(snackBar.open).toHaveBeenCalledWith(
-        `Reboot failed: ${title}`,
+        title,
+        'Close',
+        expect.objectContaining({ duration: 10000 }),
+      );
+    });
+
+    /**
+     * Verifies: an API title that doesn't name the operation still gets the console's "Power Off failed:" in front.
+     * Interacts with: Power > Power Off; the generated ProxmoxService rejecting with an HttpErrorResponse; MatSnackBar.open.
+     * Data: a 403 whose title is a permission message.
+     */
+    it('prefixes a power failure reason that does not name the operation', async () => {
+      const { fixture, apiProxmox, snackBar } = await renderOptionsBar2({ confirmation: true });
+      apiProxmox.powerOffProxmoxVirtualMachine.mockReturnValue(
+        throwError(
+          () =>
+            new HttpErrorResponse({
+              status: 403,
+              error: { title: 'You do not have permission to manage this virtual machine.', status: 403 },
+            }),
+        ),
+      );
+      await clickMenu(fixture, 'Power', 'Power Off');
+      expect(snackBar.open).toHaveBeenCalledWith(
+        'Power Off failed: You do not have permission to manage this virtual machine.',
         'Close',
         expect.objectContaining({ duration: 10000 }),
       );
@@ -1058,6 +1082,31 @@ describe('OptionsBar2Component', () => {
 
       expect(snackBar.open).toHaveBeenCalledWith(
         'Revert Failed: Vm is locked',
+        'Close',
+        expect.objectContaining({ duration: 10000 }),
+      );
+    });
+
+    /**
+     * Verifies: a revert failure whose title already names the operation is shown once, not as "Revert Failed: Revert to Snapshot failed: ...".
+     * Interacts with: the Snapshots item; ProxmoxService.revertToCurrentSnapshot rejecting with an HttpErrorResponse; MatSnackBar.open.
+     * Data: 400 with title "Revert to Snapshot failed: snapshot 'nosuchsnap' does not exist".
+     */
+    it("doesn't repeat the operation a revert failure already names", async () => {
+      const { fixture, proxmox, dialogs, snackBar } = await renderOptionsBar2({
+        grants: canRevert,
+        networkVm: of(networkVm({ hasSnapshot: true })),
+      });
+      dialogs.selectSnapshot.mockImplementation((snapshots) => of(snapshots[0]));
+      const title = "Revert to Snapshot failed: snapshot 'nosuchsnap' does not exist";
+      proxmox.revertToCurrentSnapshot.mockReturnValue(
+        throwError(() => new HttpErrorResponse({ status: 400, error: { title } })),
+      );
+
+      await clickMenu(fixture, 'Snapshots');
+
+      expect(snackBar.open).toHaveBeenCalledWith(
+        title,
         'Close',
         expect.objectContaining({ duration: 10000 }),
       );
