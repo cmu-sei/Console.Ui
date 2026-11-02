@@ -37,8 +37,10 @@ import { ProxmoxService } from '../../services/proxmox/proxmox.service';
 import { PowerAction, VmService } from '../../state/vm/vm.service';
 import { VsphereService } from '../../state/vsphere/vsphere.service';
 import {
+  COPY_FROM_VM_FAILED_MESSAGE,
   GUEST_AGENT_TOOLTIP,
   OptionsBar2Component,
+  VNC_CLIPBOARD_TOOLTIP,
   fileNameOf,
   formatConnectedUsers,
   toDirectory,
@@ -1100,8 +1102,9 @@ describe('OptionsBar2Component', () => {
       expect(await download.isDisabled()).toBe(!running);
       expect(await iso.isDisabled()).toBe(false);
 
+      // Scoped to the open menu: the toolbar's Copy button carries a tooltip of its own.
       const tooltips = await TestbedHarnessEnvironment.documentRootLoader(fixture).getAllHarnesses(
-        MatTooltipHarness,
+        MatTooltipHarness.with({ ancestor: '.mat-mdc-menu-panel' }),
       );
       await tooltips[0].show();
       if (running) {
@@ -1290,6 +1293,9 @@ describe('OptionsBar2Component', () => {
   });
 
   describe('console controls', () => {
+    // A Vm whose vga config sets clipboard=vnc, so Copy is offered.
+    const clipboardVm = (vncClipboardEnabled = true) => of(networkVm({ vncClipboardEnabled }));
+
     /**
      * Verifies: Fullscreen asks noVNC for fullscreen, and says so when the browser can't.
      * Interacts with: the Fullscreen item; ProxmoxService.fullscreen; MatSnackBar.open.
@@ -1338,11 +1344,11 @@ describe('OptionsBar2Component', () => {
     /**
      * Verifies: the toolbar Copy button and Clipboard > Copy put the guest's last copied text on the local clipboard.
      * Interacts with: user-event click on Copy; the Clipboard submenu; ProxmoxService.getGuestClipboard; stubbed navigator.clipboard.writeText; MatSnackBar.open.
-     * Data: guest clipboard 'guest text'.
+     * Data: vncClipboardEnabled true; guest clipboard 'guest text'.
      */
     it('copies the guest clipboard', async () => {
       const user = userEvent.setup();
-      const { fixture, snackBar } = await renderOptionsBar2();
+      const { fixture, snackBar } = await renderOptionsBar2({ networkVm: clipboardVm() });
       const { writeText } = stubClipboard();
 
       await user.click(screen.getByRole('button', { name: /^Copy/ }));
@@ -1354,23 +1360,79 @@ describe('OptionsBar2Component', () => {
     });
 
     /**
-     * Verifies: with nothing copied in the guest, Copy reports the vSphere bar's failure message.
+     * Verifies: with the VNC clipboard on but nothing copied in the guest, Copy says the guest also needs spice-vdagent.
      * Interacts with: the toolbar Copy button; ProxmoxService.getGuestClipboard (null); MatSnackBar.open.
+     * Data: vncClipboardEnabled true; no guest clipboard.
      */
     it('reports a guest that sent no clipboard', async () => {
       const user = userEvent.setup();
-      const { proxmox, snackBar } = await renderOptionsBar2();
+      const { proxmox, snackBar } = await renderOptionsBar2({ networkVm: clipboardVm() });
       const { writeText } = stubClipboard();
       proxmox.getGuestClipboard.mockReturnValue(null);
 
       await user.click(screen.getByRole('button', { name: /^Copy/ }));
 
+      expect(COPY_FROM_VM_FAILED_MESSAGE).toBe(
+        'Copy from VM failed!  Nothing has come from the guest clipboard; the guest also needs spice-vdagent running.',
+      );
       expect(snackBar.open).toHaveBeenCalledWith(
-        'Copy from VM failed!  Contact an Administrator to verify the Virtual machine is configured properly.',
+        COPY_FROM_VM_FAILED_MESSAGE,
         'Close',
         expect.objectContaining({ duration: 10000 }),
       );
       expect(writeText).not.toHaveBeenCalled();
+    });
+
+    /**
+     * Verifies: without clipboard=vnc on the Vm, both Copy controls are disabled and explain why, while Paste (typed keystrokes) stays enabled.
+     * Interacts with: ProxmoxService.getVm (vncClipboardEnabled); the toolbar Copy and Paste buttons; the Clipboard submenu; MatTooltipHarness.
+     * Data: vncClipboardEnabled false, then absent.
+     */
+    it.each([
+      ['false', clipboardVm(false)],
+      ['absent', of(networkVm())],
+    ])('disables Copy without the VNC clipboard (%s)', async (_, vm) => {
+      const { fixture } = await renderOptionsBar2({ networkVm: vm });
+      expect(screen.getByRole('button', { name: /^Copy/ })).toBeDisabled();
+      expect(screen.getByRole('button', { name: /^Paste/ })).toBeEnabled();
+
+      const clipboard = await openSubmenu(fixture, 'Clipboard');
+      const [copy] = await clipboard.getItems({ text: 'Copy' });
+      const [paste] = await clipboard.getItems({ text: 'Paste' });
+      expect(await copy.isDisabled()).toBe(true);
+      expect(await paste.isDisabled()).toBe(false);
+
+      const tooltips = await TestbedHarnessEnvironment.documentRootLoader(fixture).getAllHarnesses(
+        MatTooltipHarness,
+      );
+      expect(tooltips.length).toBe(2);
+      for (const tooltip of tooltips) {
+        await tooltip.show();
+        expect(await tooltip.getTooltipText()).toBe(VNC_CLIPBOARD_TOOLTIP);
+        await tooltip.hide();
+      }
+    });
+
+    /**
+     * Verifies: with clipboard=vnc on the Vm, both Copy controls are enabled and carry no tooltip.
+     * Interacts with: ProxmoxService.getVm (vncClipboardEnabled); the toolbar Copy button; the Clipboard submenu; MatTooltipHarness.
+     * Data: vncClipboardEnabled true.
+     */
+    it('enables Copy with the VNC clipboard', async () => {
+      const { fixture } = await renderOptionsBar2({ networkVm: clipboardVm() });
+      expect(screen.getByRole('button', { name: /^Copy/ })).toBeEnabled();
+
+      const clipboard = await openSubmenu(fixture, 'Clipboard');
+      const [copy] = await clipboard.getItems({ text: 'Copy' });
+      expect(await copy.isDisabled()).toBe(false);
+
+      const tooltips = await TestbedHarnessEnvironment.documentRootLoader(fixture).getAllHarnesses(
+        MatTooltipHarness,
+      );
+      for (const tooltip of tooltips) {
+        await tooltip.show();
+        expect(await tooltip.isOpen()).toBe(false);
+      }
     });
 
     /**
@@ -1379,7 +1441,7 @@ describe('OptionsBar2Component', () => {
      */
     it('shows the text when the local clipboard refuses it', async () => {
       const user = userEvent.setup();
-      const { confirm } = await renderOptionsBar2();
+      const { confirm } = await renderOptionsBar2({ networkVm: clipboardVm() });
       stubClipboard().writeText.mockRejectedValue(new Error('denied'));
 
       await user.click(screen.getByRole('button', { name: /^Copy/ }));

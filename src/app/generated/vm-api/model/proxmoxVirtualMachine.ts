@@ -27,5 +27,6 @@ export interface ProxmoxVirtualMachine {
     guestAgentRunning?: boolean;
     hasSnapshot?: boolean;
     currentSnapshot?: string | null;
+    vncClipboardEnabled?: boolean;
 }
 

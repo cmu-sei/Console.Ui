@@ -202,7 +202,18 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
             Clipboard
           </button>
           <mat-menu #clipboardMenu="matMenu">
-            <button mat-menu-item (click)="copyVmClipboard()">Copy</button>
+            <div
+              [matTooltip]="vncClipboardEnabled() ? '' : vncClipboardTooltip"
+              matTooltipPosition="after"
+            >
+              <button
+                mat-menu-item
+                [disabled]="!vncClipboardEnabled()"
+                (click)="copyVmClipboard()"
+              >
+                Copy
+              </button>
+            </div>
             <button mat-menu-item (click)="pasteFromClipboard()">Paste</button>
           </mat-menu>
         }
@@ -225,14 +236,21 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
 
   @if (!readOnly()) {
     <div class="w-50 d-flex justify-content-center gap-3">
-      <button
-        mat-stroked-button
-        title="Copy from Virtual Machine's clipboard"
-        (click)="copyVmClipboard()"
-      >
-        Copy
-        <mat-icon svgIcon="ic_clipboard_copy" />
-      </button>
+      <div [matTooltip]="vncClipboardEnabled() ? '' : vncClipboardTooltip">
+        <button
+          mat-stroked-button
+          [title]="
+            vncClipboardEnabled()
+              ? 'Copy from Virtual Machine\'s clipboard'
+              : ''
+          "
+          [disabled]="!vncClipboardEnabled()"
+          (click)="copyVmClipboard()"
+        >
+          Copy
+          <mat-icon svgIcon="ic_clipboard_copy" />
+        </button>
+      </div>
       <button
         mat-stroked-button
         title="Paste into the Virtual Machine"

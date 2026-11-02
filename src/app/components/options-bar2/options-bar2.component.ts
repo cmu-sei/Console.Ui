@@ -71,6 +71,16 @@ type NetworkVirtualMachine = ProxmoxVirtualMachine | VsphereVirtualMachine;
 // Tooltip on the controls that only work while the QEMU guest agent answers in the guest.
 export const GUEST_AGENT_TOOLTIP = 'Requires the QEMU guest agent';
 
+// Tooltip on Copy where the Vm's vga config lacks clipboard=vnc, so the guest's clipboard never
+// reaches noVNC.
+export const VNC_CLIPBOARD_TOOLTIP =
+  'Copy from the VM needs the VNC clipboard (clipboard=vnc) enabled on this VM';
+
+// Shown when Copy is enabled but nothing has come over the VNC clipboard yet: the guest side of that
+// is spice-vdagent, which the Vm's config cannot tell us about.
+export const COPY_FROM_VM_FAILED_MESSAGE =
+  'Copy from VM failed!  Nothing has come from the guest clipboard; the guest also needs spice-vdagent running.';
+
 @Component({
   selector: 'app-options-bar2',
   templateUrl: './options-bar2.component.html',
@@ -225,6 +235,13 @@ export class OptionsBar2Component implements OnInit {
 
   public readonly guestAgentRunning = computed(
     () => this.proxmoxVm()?.guestAgentRunning === true,
+  );
+
+  public readonly vncClipboardTooltip = VNC_CLIPBOARD_TOOLTIP;
+
+  // Copy can only return what QEMU passes out over VNC, which it does only with clipboard=vnc.
+  public readonly vncClipboardEnabled = computed(
+    () => this.proxmoxVm()?.vncClipboardEnabled === true,
   );
 
   // Same gates as the vSphere bar's Files items.
@@ -573,11 +590,10 @@ export class OptionsBar2Component implements OnInit {
   public async copyVmClipboard() {
     const text = this.proxmoxService.getGuestClipboard();
     if (!text) {
-      this.snackBar.open(
-        'Copy from VM failed!  Contact an Administrator to verify the Virtual machine is configured properly.',
-        'Close',
-        { duration: 10000, verticalPosition: 'top' },
-      );
+      this.snackBar.open(COPY_FROM_VM_FAILED_MESSAGE, 'Close', {
+        duration: 10000,
+        verticalPosition: 'top',
+      });
       return;
     }
 
