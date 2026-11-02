@@ -14,8 +14,8 @@ Copyright 2021 Carnegie Mellon University. All Rights Reserved.
  * https://openapi-generator.tech
  * Do not edit the class manually.
  */
-import { AppSystemPermission } from './appSystemPermission';
 import { AppViewPermission } from './appViewPermission';
+import { AppSystemPermission } from './appSystemPermission';
 import { AppTeamPermission } from './appTeamPermission';
 
 

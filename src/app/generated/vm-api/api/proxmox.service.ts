@@ -363,16 +363,17 @@ export class ProxmoxService {
     }
 
     /**
-     * Download a file from the guest OS of a proxmox virtual machine via qemu-guest-agent
-     * @param id 
-     * @param path 
+     * Download a file from the guest OS of a proxmox virtual machine via qemu-guest-agent, as raw bytes
+     * Any file content, binary included, up to Proxmox\&#39;s 16 MiB read limit; a larger file is a 400. The response\&#39;s Content-Disposition carries the file name from the path.
+     * @param id The virtual machine.
+     * @param path The file\&#39;s path in the guest.
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
      */
-    public downloadFileFromProxmoxVirtualMachine(id: string, path?: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/octet-stream', context?: HttpContext}): Observable<Blob>;
-    public downloadFileFromProxmoxVirtualMachine(id: string, path?: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/octet-stream', context?: HttpContext}): Observable<HttpResponse<Blob>>;
-    public downloadFileFromProxmoxVirtualMachine(id: string, path?: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/octet-stream', context?: HttpContext}): Observable<HttpEvent<Blob>>;
-    public downloadFileFromProxmoxVirtualMachine(id: string, path?: string, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/octet-stream', context?: HttpContext}): Observable<any> {
+    public downloadFileFromProxmoxVirtualMachine(id: string, path?: string, observe?: 'body', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/octet-stream' | 'application/json', context?: HttpContext}): Observable<Blob>;
+    public downloadFileFromProxmoxVirtualMachine(id: string, path?: string, observe?: 'response', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/octet-stream' | 'application/json', context?: HttpContext}): Observable<HttpResponse<Blob>>;
+    public downloadFileFromProxmoxVirtualMachine(id: string, path?: string, observe?: 'events', reportProgress?: boolean, options?: {httpHeaderAccept?: 'application/octet-stream' | 'application/json', context?: HttpContext}): Observable<HttpEvent<Blob>>;
+    public downloadFileFromProxmoxVirtualMachine(id: string, path?: string, observe: any = 'body', reportProgress: boolean = false, options?: {httpHeaderAccept?: 'application/octet-stream' | 'application/json', context?: HttpContext}): Observable<any> {
         if (id === null || id === undefined) {
             throw new Error('Required parameter id was null or undefined when calling downloadFileFromProxmoxVirtualMachine.');
         }
@@ -396,7 +397,8 @@ export class ProxmoxService {
         if (localVarHttpHeaderAcceptSelected === undefined) {
             // to determine the Accept header
             const httpHeaderAccepts: string[] = [
-                'application/octet-stream'
+                'application/octet-stream',
+                'application/json'
             ];
             localVarHttpHeaderAcceptSelected = this.configuration.selectHeaderAccept(httpHeaderAccepts);
         }
@@ -1054,7 +1056,8 @@ export class ProxmoxService {
     }
 
     /**
-     * Revert a proxmox virtual machine to its current snapshot
+     * Revert a proxmox virtual machine to its current snapshot (the snapshot it is running from)
+     * Answers 400 when the virtual machine has no snapshot.
      * @param id 
      * @param observe set whether or not to return the data Observable as the body, response or events. defaults to returning the body.
      * @param reportProgress flag to report request and response progress.
@@ -1419,7 +1422,8 @@ export class ProxmoxService {
     }
 
     /**
-     * Upload a file to a proxmox virtual machine via qemu-guest-agent (limited to ~60 KiB per file)
+     * Upload a file to a proxmox virtual machine via qemu-guest-agent (limited to 45 KB per file)
+     * Any file content, binary included. A file over the limit is a 400 whose message states the limit in KB.
      * @param id 
      * @param filePath 
      * @param files 
