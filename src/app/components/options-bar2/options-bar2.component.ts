@@ -396,7 +396,10 @@ export class OptionsBar2Component implements OnInit {
         },
         error: (error) => {
           this.retrievingIsos.set(false);
-          this.showMessage(`Could not load ISOs: ${error.message}`, 10000);
+          this.showMessage(
+            `Could not load ISOs: ${apiErrorMessage(error)}`,
+            10000,
+          );
         },
       });
   }
@@ -421,7 +424,10 @@ export class OptionsBar2Component implements OnInit {
               this.showMessage(`Mounted ${iso.filename}`);
             },
             error: (error) =>
-              this.showMessage(`Mount failed: ${error.message}`, 10000),
+              this.showMessage(
+                `Mount failed: ${apiErrorMessage(error)}`,
+                10000,
+              ),
           });
       });
   }
@@ -687,7 +693,10 @@ export class OptionsBar2Component implements OnInit {
       .subscribe({
         next: () => this.showMessage(`${action} submitted`),
         error: (error) =>
-          this.showMessage(`${action} failed: ${error.message}`, 10000),
+          this.showMessage(
+            `${action} failed: ${apiErrorMessage(error)}`,
+            10000,
+          ),
       });
   }
 

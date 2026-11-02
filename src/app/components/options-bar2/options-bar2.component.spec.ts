@@ -670,6 +670,34 @@ describe('OptionsBar2Component', () => {
     });
 
     /**
+     * Verifies: an HTTP failure of a power action shows vm.api's ProblemDetails title, not the HTTP client's "Http failure response for ..." text.
+     * Interacts with: Power > Reboot; the generated ProxmoxService rejecting with an HttpErrorResponse; MatSnackBar.open.
+     * Data: a 400 whose title is Proxmox's reboot timeout with the Power Off hint.
+     */
+    it('reports a failed power action with the API reason', async () => {
+      const { fixture, apiProxmox, snackBar } = await renderOptionsBar2({ confirmation: true });
+      const title =
+        'Reboot failed: VM quit/powerdown failed - got timeout. The guest did not respond to the request; use Power Off instead.';
+      apiProxmox.rebootProxmoxVirtualMachine.mockReturnValue(
+        throwError(
+          () =>
+            new HttpErrorResponse({
+              status: 400,
+              statusText: 'Bad Request',
+              url: 'http://vm-api.test/api/vms/proxmox/vm-1/actions/reboot',
+              error: { title, status: 400 },
+            }),
+        ),
+      );
+      await clickMenu(fixture, 'Power', 'Reboot');
+      expect(snackBar.open).toHaveBeenCalledWith(
+        `Reboot failed: ${title}`,
+        'Close',
+        expect.objectContaining({ duration: 10000 }),
+      );
+    });
+
+    /**
      * Verifies: power on a Vm of an unsupported type is refused with an explanation.
      * Interacts with: Power > Power On; real VmService's provider switch; MatSnackBar.open.
      * Data: Unknown-type Vm 'vm-3'.
