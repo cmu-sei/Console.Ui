@@ -1576,7 +1576,7 @@ describe('OptionsBar2Component', () => {
       tasksInProgress.next([proxmoxTask('running')]);
       fixture.detectChanges();
       const heading = screen.getByRole('heading', { name: /VM 100 Rollback/ });
-      expect(heading.textContent?.replace(/\s+/g, ' ').trim()).toBe('VM 100 Rollback ...');
+      expect(heading.textContent?.replace(/\s+/g, ' ').trim()).toBe('VM 100 Rollback (in progress)');
     });
   });
 

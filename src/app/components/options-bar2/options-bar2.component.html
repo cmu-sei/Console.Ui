@@ -212,8 +212,11 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
     @for (task of tasksInProgress(); track task.taskId) {
       <span>
         <h1 class="fs-6">
-          {{ task.taskName }} ...@if (task.progress) {
-            {{ task.progress }}%
+          {{ task.taskName }}
+          @if (task.progress) {
+            ... {{ task.progress }}%
+          } @else {
+            (in progress)
           }
         </h1>
       </span>
