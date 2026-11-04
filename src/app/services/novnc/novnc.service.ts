@@ -55,6 +55,11 @@ interface Size {
 })
 export class NoVNCService {
   private rfb: RFB;
+
+  // Set once the current client reports its connection closed, however it closed. An unexpected drop
+  // leaves the client in place while NovncComponent asks for a new console, so its presence alone
+  // does not say the session is live.
+  private clientDisconnected = false;
   private screen: HTMLElement | null = null;
   private guestClipboard: string | null = null;
   private fullscreen = false;
@@ -131,6 +136,7 @@ export class NoVNCService {
     this.applyResolution();
     this.trackResizeSupport();
     this.trackGuestClipboard();
+    this.trackConnectionLoss();
   }
 
   // noVNC raises no event when it learns the server can resize: it just sets _supportsSetDesktopSize
@@ -286,8 +292,24 @@ export class NoVNCService {
     });
   }
 
+  /**
+   * Whether there is a client whose session has not closed: true while connecting or connected, false
+   * once it has dropped. A user's Reconnect relies on this. Disconnecting a client that has already
+   * dropped fires no 'disconnect' event, so nothing would ever ask for a new console.
+   */
   public isConnected(): boolean {
-    return !!this.rfb;
+    return !!this.rfb && !this.clientDisconnected;
+  }
+
+  private trackConnectionLoss() {
+    this.clientDisconnected = false;
+    const rfb = this.rfb;
+    this.rfb.addEventListener('disconnect', () => {
+      // A replaced client's late event says nothing about the current one.
+      if (this.rfb === rfb) {
+        this.clientDisconnected = true;
+      }
+    });
   }
 
   public requestReconnect() {

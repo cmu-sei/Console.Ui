@@ -324,6 +324,25 @@ describe('NoVNCService', () => {
     });
 
     /**
+     * Verifies: isConnected() turns false when the client reports its session closed, even though the client stays in place, so a user's Reconnect asks for a new console instead of disconnecting a dead one.
+     * Interacts with: the seeded client's 'disconnect' listener (as startClient registers it).
+     * Why: noVNC's disconnect() on an already-closed client fires no 'disconnect' event, so Reconnect after a network drop used to do nothing.
+     */
+    it('stops reporting a connection once the client has dropped', () => {
+      const { service, rfb } = withClient();
+      (service as unknown as { trackConnectionLoss(): void }).trackConnectionLoss();
+      const [[event, onDisconnect]] = vi.mocked(rfb.addEventListener).mock.calls as unknown as [
+        [string, () => void],
+      ];
+      expect(event).toBe('disconnect');
+      expect(service.isConnected()).toBe(true);
+
+      onDisconnect();
+
+      expect(service.isConnected()).toBe(false);
+    });
+
+    /**
      * Verifies: the guest's last clipboard text is kept for Copy, and forgotten on disconnect.
      * Interacts with: the seeded client's 'clipboard' listener (as startClient registers it).
      * Data: guest copies 'first' then 'second'.
