@@ -61,6 +61,7 @@ import { DialogService } from '../../services/dialog/dialog.service';
 import { IsoFile, IsoResult } from '../../models/vm/iso-result';
 import { VsphereService } from '../../state/vsphere/vsphere.service';
 import { UserPermissionsService } from '../../services/user-permissions/user-permissions.service';
+import { formatConnectedUsers, inIframe } from '../../utils/console-helpers';
 import { SignalRService } from '../../services/signalr/signalr.service';
 import { NotificationService } from '../../services/notification/notification.service';
 import { NotificationData } from '../../models/notification/notification-model';
@@ -842,28 +843,4 @@ function saveBlob(blob: Blob, fileName: string) {
   link.click();
   // Revoke on the next task: the click has started the download by then.
   setTimeout(() => URL.revokeObjectURL(url));
-}
-
-function inIframe(): boolean {
-  try {
-    return window.self !== window.top;
-  } catch {
-    return true;
-  }
-}
-
-const MAX_CONNECTED_USERS_SHOWN = 2;
-
-// "Connected: alice, bob" or "Connected: alice, bob and 3 others", the vSphere bar's label.
-export function formatConnectedUsers(
-  users: string[] | null | undefined,
-): string {
-  if (!users?.length) {
-    return '';
-  }
-  const shown = users.slice(0, MAX_CONNECTED_USERS_SHOWN).join(', ');
-  const rest = users.length - MAX_CONNECTED_USERS_SHOWN;
-  return rest > 0
-    ? `Connected: ${shown} and ${rest} ${rest === 1 ? 'other' : 'others'}`
-    : `Connected: ${shown}`;
 }

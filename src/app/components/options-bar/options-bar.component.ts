@@ -62,6 +62,7 @@ import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { VmService } from '../../state/vm/vm.service';
 import { UserPermissionsService } from '../../services/user-permissions/user-permissions.service';
 import { MatLabel } from '@angular/material/form-field';
+import { inIframe } from '../../utils/console-helpers';
 
 declare var WMKS: any; // needed to check values
 const MAX_COPY_RETRIES = 1;
@@ -198,7 +199,7 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
     });
     this.notificationService.connectToProgressHub(this.vmId());
 
-    this.inFrame = this.inIframe();
+    this.inFrame = inIframe();
 
     this.vsphereService.vmClipBoard
       .pipe(takeUntil(this.destroy$))
@@ -218,14 +219,6 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
   ngOnDestroy() {
     this.destroy$.next(null);
     this.destroy$.complete();
-  }
-
-  inIframe() {
-    try {
-      return window.self !== window.top;
-    } catch (e) {
-      return true;
-    }
   }
 
   openInTab() {

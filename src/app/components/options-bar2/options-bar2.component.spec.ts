@@ -47,9 +47,9 @@ import {
   RESIZE_UNSUPPORTED_TOOLTIP,
   VNC_CLIPBOARD_TOOLTIP,
   fileNameOf,
-  formatConnectedUsers,
   toDirectory,
 } from './options-bar2.component';
+import { formatConnectedUsers } from '../../utils/console-helpers';
 import { FileUploadProgressDialogComponent } from '../shared/file-upload-progress-dialog/file-upload-progress-dialog.component';
 import { renderComponent } from '../../test-utils/render-component';
 import { ApiStub } from '../../test-utils/api-stub';
