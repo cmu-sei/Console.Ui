@@ -381,17 +381,52 @@ export class NoVNCService {
    *
    * The guest maps keysyms through its own keyboard layout, so characters its layout cannot
    * produce are lost there, the same caveat as WMKS sendInputString.
+   *
+   * Characters typed with Shift on a US layout are sent with Shift held. QEMU's VNC server turns a
+   * keysym into the key that produces it and does not press Shift itself, so a bare '!' arrives as
+   * '1' and '"' as an apostrophe. Capitals survive without Shift only through QEMU's caps-lock sync,
+   * which toggles the guest's Caps Lock to match.
    */
   public sendText(text: string): boolean {
     if (!this.rfb) {
       return false;
     }
 
-    for (const keysym of NoVNCService.keysymsFor(text)) {
+    for (const { keysym, shift } of NoVNCService.keyPressesFor(text)) {
+      if (shift) {
+        this.rfb.sendKey(KeyTable.XK_Shift_L, null, true);
+      }
       this.rfb.sendKey(keysym, null);
+      if (shift) {
+        this.rfb.sendKey(KeyTable.XK_Shift_L, null, false);
+      }
     }
 
     return true;
+  }
+
+  /** The characters a US layout types with Shift held: the capitals and the shifted symbols. */
+  private static readonly shiftedCharacters = new Set(
+    'ABCDEFGHIJKLMNOPQRSTUVWXYZ~!@#$%^&*()_+{}|:"<>?',
+  );
+
+  /** The keysyms that type `text`, as {@link keysymsFor}, each with whether Shift is held for it. */
+  public static keyPressesFor(
+    text: string,
+  ): { keysym: number; shift: boolean }[] {
+    const result: { keysym: number; shift: boolean }[] = [];
+
+    for (const character of text.replace(/\r\n?/g, '\n')) {
+      const keysym = NoVNCService.keysymFor(character);
+      if (keysym !== null) {
+        result.push({
+          keysym,
+          shift: NoVNCService.shiftedCharacters.has(character),
+        });
+      }
+    }
+
+    return result;
   }
 
   /**
@@ -401,29 +436,25 @@ export class NoVNCService {
    * table, and anything else falls back to the Unicode keysym range (0x01000000 + code point).
    */
   public static keysymsFor(text: string): number[] {
-    const result: number[] = [];
-    const normalized = text.replace(/\r\n?/g, '\n');
+    return NoVNCService.keyPressesFor(text).map((press) => press.keysym);
+  }
 
-    for (const character of normalized) {
-      if (character === '\n') {
-        result.push(KeyTable.XK_Return);
-        continue;
-      }
-      if (character === '\t') {
-        result.push(KeyTable.XK_Tab);
-        continue;
-      }
-
-      const codePoint = character.codePointAt(0);
-      // C0 controls, DEL and C1 controls have no printable keysym.
-      if (codePoint < 0x20 || (codePoint >= 0x7f && codePoint < 0xa0)) {
-        continue;
-      }
-
-      result.push(keysyms.lookup(codePoint));
+  /** The keysym for one code point, or null for a control character that has none. */
+  private static keysymFor(character: string): number | null {
+    if (character === '\n') {
+      return KeyTable.XK_Return;
+    }
+    if (character === '\t') {
+      return KeyTable.XK_Tab;
     }
 
-    return result;
+    const codePoint = character.codePointAt(0);
+    // C0 controls, DEL and C1 controls have no printable keysym.
+    if (codePoint < 0x20 || (codePoint >= 0x7f && codePoint < 0xa0)) {
+      return null;
+    }
+
+    return keysyms.lookup(codePoint);
   }
 
   public updateBackground(backgroundColor: string) {

@@ -165,21 +165,40 @@ describe('NoVNCService', () => {
   describe('typing text', () => {
     const ENTER = 0xff0d;
     const TAB = 0xff09;
+    const SHIFT = 0xffe1;
 
     /**
-     * Verifies: sendText() presses one keysym per character, with Enter for a newline, and reports it was sent.
-     * Interacts with: the seeded RFB client's sendKey (keysym, null code, press and release).
+     * Verifies: sendText() presses one keysym per character, with Enter for a newline, holds Shift around the characters a US layout types with it, and reports it was sent.
+     * Interacts with: the seeded RFB client's sendKey (keysym, null code; press and release, or an explicit Shift down/up).
      * Data: 'Hi!\n'.
+     * Why: QEMU's VNC server types the unshifted key for a bare shifted keysym, so without Shift '!' arrives as '1'. Confirmed on a live QEMU guest.
      */
-    it('types each character as a key press', () => {
+    it('types each character as a key press, holding Shift where the character needs it', () => {
       const { service, rfb } = withClient();
       expect(service.sendText('Hi!\n')).toBe(true);
       expect(vi.mocked(rfb.sendKey).mock.calls).toEqual([
+        [SHIFT, null, true],
         [0x48, null],
+        [SHIFT, null, false],
         [0x69, null],
+        [SHIFT, null, true],
         [0x21, null],
+        [SHIFT, null, false],
         [ENTER, null],
       ]);
+    });
+
+    /**
+     * Verifies: exactly the capitals and US-layout shifted symbols are flagged for Shift; digits, unshifted punctuation, whitespace and non-ASCII letters are not.
+     * Interacts with: NoVNCService.keyPressesFor.
+     * Data: every printable ASCII character plus a Latin-1 capital.
+     */
+    it('flags the characters a US layout types with Shift', () => {
+      const shifted = NoVNCService.keyPressesFor('aZ1!2@3#4$5%6^7&8*9(0)-_=+[{]}\\|;:\'",<.>/?`~ \tÉ')
+        .filter((press) => press.shift)
+        .map((press) => String.fromCodePoint(press.keysym))
+        .join('');
+      expect(shifted).toBe('Z!@#$%^&*()_+{}|:"<>?~');
     });
 
     /**
