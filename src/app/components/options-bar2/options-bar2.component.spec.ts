@@ -1008,6 +1008,36 @@ describe('OptionsBar2Component', () => {
     });
 
     /**
+     * Verifies: a disabled Snapshots item still explains itself: the tooltip sits on an element that is not disabled, as Files and Match Window Size do.
+     * Interacts with: the gear menu; MatTooltipHarness.
+     * Data: RevertVms; hasSnapshot false.
+     * Why: a disabled button receives no hover events in a browser, so a tooltip on the button itself never shows.
+     */
+    it('explains a disabled Snapshots item from a host that can be hovered', async () => {
+      const { fixture } = await renderOptionsBar2({
+        grants: canRevert,
+        networkVm: of(networkVm({ hasSnapshot: false })),
+      });
+      await menu(fixture);
+      const tooltips = await TestbedHarnessEnvironment.documentRootLoader(fixture).getAllHarnesses(
+        MatTooltipHarness.with({ ancestor: '.mat-mdc-menu-panel' }),
+      );
+
+      let found = false;
+      for (const tooltip of tooltips) {
+        await tooltip.show();
+        if ((await tooltip.getTooltipText()) === 'No snapshots available') {
+          found = true;
+          const host = await tooltip.host();
+          expect(await host.getProperty('disabled')).toBeFalsy();
+          expect(await host.text()).toContain('Snapshots');
+        }
+        await tooltip.hide();
+      }
+      expect(found).toBe(true);
+    });
+
+    /**
      * Verifies: choosing the current snapshot reverts through actions/revert, and success is reported.
      * Interacts with: the Snapshots item; ProxmoxService.getSnapshots/revertToCurrentSnapshot; DialogService.selectSnapshot; MatSnackBar.open.
      * Data: currentSnapshot 'clean' on the model; 'clean' (current) chosen.

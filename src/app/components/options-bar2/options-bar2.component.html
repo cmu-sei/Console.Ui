@@ -107,18 +107,22 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
 
           <!-- Snapshots -->
           @if (canRevertSnapshots$ | async) {
-            <button
-              mat-menu-item
-              (click)="selectAndRevertSnapshot()"
-              [disabled]="!hasSnapshot()"
+            <!-- The tooltip sits on a wrapper: a disabled button gets no hover events. -->
+            <div
               [matTooltip]="
                 hasSnapshot()
                   ? 'Select a snapshot to revert to'
                   : 'No snapshots available'
               "
             >
-              Snapshots
-            </button>
+              <button
+                mat-menu-item
+                (click)="selectAndRevertSnapshot()"
+                [disabled]="!hasSnapshot()"
+              >
+                Snapshots
+              </button>
+            </div>
           }
 
           <!-- Files -->
