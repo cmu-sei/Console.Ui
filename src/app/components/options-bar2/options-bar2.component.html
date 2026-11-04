@@ -127,7 +127,13 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
 
           <!-- Files -->
           @if (showFilesMenu()) {
-            <button mat-menu-item [matMenuTriggerFor]="fileMenu">Files</button>
+            <button
+              mat-menu-item
+              [matMenuTriggerFor]="fileMenu"
+              (menuOpened)="refreshGuestAgentState()"
+            >
+              Files
+            </button>
           }
           <mat-menu #fileMenu="matMenu">
             @if (canUploadVmFiles()) {

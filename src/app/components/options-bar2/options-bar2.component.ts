@@ -255,6 +255,36 @@ export class OptionsBar2Component implements OnInit {
     () => this.proxmoxVm()?.guestAgentRunning === true,
   );
 
+  /**
+   * Asks again whether the guest agent is running, when Files is opened while it was not. The answer
+   * is otherwise read only when the Vm loads or changes, and an agent starting in the guest changes
+   * nothing on the Vm while its addresses stay the same, so a console opened during boot kept Send and
+   * Download File disabled after the agent came up.
+   */
+  public refreshGuestAgentState() {
+    const vm = this.vmState();
+    if (
+      vm?.type !== VmType.Proxmox ||
+      !this.proxmoxVm() ||
+      this.guestAgentRunning()
+    ) {
+      return;
+    }
+
+    this.proxmoxService
+      .getVm(vm.id)
+      .pipe(
+        take(1),
+        catchError(() => EMPTY),
+      )
+      .subscribe((model) => {
+        // The Vm may have changed while the request was out.
+        if (this.vmState()?.id === vm.id) {
+          this.networkVmState.set(model);
+        }
+      });
+  }
+
   public readonly vncClipboardTooltip = VNC_CLIPBOARD_TOOLTIP;
 
   public readonly activeResolution = this.proxmoxService.activeResolution;

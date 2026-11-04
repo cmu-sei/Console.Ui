@@ -1217,6 +1217,37 @@ describe('OptionsBar2Component', () => {
     });
 
     /**
+     * Verifies: opening Files while the agent was not running asks vm.api again, and the transfer items enable once it answers that the agent is up.
+     * Interacts with: ProxmoxService.getVm (guestAgentRunning false at load, true on the re-check); the Files submenu.
+     * Data: transfer grants.
+     * Why: the agent state is otherwise read only when the Vm changes, so a console opened during boot kept the items disabled after the agent started.
+     */
+    it('re-checks the guest agent when Files opens while it was not running', async () => {
+      const { fixture, proxmox } = await renderOptionsBar2({ grants: canTransfer, networkVm: agentVm(false) });
+      proxmox.getVm.mockReturnValue(agentVm(true));
+
+      const files = await openSubmenu(fixture, 'Files');
+      fixture.detectChanges();
+      const [send] = await files.getItems({ text: 'Send File To VM' });
+
+      expect(proxmox.getVm).toHaveBeenCalledTimes(2);
+      expect(await send.isDisabled()).toBe(false);
+    });
+
+    /**
+     * Verifies: with the agent already running, opening Files sends no extra request.
+     * Interacts with: ProxmoxService.getVm; the Files submenu.
+     * Data: transfer grants; agent running.
+     */
+    it('does not re-check a guest agent that is already running', async () => {
+      const { fixture, proxmox } = await renderOptionsBar2({ grants: canTransfer, networkVm: agentVm(true) });
+
+      await openSubmenu(fixture, 'Files');
+
+      expect(proxmox.getVm).toHaveBeenCalledOnce();
+    });
+
+    /**
      * Verifies: Send File To VM opens the file picker straight from the menu click.
      * Interacts with: the Files submenu; the hidden file input's click().
      * Data: transfer grants; agent running.
