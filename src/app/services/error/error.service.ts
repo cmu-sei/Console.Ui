@@ -53,7 +53,7 @@ export class ErrorService implements ErrorHandler {
     // The body is null for an empty response (a 401 from JwtBearer), a string for an HTML error
     // page, or JSON; only JSON can name the error.
     const apiError = body;
-    if (apiError?.name !== undefined && apiError?.name !== null) {
+    if (apiError?.name != null) {
       messageService.displayMessage(apiError.name, apiError.message);
     } else if (typeof apiError?.title === 'string' && apiError.title) {
       // ProblemDetails, as vm.api returns: the title is the reason ("You do not have permission
