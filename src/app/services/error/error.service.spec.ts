@@ -72,11 +72,11 @@ describe('ErrorService', () => {
   });
 
   /**
-   * Verifies: any other HTTP error is shown with its status text and message.
+   * Verifies: any other HTTP error is shown with its status code and message.
    * Interacts with: SystemMessageService.displayMessage spy.
    * Data: HttpErrorResponse 500 'Server Error' for a url, with an unnamed body.
    */
-  it('shows other HTTP errors by status text', () => {
+  it('shows other HTTP errors by status code', () => {
     const { service, messages } = setup();
     const err = new HttpErrorResponse({
       status: 500,
@@ -86,13 +86,13 @@ describe('ErrorService', () => {
     });
     service.handleError(err);
     expect(messages.displayMessage).toHaveBeenCalledWith(
-      'Server Error',
+      'VM API Error (500)',
       err.message,
     );
   });
 
   /**
-   * Verifies: an HTTP error whose body is empty or not JSON is shown by status text instead of crashing the handler.
+   * Verifies: an HTTP error whose body is empty or not JSON is shown by status code instead of crashing the handler.
    * Interacts with: SystemMessageService.displayMessage spy.
    * Data: a 401 with error null (an empty body, as JwtBearer sends) and a 413 with an HTML string body.
    */
@@ -100,7 +100,7 @@ describe('ErrorService', () => {
     ['no body', 401, 'Unauthorized', null],
     ['an HTML body', 413, 'Payload Too Large', '<html><body>413</body></html>'],
   ])(
-    'shows an HTTP error with %s by status text',
+    'shows an HTTP error with %s by status code',
     (_label, status, statusText, error) => {
       const { service, messages } = setup();
       const err = new HttpErrorResponse({
@@ -112,7 +112,7 @@ describe('ErrorService', () => {
 
       expect(() => service.handleError(err)).not.toThrow();
       expect(messages.displayMessage).toHaveBeenCalledWith(
-        statusText,
+        `VM API Error (${status})`,
         err.message,
       );
     },
@@ -178,12 +178,40 @@ describe('ErrorService', () => {
           error,
         }),
       );
-      expect(messages.displayMessage).toHaveBeenCalledWith(statusText, shown);
+      expect(messages.displayMessage).toHaveBeenCalledWith(
+        `VM API Error (${status})`,
+        shown,
+      );
     },
   );
 
   /**
-   * Verifies: a Blob error body (a request that asked for a Blob, like Download File) is read, and its ProblemDetails title shown; a Blob that isn't JSON falls back to the status text.
+   * Verifies: the heading comes from the status code, not the status text.
+   * Interacts with: SystemMessageService.displayMessage spy.
+   * Data: a 403 ProblemDetails with statusText 'OK', which is what Angular's XHR backend reports over HTTP/2 (no status text on the wire).
+   * Why: over HTTP/2 a refused request was headed "OK".
+   */
+  it('heads a refused request by its status code over HTTP/2', () => {
+    const { service, messages } = setup();
+    service.handleError(
+      new HttpErrorResponse({
+        status: 403,
+        statusText: 'OK',
+        url: 'https://vm-api.test/api/x',
+        error: {
+          title: 'You do not have permission to revert this vm.',
+          status: 403,
+        },
+      }),
+    );
+    expect(messages.displayMessage).toHaveBeenCalledWith(
+      'VM API Error (403)',
+      'You do not have permission to revert this vm.',
+    );
+  });
+
+  /**
+   * Verifies: a Blob error body (a request that asked for a Blob, like Download File) is read, and its ProblemDetails title shown; a Blob that isn't JSON falls back to the status code.
    * Interacts with: SystemMessageService.displayMessage spy.
    * Data: a 400 whose body is a JSON ProblemDetails Blob, and a 502 whose body is an HTML Blob.
    */
@@ -208,13 +236,13 @@ describe('ErrorService', () => {
     );
     await vi.waitFor(() =>
       expect(messages.displayMessage).toHaveBeenCalledWith(
-        'Bad Request',
+        'VM API Error (400)',
         'The file path must be an absolute path.',
       ),
     );
   });
 
-  it('falls back to the status text for a Blob body that is not JSON', async () => {
+  it('falls back to the status code for a Blob body that is not JSON', async () => {
     const { service, messages } = setup();
     const err = new HttpErrorResponse({
       status: 502,
@@ -225,7 +253,7 @@ describe('ErrorService', () => {
     service.handleError(err);
     await vi.waitFor(() =>
       expect(messages.displayMessage).toHaveBeenCalledWith(
-        'Bad Gateway',
+        'VM API Error (502)',
         err.message,
       ),
     );

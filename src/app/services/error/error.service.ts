@@ -58,7 +58,7 @@ export class ErrorService implements ErrorHandler {
     } else if (typeof apiError?.title === 'string' && apiError.title) {
       // ProblemDetails, as vm.api returns: the title is the reason ("You do not have permission
       // to ..."). The detail is left out on purpose; for a 500 it can carry a stack trace.
-      messageService.displayMessage(err.statusText || 'Error', apiError.title);
+      messageService.displayMessage(httpErrorHeading(err), apiError.title);
     } else if (err.status === 0) {
       // Http failure response for (unknown url): 0 Unknown Error
       messageService.displayMessage(
@@ -66,7 +66,13 @@ export class ErrorService implements ErrorHandler {
         'The VM Console API could not be reached.',
       );
     } else {
-      messageService.displayMessage(err.statusText, err.message);
+      messageService.displayMessage(httpErrorHeading(err), err.message);
     }
   }
+}
+
+// "VM API Error (403)". Not the status text: HTTP/2 has none, and Angular's XHR backend then
+// reports 'OK', so a refused request would be headed "OK".
+function httpErrorHeading(err: HttpErrorResponse): string {
+  return `VM API Error (${err.status})`;
 }
