@@ -140,9 +140,9 @@ describe('ErrorService', () => {
   });
 
   /**
-   * Verifies: a ProblemDetails body is shown with its title as the reason, never its detail (which can hold a stack trace).
+   * Verifies: a ProblemDetails body is shown with its title as the reason, never its detail.
    * Interacts with: SystemMessageService.displayMessage spy.
-   * Data: a 403 ProblemDetails, and a 500 whose detail is a stack trace.
+   * Data: a 403 ProblemDetails, and a 500 as vm.api's ExceptionMiddleware writes it outside Development: the generic title, with the raw exception message as the detail.
    */
   it.each<[string, number, string, object, string]>([
     [
@@ -156,15 +156,15 @@ describe('ErrorService', () => {
       'You do not have permission to download files from this vm.',
     ],
     [
-      'a 500 with a stack trace',
+      'a production 500',
       500,
       'Internal Server Error',
       {
-        title: 'Value cannot be null.',
+        title: 'A server error occurred.',
         status: 500,
-        detail: 'System.ArgumentNullException ... at Player.Vm.Api',
+        detail: "Value cannot be null. (Parameter 'source')",
       },
-      'Value cannot be null.',
+      'A server error occurred.',
     ],
   ])(
     'shows the title of %s ProblemDetails',

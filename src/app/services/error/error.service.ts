@@ -57,7 +57,9 @@ export class ErrorService implements ErrorHandler {
       messageService.displayMessage(apiError.name, apiError.message);
     } else if (typeof apiError?.title === 'string' && apiError.title) {
       // ProblemDetails, as vm.api returns: the title is the reason ("You do not have permission
-      // to ..."). The detail is left out on purpose; for a 500 it can carry a stack trace.
+      // to ..."). The detail is left out on purpose. For a 500, vm.api puts the raw exception
+      // message there in production (under the title "A server error occurred.") and the full
+      // stack trace in Development.
       messageService.displayMessage(httpErrorHeading(err), apiError.title);
     } else if (err.status === 0) {
       // Http failure response for (unknown url): 0 Unknown Error
