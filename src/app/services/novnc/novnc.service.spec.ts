@@ -211,17 +211,17 @@ describe('NoVNCService', () => {
     });
 
     /**
-     * Verifies: characters map to X11 keysyms: ASCII and Latin-1 one-to-one, legacy ranges from noVNC's table, everything else to the Unicode keysym range; line breaks and tabs become Enter and Tab; other control characters are dropped.
-     * Interacts with: NoVNCService.keysymsFor (noVNC's keysymdef lookup).
+     * Verifies: characters map to X11 keysyms: ASCII and Latin-1 one-to-one, everything beyond Latin-1 to the Unicode keysym range; line breaks and tabs become Enter and Tab; other control characters are dropped.
+     * Interacts with: NoVNCService.keysymsFor.
      * Data: the text under test.
      * Why: console-forge sends charCodeAt() as the keysym, which is only right for Latin-1; these pin the cases where that differs.
      */
     it.each<[string, string, number[]]>([
       ['ASCII', 'a Z~', [0x61, 0x20, 0x5a, 0x7e]],
       ['Latin-1', 'é£ÿ', [0xe9, 0xa3, 0xff]],
-      ['Latin-2 (keysym table)', 'ł', [0x1b3]],
-      ['Greek (keysym table)', 'α', [0x7e1]],
-      ['Euro sign (keysym table)', '€', [0x20ac]],
+      ['Latin-2 (Unicode keysym)', 'ł', [0x0100_0000 | 0x142]],
+      ['Greek (Unicode keysym)', 'α', [0x0100_0000 | 0x3b1]],
+      ['Euro sign (Unicode keysym)', '€', [0x0100_0000 | 0x20ac]],
       ['astral plane (Unicode keysym)', '😀', [0x0100_0000 + 0x1f600]],
       ['LF, CRLF and CR', 'a\nb\r\nc\rd', [0x61, ENTER, 0x62, ENTER, 0x63, ENTER, 0x64]],
       ['tab', '\t', [TAB]],

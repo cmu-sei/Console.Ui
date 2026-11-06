@@ -6,8 +6,14 @@
 import { Injectable, computed, signal } from '@angular/core';
 import { Subject } from 'rxjs';
 import RFB from '@novnc/novnc/lib/rfb.js';
-import KeyTable from '@novnc/novnc/lib/input/keysym.js';
-import keysyms from '@novnc/novnc/lib/input/keysymdef.js';
+
+// X11 keysyms for the keys sendText presses. Defined here rather than imported from noVNC's
+// lib/input modules, which are private and blocked by noVNC 1.7's package exports.
+const XK_TAB = 0xff09;
+const XK_RETURN = 0xff0d;
+const XK_SHIFT_L = 0xffe1;
+// X11's Unicode keysym range: 0x01000000 | code point stands for that character.
+const UNICODE_KEYSYM = 0x0100_0000;
 
 /**
  * How the guest display is fitted to the console window. 'scale' scales the guest's own resolution
@@ -416,11 +422,11 @@ export class NoVNCService {
 
     for (const { keysym, shift } of NoVNCService.keyPressesFor(text)) {
       if (shift) {
-        this.rfb.sendKey(KeyTable.XK_Shift_L, null, true);
+        this.rfb.sendKey(XK_SHIFT_L, null, true);
       }
       this.rfb.sendKey(keysym, null);
       if (shift) {
-        this.rfb.sendKey(KeyTable.XK_Shift_L, null, false);
+        this.rfb.sendKey(XK_SHIFT_L, null, false);
       }
     }
 
@@ -453,9 +459,8 @@ export class NoVNCService {
 
   /**
    * The X11 keysyms that type `text`. Iterates code points rather than UTF-16 units so characters
-   * outside the BMP are not split, and uses noVNC's own Unicode-to-keysym table: Latin-1 maps
-   * one-to-one, the legacy keysym ranges (Latin-2 through Greek, Cyrillic, ...) come from its
-   * table, and anything else falls back to the Unicode keysym range (0x01000000 + code point).
+   * outside the BMP are not split. Latin-1 keysyms are the code points themselves; anything beyond
+   * Latin-1 uses X11's Unicode keysym range (0x01000000 | code point), so no lookup table is needed.
    */
   public static keysymsFor(text: string): number[] {
     return NoVNCService.keyPressesFor(text).map((press) => press.keysym);
@@ -464,10 +469,10 @@ export class NoVNCService {
   /** The keysym for one code point, or null for a control character that has none. */
   private static keysymFor(character: string): number | null {
     if (character === '\n') {
-      return KeyTable.XK_Return;
+      return XK_RETURN;
     }
     if (character === '\t') {
-      return KeyTable.XK_Tab;
+      return XK_TAB;
     }
 
     const codePoint = character.codePointAt(0);
@@ -476,7 +481,7 @@ export class NoVNCService {
       return null;
     }
 
-    return keysyms.lookup(codePoint);
+    return codePoint <= 0xff ? codePoint : UNICODE_KEYSYM | codePoint;
   }
 
   public updateBackground(backgroundColor: string) {
