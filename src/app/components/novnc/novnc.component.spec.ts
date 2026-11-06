@@ -3,7 +3,7 @@
 
 import { describe, it, expect, vi } from 'vitest';
 import { screen } from '@testing-library/angular';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, Subject } from 'rxjs';
 import { ComnAuthQuery, Theme } from '@cmusei/crucible-common';
 import { NoVNCService } from '../../services/novnc/novnc.service';
 import { NovncComponent } from './novnc.component';
@@ -24,6 +24,7 @@ type NoVncStub = Pick<
   | 'setSecurityFailureListener'
   | 'setClipboardListener'
   | 'updateBackground'
+  | 'isConnected'
 >;
 
 type Listener = (e: unknown) => unknown;
@@ -31,7 +32,8 @@ type Listener = (e: unknown) => unknown;
 async function renderNovnc(
   inputs: { url?: string; ticket?: string; readOnly?: boolean } = {},
 ) {
-  const novnc: NoVncStub = {
+  const reconnectRequests = new Subject<void>();
+  const novnc = {
     startClient: vi.fn(),
     disconnect: vi.fn(),
     setViewOnly: vi.fn(),
@@ -40,7 +42,9 @@ async function renderNovnc(
     setSecurityFailureListener: vi.fn(),
     setClipboardListener: vi.fn(),
     updateBackground: vi.fn(),
-  };
+    reconnectRequests$: reconnectRequests.asObservable(),
+    isConnected: vi.fn(() => true),
+  } satisfies NoVncStub & Pick<NoVNCService, 'reconnectRequests$'>;
   const theme$ = new BehaviorSubject<Theme>(Theme.LIGHT);
   const reconnect = vi.fn();
 
@@ -57,10 +61,10 @@ async function renderNovnc(
   });
 
   // The listeners the component registered with the noVNC client, by event.
-  const listener = (name: keyof NoVncStub): Listener =>
+  const listener = (name: Exclude<keyof NoVncStub, 'isConnected'>): Listener =>
     vi.mocked(novnc[name]).mock.lastCall![0] as Listener;
 
-  return { ...rendered, novnc, theme$, reconnect, listener };
+  return { ...rendered, novnc, theme$, reconnect, listener, reconnectRequests };
 }
 
 describe('NovncComponent', () => {
@@ -225,5 +229,40 @@ describe('NovncComponent', () => {
     await flush();
 
     expect(rejections).toEqual([denied]);
+  });
+
+  describe('user reconnect', () => {
+    /**
+     * Verifies: a user's Reconnect drops the live session, then asks the parent for a new console with no backoff (attempt 0).
+     * Interacts with: NoVNCService.reconnectRequests$, disconnect and the registered disconnect listener; the reconnect output.
+     * Data: a connected client; one earlier failure, which the user reconnect resets.
+     */
+    it('disconnects and reconnects at once', async () => {
+      const { novnc, reconnect, listener, reconnectRequests } = await renderNovnc({
+        url: 'wss://pve/ws',
+        ticket: 't-1',
+      });
+      listener('setDisconnectListener')({ detail: { clean: false } });
+      expect(reconnect).toHaveBeenLastCalledWith(1);
+
+      reconnectRequests.next();
+      expect(novnc.disconnect).toHaveBeenCalledOnce();
+      listener('setDisconnectListener')({ detail: { clean: true } });
+
+      expect(reconnect).toHaveBeenLastCalledWith(0);
+    });
+
+    /**
+     * Verifies: with no live session a Reconnect asks the parent for a new console straight away.
+     * Interacts with: NoVNCService.reconnectRequests$ and isConnected; the reconnect output.
+     * Data: isConnected false.
+     */
+    it('asks for a new console when not connected', async () => {
+      const { novnc, reconnect, reconnectRequests } = await renderNovnc();
+      novnc.isConnected.mockReturnValue(false);
+      reconnectRequests.next();
+      expect(novnc.disconnect).not.toHaveBeenCalled();
+      expect(reconnect).toHaveBeenCalledWith(0);
+    });
   });
 });

@@ -4,15 +4,19 @@
  */
 
 import { Injectable, inject } from '@angular/core';
-import { Observable } from 'rxjs';
+import { HttpErrorResponse } from '@angular/common/http';
+import { from, Observable, throwError } from 'rxjs';
+import { catchError, map, switchMap } from 'rxjs/operators';
 import {
   ChangeProxmoxVirtualMachineNetwork,
   MountProxmoxVirtualMachineIso,
   ProxmoxService as ApiProxmoxService,
+  ProxmoxSnapshot,
   ProxmoxVirtualMachine,
+  VmSnapshot,
 } from '../../generated/vm-api';
 import { IsoResult } from '../../models/vm/iso-result';
-import { NoVNCService } from '../novnc/novnc.service';
+import { NoVNCService, ResolutionMode } from '../novnc/novnc.service';
 
 @Injectable({
   providedIn: 'root',
@@ -50,6 +54,84 @@ export class ProxmoxService {
     return this.apiProxmoxService.mountProxmoxVirtualMachineIso(id, data);
   }
 
+  /**
+   * The Vm's snapshots as the shared snapshot dialog shows them: in tree order, each with its depth,
+   * and the one the Vm is running from marked current. `currentSnapshot` (from the Vm model) is only
+   * a fallback; Proxmox's own listing carries a synthetic "current" entry whose parent names it.
+   */
+  public getSnapshots(
+    id: string,
+    currentSnapshot?: string | null,
+  ): Observable<VmSnapshot[]> {
+    return this.apiProxmoxService
+      .getProxmoxVirtualMachineSnapshots(id)
+      .pipe(map((snapshots) => toVmSnapshots(snapshots, currentSnapshot)));
+  }
+
+  // Reverts to the snapshot the Vm is currently running from.
+  public revertToCurrentSnapshot(id: string): Observable<string> {
+    return this.apiProxmoxService.revertProxmoxVirtualMachine(id);
+  }
+
+  public revertToSnapshot(id: string, name: string): Observable<string> {
+    return this.apiProxmoxService.revertProxmoxVirtualMachineSnapshot(id, name);
+  }
+
+  // Writes the files into `directory` (which must end in a path separator) through the QEMU guest
+  // agent. The API caps the size per file and answers 400 with the reason in the ProblemDetails title.
+  public uploadFiles(
+    id: string,
+    directory: string,
+    files: FileList,
+  ): Observable<string> {
+    return this.apiProxmoxService.uploadFileToProxmoxVirtualMachine(
+      id,
+      directory,
+      Array.from(files),
+    );
+  }
+
+  // Reads a file from the guest through the QEMU guest agent. A failed request's body arrives as a
+  // Blob too, since the request asks for one; it is parsed back into the ProblemDetails object so
+  // callers can read the reason the same way as for any other endpoint.
+  public downloadFile(id: string, path: string): Observable<Blob> {
+    return this.apiProxmoxService
+      .downloadFileFromProxmoxVirtualMachine(id, path)
+      .pipe(
+        catchError((error) =>
+          from(parseBlobError(error)).pipe(
+            switchMap((parsed) => throwError(() => parsed)),
+          ),
+        ),
+      );
+  }
+
+  public fullscreen(): boolean {
+    return this.novncService.enterFullscreen();
+  }
+
+  public reconnect() {
+    this.novncService.requestReconnect();
+  }
+
+  // The resolution mode in effect on the console, and whether the server can resize the guest.
+  public readonly activeResolution = this.novncService.activeResolution;
+  public readonly resizeSupported = this.novncService.resizeSupported;
+  // Fires when Match Window Size fell back to scaling because the guest didn't resize.
+  public readonly resizeFallback$ = this.novncService.resizeFallback$;
+
+  public setResolutionMode(mode: ResolutionMode) {
+    this.novncService.setResolutionMode(mode);
+  }
+
+  public refreshResizeSupport() {
+    this.novncService.refreshResizeSupport();
+  }
+
+  public getGuestClipboard(): string | null {
+    return this.novncService.getGuestClipboard();
+  }
+
   public sendCtrlAltDel() {
     this.novncService.sendCtrlAltDel();
   }
@@ -57,4 +139,77 @@ export class ProxmoxService {
   public sendClipboardText(text: string) {
     this.novncService.sendClipboardText(text);
   }
+
+  // Types the text into the guest as key presses. False when the console is not connected.
+  public sendText(text: string): boolean {
+    return this.novncService.sendText(text);
+  }
+}
+
+// The name Proxmox gives the "you are here" pseudo-snapshot in a snapshot listing.
+const CURRENT_STATE_ENTRY = 'current';
+
+export function toVmSnapshots(
+  snapshots: ProxmoxSnapshot[],
+  currentSnapshot?: string | null,
+): VmSnapshot[] {
+  const currentState = snapshots.find((s) => s.name === CURRENT_STATE_ENTRY);
+  const real = snapshots.filter(
+    (s) => s.name && s.name !== CURRENT_STATE_ENTRY,
+  );
+  const current = currentState ? currentState.parent : currentSnapshot;
+  const names = new Set(real.map((s) => s.name));
+
+  const children = new Map<string | null, ProxmoxSnapshot[]>();
+  for (const snapshot of real) {
+    const parent =
+      snapshot.parent && names.has(snapshot.parent) ? snapshot.parent : null;
+    children.set(parent, [...(children.get(parent) ?? []), snapshot]);
+  }
+
+  const result: VmSnapshot[] = [];
+  const visit = (parent: string | null, depth: number) => {
+    const siblings = [...(children.get(parent) ?? [])].sort(
+      (a, b) => (a.snapTime ?? 0) - (b.snapTime ?? 0),
+    );
+    for (const snapshot of siblings) {
+      result.push({
+        id: snapshot.name,
+        name: snapshot.name,
+        description: snapshot.description,
+        createTime:
+          snapshot.snapTime != null
+            ? new Date(snapshot.snapTime * 1000).toISOString()
+            : undefined,
+        isCurrent: !!current && snapshot.name === current,
+        depth,
+      });
+      visit(snapshot.name, depth + 1);
+    }
+  };
+  visit(null, 0);
+
+  return result;
+}
+
+async function parseBlobError(error: unknown): Promise<unknown> {
+  if (!(error instanceof HttpErrorResponse) || !(error.error instanceof Blob)) {
+    return error;
+  }
+
+  let body: unknown;
+  try {
+    const text = await error.error.text();
+    body = text ? JSON.parse(text) : null;
+  } catch {
+    return error;
+  }
+
+  return new HttpErrorResponse({
+    error: body,
+    headers: error.headers,
+    status: error.status,
+    statusText: error.statusText,
+    url: error.url ?? undefined,
+  });
 }
