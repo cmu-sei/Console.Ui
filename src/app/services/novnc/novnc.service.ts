@@ -410,6 +410,9 @@ export class NoVNCService {
    * The guest maps keysyms through its own keyboard layout, so characters its layout cannot
    * produce are lost there, the same caveat as WMKS sendInputString.
    *
+   * The guest is assumed to use a US keyboard layout. On another layout some characters type
+   * differently; a real clipboard (vncClipboardEnabled) avoids that where the guest has one.
+   *
    * Characters typed with Shift on a US layout are sent with Shift held. QEMU's VNC server turns a
    * keysym into the key that produces it and does not press Shift itself, so a bare '!' arrives as
    * '1' and '"' as an apostrophe. Capitals survive without Shift only through QEMU's caps-lock sync,
