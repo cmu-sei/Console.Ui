@@ -24,6 +24,7 @@ type RfbStub = Pick<
   _fbWidth: number;
   _fbHeight: number;
   _FBU: { x: number; y: number };
+  _resize: (width: number, height: number) => void;
   _rfbConnectionState: string;
   // The console's size, which _screenSize reports (noVNC measures its screen element).
   screen: { w: number; h: number };
@@ -55,6 +56,11 @@ function rfbStub(): RfbStub {
     _fbWidth: 1024,
     _fbHeight: 768,
     _FBU: { x: 0, y: 0 },
+    // As in noVNC: the server reported a new framebuffer size.
+    _resize(this: RfbStub, width: number, height: number) {
+      this._fbWidth = width;
+      this._fbHeight = height;
+    },
     _rfbConnectionState: 'connected',
     screen: { w: 1024, h: 768 },
   };
@@ -719,11 +725,33 @@ describe('NoVNCService', () => {
       });
 
       /**
-       * Verifies: a window resize while matched is checked too: noVNC's request goes through the wrapped _requestRemoteResize, and a guest that followed the first size but not the next falls back. The timeout is overridable.
+       * Verifies: a window resize while matched is checked too, through the wrapped _requestRemoteResize, until the guest has taken a requested size; the timeout is overridable.
        * Interacts with: the wrapped _requestRemoteResize (noVNC's debounced resize handler calls it); resizeVerifyTimeoutMs.
-       * Data: resizeVerifyTimeoutMs 100; guest follows to 1280x800, then ignores 1600x900.
+       * Data: resizeVerifyTimeoutMs 100; Match Window Size, then a window resize to 1600x900 that the guest ignores.
        */
       it('checks a window resize while matched', () => {
+        useFakeTimers();
+        const { service, rfb, notices } = matchingClient();
+        service.resizeVerifyTimeoutMs = 100;
+        rfb.screen = { w: 1024, h: 768 };
+        service.setResolutionMode('match');
+
+        rfb.screen = { w: 1600, h: 900 };
+        rfb._requestRemoteResize();
+        vi.advanceTimersByTime(99);
+        expect(service.activeResolution()).toBe('match');
+        vi.advanceTimersByTime(1);
+        expect(service.activeResolution()).toBe('scale');
+        expect(notices).toHaveBeenCalledOnce();
+      });
+
+      /**
+       * Verifies: once the guest has taken a size it was asked for, a later request it doesn't follow leaves Match Window Size on.
+       * Interacts with: the wrapped _requestRemoteResize; the stub's framebuffer size; resizeVerifyTimeoutMs.
+       * Data: resizeVerifyTimeoutMs 100; guest follows to 1280x800, then ignores 1600x900 (above its largest mode, say).
+       * Why: one ignored request used to turn Match Window Size off for the rest of the connection, even on a virtio-gpu guest that had just resized.
+       */
+      it('keeps matching a guest that has resized when it ignores a later size', () => {
         useFakeTimers();
         const { service, rfb, notices } = matchingClient();
         service.resizeVerifyTimeoutMs = 100;
@@ -735,11 +763,63 @@ describe('NoVNCService', () => {
 
         rfb.screen = { w: 1600, h: 900 };
         rfb._requestRemoteResize();
-        vi.advanceTimersByTime(99);
+        vi.advanceTimersByTime(RESIZE_VERIFY_TIMEOUT_MS);
         expect(service.activeResolution()).toBe('match');
-        vi.advanceTimersByTime(1);
+        expect(rfb.resizeSession).toBe(true);
+        expect(notices).not.toHaveBeenCalled();
+      });
+
+      /**
+       * Verifies: a guest that takes the requested size after the timeout has fallen back is matched again.
+       * Interacts with: the wrapped _resize (noVNC applies a server's new framebuffer size through it); fake timers.
+       * Data: guest stays 1024x768 past the timeout, then reports 1280x800.
+       * Why: a slow guest, such as Windows, can take longer than the timeout to change resolution.
+       */
+      it('matches again when a slow guest takes the size after the timeout', () => {
+        useFakeTimers();
+        const { service, rfb } = matchingClient();
+        service.setResolutionMode('match');
+        vi.advanceTimersByTime(RESIZE_VERIFY_TIMEOUT_MS);
         expect(service.activeResolution()).toBe('scale');
-        expect(notices).toHaveBeenCalledOnce();
+
+        rfb._resize(1280, 800);
+        expect(service.resizeSupported()).toBe(true);
+        expect(service.activeResolution()).toBe('match');
+        expect(rfb.scaleViewport).toBe(false);
+        expect(rfb.resizeSession).toBe(true);
+      });
+
+      /**
+       * Verifies: after the timeout's fallback, a size change that isn't the requested size does not bring Match Window Size back.
+       * Interacts with: the wrapped _resize; fake timers.
+       * Data: guest stays 1024x768 past the timeout, then reports 800x600.
+       * Why: a guest changing mode on its own, as one does while booting, says nothing about whether it can follow a request.
+       */
+      it('does not match again on a size the guest was not asked for', () => {
+        useFakeTimers();
+        const { service, rfb } = matchingClient();
+        service.setResolutionMode('match');
+        vi.advanceTimersByTime(RESIZE_VERIFY_TIMEOUT_MS);
+
+        rfb._resize(800, 600);
+        expect(service.resizeSupported()).toBe(false);
+        expect(service.activeResolution()).toBe('scale');
+      });
+
+      /**
+       * Verifies: a fallback from a rejecting ExtendedDesktopSize status stays for the connection, even if the guest later reports the requested size.
+       * Interacts with: the wrapped _handleExtendedDesktopSize and _resize.
+       * Data: status 1 after Match Window Size, then the guest reports 1280x800.
+       */
+      it('does not match again after a rejecting status', () => {
+        const { service, rfb } = matchingClient();
+        service.setResolutionMode('match');
+        rfb._FBU = { x: 1, y: 1 };
+        serverOffersResize(rfb);
+
+        rfb._resize(1280, 800);
+        expect(service.resizeSupported()).toBe(false);
+        expect(service.activeResolution()).toBe('scale');
       });
 
       /**

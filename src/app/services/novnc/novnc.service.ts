@@ -57,6 +57,8 @@ interface RfbResizeInternals {
   _handleExtendedDesktopSize?: (...args: unknown[]) => boolean;
   // Sends SetDesktopSize for _screenSize(), floored, when resizeSession is on (lib/rfb.js).
   _requestRemoteResize?: (...args: unknown[]) => unknown;
+  // Applies a framebuffer size the server reports (DesktopSize or ExtendedDesktopSize).
+  _resize?: (...args: unknown[]) => unknown;
   _screenSize?: () => { w: number; h: number };
   // The guest framebuffer size, updated by _resize when the server reports a new size.
   _fbWidth?: number;
@@ -74,6 +76,10 @@ interface RfbConnectionInternals {
 interface Size {
   w: number;
   h: number;
+}
+
+function sameSize(a: Size, b: Size): boolean {
+  return a.w === b.w && a.h === b.h;
 }
 
 @Injectable({
@@ -114,6 +120,15 @@ export class NoVNCService {
   // Set for the connection when the guest showed it can't resize: it rejected a request, or a
   // request left its framebuffer unchanged. Overrides what the server advertised.
   private resizeRejected = false;
+  // Whether resizeRejected came from the timeout rather than a rejecting status. A guest that was
+  // only slow can still take the size it was asked for, which lifts a timeout's verdict.
+  private resizeTimedOut = false;
+  // Set for the connection once the guest has taken a size it was asked for, so it can resize. A
+  // later request it doesn't follow - a size above its largest mode, say - is that one size, not
+  // an adapter that can't resize, so it no longer falls back to scaling.
+  private guestResized = false;
+  // The size the latest request asked for, to recognise the guest taking it.
+  private requested: Size | null = null;
   private resizeCheck: ReturnType<typeof setTimeout> | null = null;
   // Overridable so tests need not wait the real timeout.
   public resizeVerifyTimeoutMs = RESIZE_VERIFY_TIMEOUT_MS;
@@ -204,6 +219,18 @@ export class NoVNCService {
         return result;
       };
     }
+    // Every framebuffer size the server reports goes through here, including a guest's late answer
+    // to a request the timeout had already given up on.
+    const resize = rfb._resize;
+    if (typeof resize === 'function') {
+      rfb._resize = (...args: unknown[]) => {
+        const result = resize.apply(rfb, args);
+        if (this.rfb === (rfb as unknown as RFB)) {
+          this.onFramebufferResized();
+        }
+        return result;
+      };
+    }
     this.rfb.addEventListener('connect', () => this.refreshResizeSupport());
   }
 
@@ -225,9 +252,10 @@ export class NoVNCService {
   }
 
   // A server can advertise resize while the guest can't follow (QEMU with std VGA), and nothing
-  // reports that: the framebuffer just stays the size it was. So after each request under Match
-  // Window Size, a framebuffer that hasn't changed within the timeout means the guest can't resize.
-  // A request for the size the guest already has changes nothing and proves nothing.
+  // reports that: the framebuffer just stays the size it was. So until the guest has taken a size it
+  // was asked for, a request under Match Window Size that leaves the framebuffer unchanged within
+  // the timeout means the guest can't resize. A request for the size the guest already has changes
+  // nothing and proves nothing.
   private verifyResize() {
     this.cancelResizeCheck();
     if (this.activeResolution() !== 'match') {
@@ -235,20 +263,41 @@ export class NoVNCService {
     }
     const before = this.framebufferSize();
     const requested = this.requestedSize();
+    this.requested = requested;
     if (
+      this.guestResized ||
       !before ||
       !requested ||
-      (requested.w === before.w && requested.h === before.h)
+      sameSize(requested, before)
     ) {
       return;
     }
     this.resizeCheck = setTimeout(() => {
       this.resizeCheck = null;
       const now = this.framebufferSize();
-      if (now && now.w === before.w && now.h === before.h) {
-        this.fallBackToScaling();
+      if (now && sameSize(now, before)) {
+        this.fallBackToScaling(true);
+      } else if (now && sameSize(now, requested)) {
+        this.guestResized = true;
       }
     }, this.resizeVerifyTimeoutMs);
+  }
+
+  // A guest taking exactly the size it was asked for can resize. Only an exact match counts: a guest
+  // changing mode on its own while booting is not an answer to the request.
+  private onFramebufferResized() {
+    const now = this.framebufferSize();
+    if (!now || !this.requested || !sameSize(now, this.requested)) {
+      return;
+    }
+    this.guestResized = true;
+    this.cancelResizeCheck();
+    // The timeout gave up on a guest that was only slow, such as Windows: match the window again.
+    if (this.resizeRejected && this.resizeTimedOut) {
+      this.resizeRejected = false;
+      this.resizeTimedOut = false;
+      this.refreshResizeSupport();
+    }
   }
 
   private cancelResizeCheck() {
@@ -259,14 +308,17 @@ export class NoVNCService {
   }
 
   // Marks resize unsupported for this connection, scales instead, and says so once. The user's
-  // choice is kept, so a new connection tries it again.
-  private fallBackToScaling() {
+  // choice is kept, so a new connection tries it again. `timedOut` is a verdict a slow guest can
+  // still lift by taking the requested size late; a rejecting status is final for the connection.
+  private fallBackToScaling(timedOut = false) {
     this.cancelResizeCheck();
     if (this.resizeRejected) {
+      this.resizeTimedOut &&= timedOut;
       return;
     }
     const wasMatching = this.activeResolution() === 'match';
     this.resizeRejected = true;
+    this.resizeTimedOut = timedOut;
     this.resizeSupportedSignal.set(false);
     this.applyResolution();
     if (wasMatching) {
@@ -277,6 +329,9 @@ export class NoVNCService {
   private resetResizeVerdict() {
     this.cancelResizeCheck();
     this.resizeRejected = false;
+    this.resizeTimedOut = false;
+    this.guestResized = false;
+    this.requested = null;
     this.resizeSupportedSignal.set(false);
   }
 
