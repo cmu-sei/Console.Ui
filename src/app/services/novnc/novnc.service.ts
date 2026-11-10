@@ -65,6 +65,12 @@ interface RfbResizeInternals {
   _FBU?: { x?: number; y?: number };
 }
 
+// The noVNC internal sendText checks before typing: sendKey silently drops keys unless this is
+// 'connected' (lib/rfb.js), so a client still connecting, or one that has dropped, types nothing.
+interface RfbConnectionInternals {
+  _rfbConnectionState?: string;
+}
+
 interface Size {
   w: number;
   h: number;
@@ -424,8 +430,9 @@ export class NoVNCService {
 
   /**
    * Types text into the guest as key presses, one keysym per character. A line break (\n, \r\n
-   * or \r) is sent as Enter and a tab as Tab; other control characters are dropped. Resolves false,
-   * sending nothing, when there is no client.
+   * or \r) is sent as Enter and a tab as Tab; other control characters are dropped. Resolves false
+   * when the console is not connected - no client, one still connecting, or one that has dropped -
+   * or when it stops being connected partway through, in which case the rest is not sent.
    *
    * Keys are sent in batches of {@link keyBatchEvents} events, each followed by a wait long enough
    * for QEMU to type them ({@link KEY_EVENT_MS} per event), and resolves once the last batch has had
@@ -450,7 +457,7 @@ export class NoVNCService {
 
   private async typeText(text: string): Promise<boolean> {
     const rfb = this.rfb;
-    if (!rfb) {
+    if (!this.canType(rfb)) {
       return false;
     }
 
@@ -462,6 +469,11 @@ export class NoVNCService {
       if (batch > 0 && batch + events > this.keyBatchEvents) {
         await this.waitForKeys(batch);
         batch = 0;
+        // Dropped, or replaced by a reconnect, while waiting: the rest would go nowhere, or to a
+        // session that never saw the start of the text.
+        if (this.rfb !== rfb || !this.canType(rfb)) {
+          return false;
+        }
       }
 
       if (shift) {
@@ -480,6 +492,17 @@ export class NoVNCService {
       await this.waitForKeys(batch);
     }
     return true;
+  }
+
+  // Whether keys sent to this client reach the guest. Falls back to isConnected's answer if a noVNC
+  // version no longer has the connection state sendKey checks.
+  private canType(rfb: RFB | null): boolean {
+    if (!rfb || rfb !== this.rfb || this.clientDisconnected) {
+      return false;
+    }
+    const state = (rfb as unknown as RfbConnectionInternals)
+      ._rfbConnectionState;
+    return state === undefined || state === 'connected';
   }
 
   private waitForKeys(events: number): Promise<void> {

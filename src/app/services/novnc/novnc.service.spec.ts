@@ -24,6 +24,7 @@ type RfbStub = Pick<
   _fbWidth: number;
   _fbHeight: number;
   _FBU: { x: number; y: number };
+  _rfbConnectionState: string;
   // The console's size, which _screenSize reports (noVNC measures its screen element).
   screen: { w: number; h: number };
 };
@@ -54,6 +55,7 @@ function rfbStub(): RfbStub {
     _fbWidth: 1024,
     _fbHeight: 768,
     _FBU: { x: 0, y: 0 },
+    _rfbConnectionState: 'connected',
     screen: { w: 1024, h: 768 },
   };
 }
@@ -212,6 +214,19 @@ describe('NoVNCService', () => {
       await expect(new NoVNCService().sendText('hello')).resolves.toBe(false);
     });
 
+    /**
+     * Verifies: a client that is not connected - still connecting, or dropped - types nothing and sendText() says so.
+     * Interacts with: noVNC's _rfbConnectionState, which sendKey checks before sending.
+     * Data: 'hello' with the state 'connecting', then 'disconnected'.
+     * Why: noVNC's sendKey silently drops keys unless connected, so text typed during a reconnect used to vanish while reporting success.
+     */
+    it.each(['connecting', 'disconnected'])('types nothing while the client is %s', async (state) => {
+      const { service, rfb } = withClient();
+      rfb._rfbConnectionState = state;
+      await expect(service.sendText('hello')).resolves.toBe(false);
+      expect(rfb.sendKey).not.toHaveBeenCalled();
+    });
+
     describe('pacing', () => {
       function useFakeTimers() {
         vi.useFakeTimers();
@@ -252,6 +267,47 @@ describe('NoVNCService', () => {
         expect(done).toBe(false);
         await vi.advanceTimersByTimeAsync(1);
         await expect(typed).resolves.toBe(true);
+      });
+
+      /**
+       * Verifies: a connection that drops between batches stops the typing, and sendText() resolves false.
+       * Interacts with: _rfbConnectionState; keyBatchEvents.
+       * Data: 'abcd' in batches of 4 events; the client drops after 'a' and 'b'.
+       */
+      it('stops when the connection drops partway through', async () => {
+        useFakeTimers();
+        const { service, rfb } = withClient();
+        service.keyEventMs = 10;
+        service.keyBatchEvents = 4;
+        const typed = service.sendText('abcd');
+        await vi.advanceTimersByTimeAsync(0);
+
+        rfb._rfbConnectionState = 'disconnected';
+        await vi.advanceTimersByTimeAsync(100);
+
+        await expect(typed).resolves.toBe(false);
+        expect(keysyms(rfb)).toEqual([0x61, 0x62]);
+      });
+
+      /**
+       * Verifies: a client replaced by a reconnect between batches gets none of the rest.
+       * Interacts with: the private rfb field a reconnect replaces; keyBatchEvents.
+       * Data: 'abcd' in batches of 4 events; a new client after 'a' and 'b'.
+       */
+      it('stops when the client is replaced partway through', async () => {
+        useFakeTimers();
+        const { service, rfb } = withClient();
+        service.keyEventMs = 10;
+        service.keyBatchEvents = 4;
+        const typed = service.sendText('abcd');
+        await vi.advanceTimersByTimeAsync(0);
+
+        const next = rfbStub();
+        (service as unknown as { rfb: RfbStub }).rfb = next;
+        await vi.advanceTimersByTimeAsync(100);
+
+        await expect(typed).resolves.toBe(false);
+        expect(next.sendKey).not.toHaveBeenCalled();
       });
 
       /**
