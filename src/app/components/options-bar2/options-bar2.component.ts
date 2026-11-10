@@ -56,7 +56,11 @@ import {
 import { MatLabel } from '@angular/material/form-field';
 import { AsyncPipe } from '@angular/common';
 import { MatTooltip } from '@angular/material/tooltip';
-import { ProxmoxService } from '../../services/proxmox/proxmox.service';
+import {
+  filesOverUploadLimit,
+  ProxmoxService,
+  uploadLimitMessage,
+} from '../../services/proxmox/proxmox.service';
 import { DialogService } from '../../services/dialog/dialog.service';
 import { IsoFile, IsoResult } from '../../models/vm/iso-result';
 import { VsphereService } from '../../state/vsphere/vsphere.service';
@@ -552,6 +556,17 @@ export class OptionsBar2Component implements OnInit {
     const files = fileSelector.files;
     if (!vm?.id || !files?.length) {
       fileSelector.value = '';
+      return;
+    }
+
+    // Before the upload rather than after it: the API only refuses a file once it has all of it.
+    const tooLarge = filesOverUploadLimit(files);
+    if (tooLarge.length) {
+      fileSelector.value = '';
+      this.showMessage(
+        `Error Uploading File: ${uploadLimitMessage(tooLarge)}`,
+        10000,
+      );
       return;
     }
 

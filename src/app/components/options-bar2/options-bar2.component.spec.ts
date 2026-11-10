@@ -1324,6 +1324,46 @@ describe('OptionsBar2Component', () => {
     });
 
     /**
+     * Verifies: a file over the API's 45 KB limit is refused before anything is asked or sent, with the reason the API would give.
+     * Interacts with: the file input's change event; DialogService.getFileUploadInfo; ProxmoxService.uploadFiles; MatSnackBar.open.
+     * Data: 'big.bin' at 46081 bytes, one over PROXMOX_UPLOAD_LIMIT_BYTES.
+     * Why: the API enforces the limit only after receiving the whole file, so a large file used to upload in full behind the progress dialog just to get a 400.
+     */
+    it('refuses a file over the upload limit without sending it', async () => {
+      const { fixture, dialogs, proxmox, snackBar } = await renderOptionsBar2({
+        grants: canTransfer,
+        networkVm: agentVm(),
+      });
+
+      pickFiles(fixture, new File(['hi'], 'notes.txt'), new File([new Uint8Array(46081)], 'big.bin'));
+
+      expect(dialogs.getFileUploadInfo).not.toHaveBeenCalled();
+      expect(proxmox.uploadFiles).not.toHaveBeenCalled();
+      expect(snackBar.open).toHaveBeenCalledWith(
+        'Error Uploading File: big.bin is 45.01 KB, which exceeds the 45 KB limit for uploading a file to a Proxmox virtual machine.',
+        'Close',
+        expect.anything(),
+      );
+    });
+
+    /**
+     * Verifies: a file exactly at the limit is uploaded as usual.
+     * Interacts with: the file input's change event; DialogService.getFileUploadInfo; ProxmoxService.uploadFiles.
+     * Data: 'max.bin' at 46080 bytes.
+     */
+    it('uploads a file at the upload limit', async () => {
+      const { fixture, dialogs, proxmox } = await renderOptionsBar2({
+        grants: canTransfer,
+        networkVm: agentVm(),
+      });
+      dialogs.getFileUploadInfo.mockReturnValue(of({ filepath: '/tmp', username: '', password: '' }));
+
+      pickFiles(fixture, new File([new Uint8Array(46080)], 'max.bin'));
+
+      expect(proxmox.uploadFiles).toHaveBeenCalledOnce();
+    });
+
+    /**
      * Verifies: the API's 400 reason (such as the guest agent's size cap) is shown to the user and the progress dialog closes.
      * Interacts with: ProxmoxService.uploadFiles rejecting with an HttpErrorResponse; MatSnackBar.open.
      * Data: 400 titled with the size cap message.

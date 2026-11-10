@@ -11,7 +11,13 @@ import {
   ProxmoxVirtualMachine,
 } from '../../generated/vm-api';
 import { NoVNCService } from '../novnc/novnc.service';
-import { ProxmoxService, toVmSnapshots } from './proxmox.service';
+import {
+  filesOverUploadLimit,
+  PROXMOX_UPLOAD_LIMIT_BYTES,
+  ProxmoxService,
+  toVmSnapshots,
+  uploadLimitMessage,
+} from './proxmox.service';
 import { ApiStub } from '../../test-utils/api-stub';
 
 const VM: ProxmoxVirtualMachine = { id: 'vm-1', name: 'Alpha' };
@@ -128,6 +134,26 @@ describe('ProxmoxService', () => {
     const { service, novnc } = setup();
     service.sendClipboardText('hello');
     expect(novnc.sendClipboardText).toHaveBeenCalledWith('hello');
+  });
+
+  /**
+   * Verifies: the upload limit picks out files over 46080 bytes, and the message names them in the API's words, with sizes in KB rounded so one byte over never reads as the limit.
+   * Interacts with: filesOverUploadLimit and uploadLimitMessage.
+   * Data: files of 46080, 46081 and 100000 bytes.
+   */
+  it('names the files over the upload limit as the API does', () => {
+    const atLimit = new File([new Uint8Array(46080)], 'max.bin');
+    const over = new File([new Uint8Array(46081)], 'over.bin');
+    const big = new File([new Uint8Array(100000)], 'big.iso');
+
+    expect(PROXMOX_UPLOAD_LIMIT_BYTES).toBe(46080);
+    expect(filesOverUploadLimit([atLimit, over, big])).toEqual([over, big]);
+    expect(uploadLimitMessage([over])).toBe(
+      'over.bin is 45.01 KB, which exceeds the 45 KB limit for uploading a file to a Proxmox virtual machine.',
+    );
+    expect(uploadLimitMessage([over, big])).toBe(
+      'over.bin, big.iso exceed the 45 KB limit for uploading a file to a Proxmox virtual machine.',
+    );
   });
 
   /**

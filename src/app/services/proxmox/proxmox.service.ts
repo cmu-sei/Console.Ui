@@ -18,6 +18,38 @@ import {
 import { IsoResult } from '../../models/vm/iso-result';
 import { NoVNCService, ResolutionMode } from '../novnc/novnc.service';
 
+/**
+ * The largest file vm.api uploads to a Proxmox guest: PVE's agent/file-write takes at most 61440
+ * characters of base64, which is 46080 bytes (45 KB). The API refuses a larger file, but only after
+ * receiving all of it, so the console checks first. A deployment can configure a lower limit, which
+ * only the API knows; the API's refusal still covers that.
+ */
+export const PROXMOX_UPLOAD_LIMIT_BYTES = 46080;
+
+/** The files `uploadFiles` would send that are over {@link PROXMOX_UPLOAD_LIMIT_BYTES}. */
+export function filesOverUploadLimit(files: FileList | File[]): File[] {
+  return Array.from(files).filter((f) => f.size > PROXMOX_UPLOAD_LIMIT_BYTES);
+}
+
+/**
+ * Says which files are too large, in the API's own words. Sizes are KB to two places, rounded so
+ * that a file one byte over the limit never reads as equal to it.
+ */
+export function uploadLimitMessage(tooLarge: File[]): string {
+  const kilobytes = (bytes: number, roundUp: boolean) => {
+    const hundredths = (bytes * 100) / 1024;
+    return String(
+      (roundUp ? Math.ceil(hundredths) : Math.floor(hundredths)) / 100,
+    );
+  };
+  const limit = `${kilobytes(PROXMOX_UPLOAD_LIMIT_BYTES, false)} KB limit for uploading a file to a Proxmox virtual machine`;
+  if (tooLarge.length === 1) {
+    const [file] = tooLarge;
+    return `${file.name} is ${kilobytes(file.size, true)} KB, which exceeds the ${limit}.`;
+  }
+  return `${tooLarge.map((f) => f.name).join(', ')} exceed the ${limit}.`;
+}
+
 @Injectable({
   providedIn: 'root',
 })
