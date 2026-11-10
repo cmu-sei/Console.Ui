@@ -19,9 +19,12 @@ function setup() {
 
 // What zone.js hands the ErrorHandler for an unhandled promise rejection.
 function uncaughtInPromise(rejection: Error) {
-  return Object.assign(new Error(`Uncaught (in promise): ${rejection.message}`), {
-    rejection,
-  });
+  return Object.assign(
+    new Error(`Uncaught (in promise): ${rejection.message}`),
+    {
+      rejection,
+    },
+  );
 }
 
 describe('ErrorService', () => {
@@ -42,7 +45,10 @@ describe('ErrorService', () => {
         error: { name: 'Forbidden', message: 'No access' },
       }),
     );
-    expect(messages.displayMessage).toHaveBeenCalledWith('Forbidden', 'No access');
+    expect(messages.displayMessage).toHaveBeenCalledWith(
+      'Forbidden',
+      'No access',
+    );
   });
 
   /**
@@ -53,7 +59,11 @@ describe('ErrorService', () => {
   it('explains an unreachable API', () => {
     const { service, messages } = setup();
     service.handleError(
-      new HttpErrorResponse({ status: 0, statusText: 'Unknown Error', error: {} }),
+      new HttpErrorResponse({
+        status: 0,
+        statusText: 'Unknown Error',
+        error: {},
+      }),
     );
     expect(messages.displayMessage).toHaveBeenCalledWith(
       'VM API Error',
@@ -62,11 +72,11 @@ describe('ErrorService', () => {
   });
 
   /**
-   * Verifies: any other HTTP error is shown with its status text and message.
+   * Verifies: any other HTTP error is shown with its status code and message.
    * Interacts with: SystemMessageService.displayMessage spy.
    * Data: HttpErrorResponse 500 'Server Error' for a url, with an unnamed body.
    */
-  it('shows other HTTP errors by status text', () => {
+  it('shows other HTTP errors by status code', () => {
     const { service, messages } = setup();
     const err = new HttpErrorResponse({
       status: 500,
@@ -75,20 +85,178 @@ describe('ErrorService', () => {
       error: {},
     });
     service.handleError(err);
-    expect(messages.displayMessage).toHaveBeenCalledWith('Server Error', err.message);
+    expect(messages.displayMessage).toHaveBeenCalledWith(
+      'VM API Error (500)',
+      err.message,
+    );
   });
 
   /**
-   * Verifies: an HTTP error with no response body crashes the error handler.
-   * Interacts with: ErrorService.handleError.
-   * Data: HttpErrorResponse 401 with error null (an empty body, as JwtBearer sends).
+   * Verifies: an HTTP error whose body is empty or not JSON is shown by status code instead of crashing the handler.
+   * Interacts with: SystemMessageService.displayMessage spy.
+   * Data: a 401 with error null (an empty body, as JwtBearer sends) and a 413 with an HTML string body.
    */
-  it('throws on an HTTP error with no body', () => {
+  it.each<[string, number, string, unknown]>([
+    ['no body', 401, 'Unauthorized', null],
+    ['an HTML body', 413, 'Payload Too Large', '<html><body>413</body></html>'],
+  ])(
+    'shows an HTTP error with %s by status code',
+    (_label, status, statusText, error) => {
+      const { service, messages } = setup();
+      const err = new HttpErrorResponse({
+        status,
+        statusText,
+        url: 'https://vm-api.test/api/x',
+        error,
+      });
+
+      expect(() => service.handleError(err)).not.toThrow();
+      expect(messages.displayMessage).toHaveBeenCalledWith(
+        `VM API Error (${status})`,
+        err.message,
+      );
+    },
+  );
+
+  /**
+   * Verifies: any status-0 failure is explained as an unreachable API, whatever url HttpClient reports.
+   * Interacts with: SystemMessageService.displayMessage spy.
+   * Data: HttpErrorResponse status 0 with a url (CORS or connection refused on a known endpoint).
+   */
+  it('explains an unreachable API that has a url', () => {
     const { service, messages } = setup();
-    expect(() =>
-      service.handleError(new HttpErrorResponse({ status: 401, error: null })),
-    ).toThrow(TypeError);
-    expect(messages.displayMessage).not.toHaveBeenCalled();
+    service.handleError(
+      new HttpErrorResponse({
+        status: 0,
+        statusText: 'Unknown Error',
+        url: 'https://vm-api.test/api/vms/1',
+        error: null,
+      }),
+    );
+    expect(messages.displayMessage).toHaveBeenCalledWith(
+      'VM API Error',
+      'The VM Console API could not be reached.',
+    );
+  });
+
+  /**
+   * Verifies: a ProblemDetails body is shown with its title as the reason, never its detail.
+   * Interacts with: SystemMessageService.displayMessage spy.
+   * Data: a 403 ProblemDetails, and a 500 as vm.api's ExceptionMiddleware writes it outside Development: the generic title, with the raw exception message as the detail.
+   */
+  it.each<[string, number, string, object, string]>([
+    [
+      'a 403',
+      403,
+      'Forbidden',
+      {
+        title: 'You do not have permission to download files from this vm.',
+        status: 403,
+      },
+      'You do not have permission to download files from this vm.',
+    ],
+    [
+      'a production 500',
+      500,
+      'Internal Server Error',
+      {
+        title: 'A server error occurred.',
+        status: 500,
+        detail: "Value cannot be null. (Parameter 'source')",
+      },
+      'A server error occurred.',
+    ],
+  ])(
+    'shows the title of %s ProblemDetails',
+    (_label, status, statusText, error, shown) => {
+      const { service, messages } = setup();
+      service.handleError(
+        new HttpErrorResponse({
+          status,
+          statusText,
+          url: 'https://vm-api.test/api/x',
+          error,
+        }),
+      );
+      expect(messages.displayMessage).toHaveBeenCalledWith(
+        `VM API Error (${status})`,
+        shown,
+      );
+    },
+  );
+
+  /**
+   * Verifies: the heading comes from the status code, not the status text.
+   * Interacts with: SystemMessageService.displayMessage spy.
+   * Data: a 403 ProblemDetails with statusText 'OK', which is what Angular's XHR backend reports over HTTP/2 (no status text on the wire).
+   * Why: over HTTP/2 a refused request was headed "OK".
+   */
+  it('heads a refused request by its status code over HTTP/2', () => {
+    const { service, messages } = setup();
+    service.handleError(
+      new HttpErrorResponse({
+        status: 403,
+        statusText: 'OK',
+        url: 'https://vm-api.test/api/x',
+        error: {
+          title: 'You do not have permission to revert this vm.',
+          status: 403,
+        },
+      }),
+    );
+    expect(messages.displayMessage).toHaveBeenCalledWith(
+      'VM API Error (403)',
+      'You do not have permission to revert this vm.',
+    );
+  });
+
+  /**
+   * Verifies: a Blob error body (a request that asked for a Blob, like Download File) is read, and its ProblemDetails title shown; a Blob that isn't JSON falls back to the status code.
+   * Interacts with: SystemMessageService.displayMessage spy.
+   * Data: a 400 whose body is a JSON ProblemDetails Blob, and a 502 whose body is an HTML Blob.
+   */
+  it('reads a ProblemDetails Blob body', async () => {
+    const { service, messages } = setup();
+    const body = new Blob(
+      [
+        JSON.stringify({
+          title: 'The file path must be an absolute path.',
+          status: 400,
+        }),
+      ],
+      { type: 'application/problem+json' },
+    );
+    service.handleError(
+      new HttpErrorResponse({
+        status: 400,
+        statusText: 'Bad Request',
+        url: 'https://vm-api.test/api/x',
+        error: body,
+      }),
+    );
+    await vi.waitFor(() =>
+      expect(messages.displayMessage).toHaveBeenCalledWith(
+        'VM API Error (400)',
+        'The file path must be an absolute path.',
+      ),
+    );
+  });
+
+  it('falls back to the status code for a Blob body that is not JSON', async () => {
+    const { service, messages } = setup();
+    const err = new HttpErrorResponse({
+      status: 502,
+      statusText: 'Bad Gateway',
+      url: 'https://vm-api.test/api/x',
+      error: new Blob(['<html>502</html>'], { type: 'text/html' }),
+    });
+    service.handleError(err);
+    await vi.waitFor(() =>
+      expect(messages.displayMessage).toHaveBeenCalledWith(
+        'VM API Error (502)',
+        err.message,
+      ),
+    );
   });
 
   /**
@@ -133,15 +301,26 @@ describe('ErrorService', () => {
   });
 
   /**
-   * Verifies: a thrown value without a message (not an Error) crashes the error handler.
-   * Interacts with: ErrorService.handleError.
-   * Data: the thrown value under test.
+   * Verifies: a thrown value without a message (not an Error) is logged instead of crashing the handler.
+   * Interacts with: console.log spy; SystemMessageService.displayMessage spy.
+   * Data: the thrown value under test, and an unhandled rejection that rejected with a non-Error.
    */
   it.each<[string, unknown]>([
     ['a thrown string', 'boom'],
     ['a plain object', { status: 404 }],
-  ])('throws on %s', (_label, thrown) => {
+    ['null', null],
+  ])('logs %s without crashing', (_label, thrown) => {
+    const { service, messages } = setup();
+    expect(() => service.handleError(thrown)).not.toThrow();
+    expect(vi.mocked(console.log).mock.calls).toEqual([[thrown]]);
+    expect(messages.displayMessage).not.toHaveBeenCalled();
+  });
+
+  it('logs an unhandled rejection with no Error without crashing', () => {
     const { service } = setup();
-    expect(() => service.handleError(thrown)).toThrow(TypeError);
+    const err = Object.assign(new Error('Uncaught (in promise): undefined'), {
+      rejection: undefined,
+    });
+    expect(() => service.handleError(err)).not.toThrow();
   });
 });
