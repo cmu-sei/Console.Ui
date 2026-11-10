@@ -64,6 +64,8 @@ function rfbStub(): RfbStub {
 // seam the service offers.
 function withClient() {
   const service = new NoVNCService();
+  // Typing is paced to QEMU; not waited out except where the pacing is under test.
+  service.keyEventMs = 0;
   const rfb = rfbStub();
   (service as unknown as { rfb: RfbStub }).rfb = rfb;
   return { service, rfb };
@@ -173,9 +175,9 @@ describe('NoVNCService', () => {
      * Data: 'Hi!\n'.
      * Why: QEMU's VNC server types the unshifted key for a bare shifted keysym, so without Shift '!' arrives as '1'. Confirmed on a live QEMU guest.
      */
-    it('types each character as a key press, holding Shift where the character needs it', () => {
+    it('types each character as a key press, holding Shift where the character needs it', async () => {
       const { service, rfb } = withClient();
-      expect(service.sendText('Hi!\n')).toBe(true);
+      await expect(service.sendText('Hi!\n')).resolves.toBe(true);
       expect(vi.mocked(rfb.sendKey).mock.calls).toEqual([
         [SHIFT, null, true],
         [0x48, null],
@@ -206,8 +208,69 @@ describe('NoVNCService', () => {
      * Interacts with: NoVNCService with no RFB client.
      * Data: 'hello'.
      */
-    it('types nothing without a client', () => {
-      expect(new NoVNCService().sendText('hello')).toBe(false);
+    it('types nothing without a client', async () => {
+      await expect(new NoVNCService().sendText('hello')).resolves.toBe(false);
+    });
+
+    describe('pacing', () => {
+      function useFakeTimers() {
+        vi.useFakeTimers();
+        onTestFinished(() => {
+          vi.useRealTimers();
+        });
+      }
+
+      const keysyms = (rfb: RfbStub) =>
+        vi.mocked(rfb.sendKey).mock.calls.map(([keysym]) => keysym);
+
+      /**
+       * Verifies: keys go out in batches of keyBatchEvents events, each followed by a wait of keyEventMs per event; Shift stays in the same batch as its key; sendText() resolves once the last batch has been waited out.
+       * Interacts with: keyBatchEvents and keyEventMs; the seeded client's sendKey; fake timers.
+       * Data: 'abC' with batches of 4 events at 10 ms each: 'a' and 'b' (2 events each), then 'C' (4, with Shift).
+       * Why: QEMU types a key event every 10 ms and drops events past a 1024-entry queue (3 entries each), so an unpaced paste lost its tail and could leave Shift held.
+       */
+      it('sends keys in batches QEMU can take, waiting between them', async () => {
+        useFakeTimers();
+        const { service, rfb } = withClient();
+        service.keyEventMs = 10;
+        service.keyBatchEvents = 4;
+        let done = false;
+        const typed = service.sendText('abC').then((sent) => {
+          done = true;
+          return sent;
+        });
+
+        await vi.advanceTimersByTimeAsync(0);
+        expect(keysyms(rfb)).toEqual([0x61, 0x62]);
+
+        await vi.advanceTimersByTimeAsync(39);
+        expect(keysyms(rfb)).toEqual([0x61, 0x62]);
+        await vi.advanceTimersByTimeAsync(1);
+        expect(keysyms(rfb)).toEqual([0x61, 0x62, SHIFT, 0x43, SHIFT]);
+
+        await vi.advanceTimersByTimeAsync(39);
+        expect(done).toBe(false);
+        await vi.advanceTimersByTimeAsync(1);
+        await expect(typed).resolves.toBe(true);
+      });
+
+      /**
+       * Verifies: a second sendText() waits for the first to finish, so the two texts' keys don't interleave.
+       * Interacts with: sendText's queue; keyBatchEvents.
+       * Data: 'ab' then 'cd', sent together, in batches of 2 events (one character).
+       */
+      it('types one text after another', async () => {
+        useFakeTimers();
+        const { service, rfb } = withClient();
+        service.keyBatchEvents = 2;
+        const first = service.sendText('ab');
+        const second = service.sendText('cd');
+
+        await vi.advanceTimersByTimeAsync(100);
+
+        await expect(Promise.all([first, second])).resolves.toEqual([true, true]);
+        expect(keysyms(rfb)).toEqual([0x61, 0x62, 0x63, 0x64]);
+      });
     });
 
     /**

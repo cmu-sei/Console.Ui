@@ -122,7 +122,7 @@ async function renderOptionsBar2(
     mountIso: vi.fn<ProxmoxService['mountIso']>(() => of(networkVm())),
     sendCtrlAltDel: vi.fn<ProxmoxService['sendCtrlAltDel']>(),
     sendClipboardText: vi.fn<ProxmoxService['sendClipboardText']>(),
-    sendText: vi.fn<ProxmoxService['sendText']>(() => true),
+    sendText: vi.fn<ProxmoxService['sendText']>(async () => true),
     getSnapshots: vi.fn<ProxmoxService['getSnapshots']>(() =>
       of([
         { id: 'clean', name: 'clean', isCurrent: true, depth: 0 },
@@ -916,7 +916,7 @@ describe('OptionsBar2Component', () => {
     it('reports a console that is not connected', async () => {
       const { fixture, dialogs, proxmox, snackBar } = await renderOptionsBar2();
       dialogs.sendText.mockReturnValue(of({ textToSend: 'one\ntwo', timeout: '0' }));
-      proxmox.sendText.mockReturnValue(false);
+      proxmox.sendText.mockResolvedValue(false);
 
       await clickMenu(fixture, 'Keyboard', 'Send Text');
 

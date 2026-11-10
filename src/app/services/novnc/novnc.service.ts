@@ -16,6 +16,20 @@ const XK_SHIFT_L = 0xffe1;
 const UNICODE_KEYSYM = 0x0100_0000;
 
 /**
+ * How long QEMU's VNC server takes to hand one key event to the guest, with a margin: its
+ * key-delay-ms, 10 ms by default, which PVE does not change. Events that arrive faster wait in a
+ * queue capped at 1024 entries, three per event, and the ones past the cap are dropped.
+ */
+export const KEY_EVENT_MS = 12;
+
+/**
+ * The most key events sendText sends before waiting for QEMU to type them: a press and release per
+ * character, two more for Shift. Well under the roughly 340 events QEMU's queue holds, so a long
+ * paste is neither cut short nor left with Shift held because its release was dropped.
+ */
+export const KEY_BATCH_EVENTS = 64;
+
+/**
  * How the guest display is fitted to the console window. 'scale' scales the guest's own resolution
  * to fit; 'match' asks the guest to change its resolution to the window (SetDesktopSize), which
  * only works where the VNC server supports it and the guest's display adapter can resize.
@@ -101,6 +115,12 @@ export class NoVNCService {
   private resizeFallbackSubject = new Subject<void>();
   // Fires once each time Match Window Size falls back to scaling because the guest didn't resize.
   public readonly resizeFallback$ = this.resizeFallbackSubject.asObservable();
+
+  // Overridable so tests need not wait QEMU's pace.
+  public keyEventMs = KEY_EVENT_MS;
+  public keyBatchEvents = KEY_BATCH_EVENTS;
+  // The text being typed, so a second sendText waits for the first rather than mixing its keys in.
+  private typing: Promise<unknown> = Promise.resolve();
 
   private reconnectRequestsSubject = new Subject<void>();
   // NovncComponent owns the connection lifecycle, so a user's Reconnect is handed to it.
@@ -404,8 +424,12 @@ export class NoVNCService {
 
   /**
    * Types text into the guest as key presses, one keysym per character. A line break (\n, \r\n
-   * or \r) is sent as Enter and a tab as Tab; other control characters are dropped. Returns false,
-   * sending nothing, when there is no connected client.
+   * or \r) is sent as Enter and a tab as Tab; other control characters are dropped. Resolves false,
+   * sending nothing, when there is no client.
+   *
+   * Keys are sent in batches of {@link keyBatchEvents} events, each followed by a wait long enough
+   * for QEMU to type them ({@link KEY_EVENT_MS} per event), and resolves once the last batch has had
+   * that wait. A second call waits for the first to finish.
    *
    * The guest maps keysyms through its own keyboard layout, so characters its layout cannot
    * produce are lost there, the same caveat as WMKS sendInputString.
@@ -418,22 +442,50 @@ export class NoVNCService {
    * '1' and '"' as an apostrophe. Capitals survive without Shift only through QEMU's caps-lock sync,
    * which toggles the guest's Caps Lock to match.
    */
-  public sendText(text: string): boolean {
-    if (!this.rfb) {
+  public sendText(text: string): Promise<boolean> {
+    const typed = this.typing.then(() => this.typeText(text));
+    this.typing = typed.catch(() => undefined);
+    return typed;
+  }
+
+  private async typeText(text: string): Promise<boolean> {
+    const rfb = this.rfb;
+    if (!rfb) {
       return false;
     }
 
+    let batch = 0;
     for (const { keysym, shift } of NoVNCService.keyPressesFor(text)) {
-      if (shift) {
-        this.rfb.sendKey(XK_SHIFT_L, null, true);
+      // A press and release, and Shift's around them; kept in one batch so Shift is never left held
+      // across a wait.
+      const events = shift ? 4 : 2;
+      if (batch > 0 && batch + events > this.keyBatchEvents) {
+        await this.waitForKeys(batch);
+        batch = 0;
       }
-      this.rfb.sendKey(keysym, null);
+
       if (shift) {
-        this.rfb.sendKey(XK_SHIFT_L, null, false);
+        rfb.sendKey(XK_SHIFT_L, null, true);
       }
+      rfb.sendKey(keysym, null);
+      if (shift) {
+        rfb.sendKey(XK_SHIFT_L, null, false);
+      }
+      batch += events;
     }
 
+    // The last batch too, so text sent straight after this, such as a paste's next line, does not
+    // pile onto keys QEMU is still typing.
+    if (batch > 0) {
+      await this.waitForKeys(batch);
+    }
     return true;
+  }
+
+  private waitForKeys(events: number): Promise<void> {
+    return new Promise((resolve) =>
+      setTimeout(resolve, events * this.keyEventMs),
+    );
   }
 
   /** The characters a US layout types with Shift held: the capitals and the shifted symbols. */

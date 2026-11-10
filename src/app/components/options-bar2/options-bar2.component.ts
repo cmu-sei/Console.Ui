@@ -714,11 +714,12 @@ export class OptionsBar2Component implements OnInit {
   }
 
   // Same pacing as the vSphere bar: each line is typed and followed by Enter, then a pause of
-  // `timeoutStr` ms (the Send Text dialog's paste speed) before the next line.
+  // `timeoutStr` ms (the Send Text dialog's paste speed) before the next line. sendText itself
+  // paces the keys within a line to what QEMU can take.
   public async paste(text: string, timeoutStr: string = '50') {
     const timeout = parseInt(timeoutStr);
     for (const line of text.split('\n')) {
-      if (!this.proxmoxService.sendText(line + '\n')) {
+      if (!(await this.proxmoxService.sendText(line + '\n'))) {
         this.showMessage(
           'Send Text failed: the console is not connected',
           10000,

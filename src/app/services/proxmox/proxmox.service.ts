@@ -141,7 +141,7 @@ export class ProxmoxService {
   }
 
   // Types the text into the guest as key presses. False when the console is not connected.
-  public sendText(text: string): boolean {
+  public sendText(text: string): Promise<boolean> {
     return this.novncService.sendText(text);
   }
 }

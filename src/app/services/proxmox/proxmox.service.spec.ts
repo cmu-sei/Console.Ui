@@ -36,7 +36,7 @@ function setup() {
   const novnc = {
     sendCtrlAltDel: vi.fn(),
     sendClipboardText: vi.fn(),
-    sendText: vi.fn(() => true),
+    sendText: vi.fn(async () => true),
     enterFullscreen: vi.fn(() => true),
     requestReconnect: vi.fn(),
     getGuestClipboard: vi.fn(() => 'copied'),
@@ -135,12 +135,12 @@ describe('ProxmoxService', () => {
    * Interacts with: NoVNCService stub.
    * Data: text 'hello'; the client answering true, then false.
    */
-  it('types text through noVNC', () => {
+  it('types text through noVNC', async () => {
     const { service, novnc } = setup();
-    expect(service.sendText('hello')).toBe(true);
+    await expect(service.sendText('hello')).resolves.toBe(true);
     expect(novnc.sendText).toHaveBeenCalledWith('hello');
-    novnc.sendText.mockReturnValue(false);
-    expect(service.sendText('hello')).toBe(false);
+    novnc.sendText.mockResolvedValue(false);
+    await expect(service.sendText('hello')).resolves.toBe(false);
   });
 
   describe('snapshots', () => {
