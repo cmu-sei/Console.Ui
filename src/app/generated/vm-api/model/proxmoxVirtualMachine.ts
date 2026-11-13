@@ -24,5 +24,10 @@ export interface ProxmoxVirtualMachine {
     networkCards?: NicOptions;
     canAccessNicConfiguration?: boolean;
     canMountIso?: boolean;
+    guestAgentRunning?: boolean;
+    hasSnapshot?: boolean;
+    currentSnapshot?: string | null;
+    vncClipboardEnabled?: boolean;
+    fileUploadMaxBytes?: number;
 }
 

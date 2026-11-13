@@ -3,8 +3,16 @@ Copyright 2022 Carnegie Mellon University. All Rights Reserved.
 Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
 -->
 
-<div>
-  <div>
+<!-- Outside the menus so the selection survives the menu closing. -->
+<input
+  #file
+  type="file"
+  multiple
+  style="display: none"
+  (change)="uploadFileToVm(file)"
+/>
+<div class="d-flex align-items-center justify-content-between">
+  <div class="w-25 d-flex align-items-center justify-content-between">
     <div class="d-flex align-items-center">
       <button
         class="z-3"
@@ -14,9 +22,159 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
       >
         <mat-icon svgIcon="gear" />
       </button>
-      <span class="ms-1">{{ vm?.name }}</span>
+      <span class="ms-1"
+        >{{ vm?.name }}{{ readOnly() ? ' (Read Only)' : '' }}</span
+      >
       <mat-menu #mainMenu="matMenu">
+        <button mat-menu-item (click)="fullscreen()">Fullscreen</button>
+        @if (inFrame) {
+          <button mat-menu-item (click)="openInTab()">Open In New Tab</button>
+        }
+        <button mat-menu-item (click)="reconnect()">Reconnect</button>
+
+        @if (allowReadOnlyToggle()) {
+          <button mat-menu-item (click)="$event.stopPropagation()">
+            <mat-slide-toggle
+              labelPosition="before"
+              color="primary"
+              [checked]="readOnly()"
+              (click)="$event.stopPropagation()"
+              (change)="toggleReadOnly($event)"
+            >
+              <mat-label class="mat-mdc-menu-item-text me-2"
+                >Read Only</mat-label
+              >
+            </mat-slide-toggle>
+          </button>
+        }
+
+        <button mat-menu-item (click)="$event.stopPropagation()">
+          <mat-slide-toggle
+            labelPosition="before"
+            color="primary"
+            [checked]="(theme$ | async) === 'dark-theme'"
+            (click)="$event.stopPropagation()"
+            (change)="toggleTheme($event)"
+          >
+            <mat-label class="mat-mdc-menu-item-text me-2"
+              >Dark Theme</mat-label
+            >
+          </mat-slide-toggle>
+        </button>
+
+        <!-- Resolution: where the vSphere bar has it, above Power. Shown on read-only consoles too,
+             which can still scale. -->
+        <button
+          mat-menu-item
+          [matMenuTriggerFor]="resolutionMenu"
+          (menuOpened)="refreshResizeSupport()"
+        >
+          Resolution
+        </button>
+        <mat-menu #resolutionMenu="matMenu">
+          <button mat-menu-item (click)="scaleToFit()">
+            @if (activeResolution() === 'scale') {
+              <span>&#10004;</span>
+            }
+            Scale to Fit
+          </button>
+          <div
+            [matTooltip]="matchWindowSizeTooltip()"
+            matTooltipPosition="after"
+          >
+            <button
+              mat-menu-item
+              [disabled]="!!matchWindowSizeTooltip()"
+              (click)="matchWindowSize()"
+            >
+              @if (activeResolution() === 'match') {
+                <span>&#10004;</span>
+              }
+              Match Window Size
+            </button>
+          </div>
+        </mat-menu>
+
         @if (!readOnly()) {
+          <!-- Power -->
+          <button mat-menu-item [matMenuTriggerFor]="powerMenu">Power</button>
+          <mat-menu #powerMenu="matMenu">
+            <button mat-menu-item (click)="powerOn()">Power On</button>
+            <button mat-menu-item (click)="powerOff()">Power Off</button>
+            <button mat-menu-item (click)="reboot()">Reboot</button>
+            <button mat-menu-item (click)="shutdown()">Shutdown OS</button>
+          </mat-menu>
+
+          <!-- Snapshots -->
+          @if (canRevertSnapshots$ | async) {
+            <!-- The tooltip sits on a wrapper: a disabled button gets no hover events. -->
+            <div
+              [matTooltip]="
+                hasSnapshot()
+                  ? 'Select a snapshot to revert to'
+                  : 'No snapshots available'
+              "
+            >
+              <button
+                mat-menu-item
+                (click)="selectAndRevertSnapshot()"
+                [disabled]="!hasSnapshot()"
+              >
+                Snapshots
+              </button>
+            </div>
+          }
+
+          <!-- Files -->
+          @if (showFilesMenu()) {
+            <button
+              mat-menu-item
+              [matMenuTriggerFor]="fileMenu"
+              (menuOpened)="refreshGuestAgentState()"
+            >
+              Files
+            </button>
+          }
+          <mat-menu #fileMenu="matMenu">
+            @if (canUploadVmFiles()) {
+              <div
+                [matTooltip]="guestAgentRunning() ? '' : guestAgentTooltip"
+                matTooltipPosition="after"
+              >
+                <button
+                  mat-menu-item
+                  [disabled]="!guestAgentRunning() || uploading()"
+                  (click)="file.click()"
+                >
+                  Send File To VM
+                </button>
+              </div>
+            }
+            @if (canDownloadVmFiles()) {
+              <div
+                [matTooltip]="guestAgentRunning() ? '' : guestAgentTooltip"
+                matTooltipPosition="after"
+              >
+                <button
+                  mat-menu-item
+                  [disabled]="!guestAgentRunning() || uploading()"
+                  (click)="downloadFileFromVm()"
+                >
+                  Download File From VM
+                </button>
+              </div>
+            }
+            @if (canMountIso()) {
+              <button
+                mat-menu-item
+                [disabled]="retrievingIsos()"
+                (click)="startIsoMount()"
+              >
+                {{ retrievingIsos() ? 'Loading ISOs...' : 'Mount ISO' }}
+              </button>
+            }
+          </mat-menu>
+
           <button mat-menu-item [matMenuTriggerFor]="keyboardMenu">
             Keyboard
           </button>
@@ -24,32 +182,15 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
             <button mat-menu-item (click)="ctrlAltDel()">
               Send Ctrl-Alt-Del
             </button>
+            <button mat-menu-item (click)="sendInputString()">Send Text</button>
             <button mat-menu-item (click)="sendClipboardText()">
               Paste to Clipboard
             </button>
           </mat-menu>
 
-          <!-- Power -->
-          <button mat-menu-item [matMenuTriggerFor]="powerMenu">Power</button>
-          <mat-menu #powerMenu="matMenu">
-            <button mat-menu-item (click)="powerOn()">Power On</button>
-            <button mat-menu-item (click)="powerOff()">Power Off</button>
-            <button mat-menu-item (click)="reboot()">Reboot</button>
-            <button mat-menu-item (click)="shutdown()">Shutdown</button>
-          </mat-menu>
-
           @if (canAccessNicConfiguration() && networkMenuItems().length > 0) {
             <button mat-menu-item [matMenuTriggerFor]="networkMenu">
               Network Cards
-            </button>
-          }
-          @if (canMountIso()) {
-            <button
-              mat-menu-item
-              [disabled]="retrievingIsos()"
-              (click)="startIsoMount()"
-            >
-              {{ retrievingIsos() ? 'Loading ISOs...' : 'Mount ISO' }}
             </button>
           }
 
@@ -98,22 +239,85 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
               </mat-menu>
             }
           </mat-menu>
-        }
 
-        <button mat-menu-item (click)="$event.stopPropagation()">
-          <mat-slide-toggle
-            labelPosition="before"
-            color="primary"
-            [checked]="(theme$ | async) === 'dark-theme'"
-            (click)="$event.stopPropagation()"
-            (change)="toggleTheme($event)"
-          >
-            <mat-label class="mat-mdc-menu-item-text me-2"
-              >Dark Theme</mat-label
+          <!-- Clipboard -->
+          <button mat-menu-item [matMenuTriggerFor]="clipboardMenu">
+            Clipboard
+          </button>
+          <mat-menu #clipboardMenu="matMenu">
+            <div
+              [matTooltip]="vncClipboardEnabled() ? '' : vncClipboardTooltip"
+              matTooltipPosition="after"
             >
-          </mat-slide-toggle>
-        </button>
+              <button
+                mat-menu-item
+                [disabled]="!vncClipboardEnabled()"
+                (click)="copyVmClipboard()"
+              >
+                Copy
+              </button>
+            </div>
+            <button mat-menu-item (click)="pasteFromClipboard()">Paste</button>
+          </mat-menu>
+        }
       </mat-menu>
     </div>
+
+    @for (task of tasksInProgress(); track task.taskId) {
+      <span>
+        <h1 class="fs-6">
+          {{ task.taskName }}
+          @if (task.progress) {
+            ... {{ task.progress }}%
+          } @else {
+            (in progress)
+          }
+        </h1>
+      </span>
+    }
+  </div>
+
+  @if (!readOnly()) {
+    <div class="w-50 d-flex justify-content-center gap-3">
+      <div [matTooltip]="vncClipboardEnabled() ? '' : vncClipboardTooltip">
+        <button
+          mat-stroked-button
+          [title]="
+            vncClipboardEnabled()
+              ? 'Copy from Virtual Machine\'s clipboard'
+              : ''
+          "
+          [disabled]="!vncClipboardEnabled()"
+          (click)="copyVmClipboard()"
+        >
+          Copy
+          <mat-icon svgIcon="ic_clipboard_copy" />
+        </button>
+      </div>
+      <button
+        mat-stroked-button
+        title="Paste into the Virtual Machine"
+        (click)="pasteFromClipboard()"
+      >
+        Paste
+        <mat-icon svgIcon="ic_clipboard_paste" />
+      </button>
+      <button
+        mat-stroked-button
+        title="Send Ctrl-Alt-Del to the Virtual Machine"
+        (click)="ctrlAltDel()"
+      >
+        Ctrl-Alt-Del
+        <mat-icon svgIcon="keyboard" />
+      </button>
+    </div>
+  }
+
+  <div class="w-25">
+    @if (showConnectedUsers()) {
+      <div [title]="connectedUsersTooltip()">
+        <span class="connected-users">{{ connectedUsersLabel() }}</span>
+      </div>
+    }
   </div>
 </div>

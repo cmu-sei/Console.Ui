@@ -10,7 +10,11 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
         when virtualMachine.value.type == vmType.Proxmox;
         prefetch on idle
       ) {
-        <app-options-bar2 [vm]="virtualMachine.value" [readOnly]="readOnly()" />
+        <app-options-bar2
+          [vm]="virtualMachine.value"
+          [readOnly]="readOnly()"
+          [allowReadOnlyToggle]="allowReadOnlyToggle()"
+        />
         <app-proxmox-console
           [vm]="virtualMachine.value"
           [readOnly]="readOnly()"
