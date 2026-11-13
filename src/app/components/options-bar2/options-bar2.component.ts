@@ -560,11 +560,13 @@ export class OptionsBar2Component implements OnInit {
     }
 
     // Before the upload rather than after it: the API only refuses a file once it has all of it.
-    const tooLarge = filesOverUploadLimit(files);
+    // The limit is the one the API reports for this deployment.
+    const limit = this.proxmoxVm()?.fileUploadMaxBytes;
+    const tooLarge = filesOverUploadLimit(files, limit);
     if (tooLarge.length) {
       fileSelector.value = '';
       this.showMessage(
-        `Error Uploading File: ${uploadLimitMessage(tooLarge)}`,
+        `Error Uploading File: ${uploadLimitMessage(tooLarge, limit)}`,
         10000,
       );
       return;

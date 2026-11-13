@@ -19,30 +19,37 @@ import { IsoResult } from '../../models/vm/iso-result';
 import { NoVNCService, ResolutionMode } from '../novnc/novnc.service';
 
 /**
- * The largest file vm.api uploads to a Proxmox guest: PVE's agent/file-write takes at most 61440
- * characters of base64, which is 46080 bytes (45 KB). The API refuses a larger file, but only after
- * receiving all of it, so the console checks first. A deployment can configure a lower limit, which
- * only the API knows; the API's refusal still covers that.
+ * The files `uploadFiles` would send that are over `limitBytes`, the largest file vm.api accepts for
+ * a Proxmox guest as the Vm reports it (fileUploadMaxBytes). The API is configurable, so the limit
+ * comes from it rather than from here. The API refuses a larger file only after receiving all of it,
+ * so the console checks first. With no limit reported, by an API that predates the field, nothing is
+ * refused here and the API's own refusal still applies.
  */
-export const PROXMOX_UPLOAD_LIMIT_BYTES = 46080;
-
-/** The files `uploadFiles` would send that are over {@link PROXMOX_UPLOAD_LIMIT_BYTES}. */
-export function filesOverUploadLimit(files: FileList | File[]): File[] {
-  return Array.from(files).filter((f) => f.size > PROXMOX_UPLOAD_LIMIT_BYTES);
+export function filesOverUploadLimit(
+  files: FileList | File[],
+  limitBytes: number | null | undefined,
+): File[] {
+  if (!limitBytes || limitBytes <= 0) {
+    return [];
+  }
+  return Array.from(files).filter((f) => f.size > limitBytes);
 }
 
 /**
- * Says which files are too large, in the API's own words. Sizes are KB to two places, rounded so
- * that a file one byte over the limit never reads as equal to it.
+ * Says which files are over `limitBytes`, in the API's own words. Sizes are KB to two places, rounded
+ * so that a file one byte over the limit never reads as equal to it.
  */
-export function uploadLimitMessage(tooLarge: File[]): string {
+export function uploadLimitMessage(
+  tooLarge: File[],
+  limitBytes: number,
+): string {
   const kilobytes = (bytes: number, roundUp: boolean) => {
     const hundredths = (bytes * 100) / 1024;
     return String(
       (roundUp ? Math.ceil(hundredths) : Math.floor(hundredths)) / 100,
     );
   };
-  const limit = `${kilobytes(PROXMOX_UPLOAD_LIMIT_BYTES, false)} KB limit for uploading a file to a Proxmox virtual machine`;
+  const limit = `${kilobytes(limitBytes, false)} KB limit for uploading a file to a Proxmox virtual machine`;
   if (tooLarge.length === 1) {
     const [file] = tooLarge;
     return `${file.name} is ${kilobytes(file.size, true)} KB, which exceeds the ${limit}.`;

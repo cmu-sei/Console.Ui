@@ -1323,42 +1323,64 @@ describe('OptionsBar2Component', () => {
       expect(proxmox.uploadFiles).not.toHaveBeenCalled();
     });
 
+    // A Vm whose API reports `fileUploadMaxBytes`, here 2 KB: a deployment that configured a lower limit
+    // than PVE's 45 KB, which a limit built into the console would have missed.
+    const limitedVm = (fileUploadMaxBytes?: number) =>
+      of(networkVm({ guestAgentRunning: true, canMountIso: true, fileUploadMaxBytes }));
+
     /**
-     * Verifies: a file over the API's 45 KB limit is refused before anything is asked or sent, with the reason the API would give.
-     * Interacts with: the file input's change event; DialogService.getFileUploadInfo; ProxmoxService.uploadFiles; MatSnackBar.open.
-     * Data: 'big.bin' at 46081 bytes, one over PROXMOX_UPLOAD_LIMIT_BYTES.
-     * Why: the API enforces the limit only after receiving the whole file, so a large file used to upload in full behind the progress dialog just to get a 400.
+     * Verifies: a file over the limit the API reports is refused before anything is asked or sent, with the reason the API would give.
+     * Interacts with: the file input's change event; the Vm's fileUploadMaxBytes; DialogService.getFileUploadInfo; ProxmoxService.uploadFiles; MatSnackBar.open.
+     * Data: fileUploadMaxBytes 2048; 'big.bin' at 2049 bytes beside a small file.
+     * Why: the API enforces the limit only after receiving the whole file, so a large file used to upload in full behind the progress dialog just to get a 400. The limit is configurable, so it comes from the API.
      */
-    it('refuses a file over the upload limit without sending it', async () => {
+    it('refuses a file over the limit the API reports without sending it', async () => {
       const { fixture, dialogs, proxmox, snackBar } = await renderOptionsBar2({
         grants: canTransfer,
-        networkVm: agentVm(),
+        networkVm: limitedVm(2048),
       });
 
-      pickFiles(fixture, new File(['hi'], 'notes.txt'), new File([new Uint8Array(46081)], 'big.bin'));
+      pickFiles(fixture, new File(['hi'], 'notes.txt'), new File([new Uint8Array(2049)], 'big.bin'));
 
       expect(dialogs.getFileUploadInfo).not.toHaveBeenCalled();
       expect(proxmox.uploadFiles).not.toHaveBeenCalled();
       expect(snackBar.open).toHaveBeenCalledWith(
-        'Error Uploading File: big.bin is 45.01 KB, which exceeds the 45 KB limit for uploading a file to a Proxmox virtual machine.',
+        'Error Uploading File: big.bin is 2.01 KB, which exceeds the 2 KB limit for uploading a file to a Proxmox virtual machine.',
         'Close',
         expect.anything(),
       );
     });
 
     /**
-     * Verifies: a file exactly at the limit is uploaded as usual.
-     * Interacts with: the file input's change event; DialogService.getFileUploadInfo; ProxmoxService.uploadFiles.
-     * Data: 'max.bin' at 46080 bytes.
+     * Verifies: a file exactly at the reported limit is uploaded as usual.
+     * Interacts with: the file input's change event; the Vm's fileUploadMaxBytes; ProxmoxService.uploadFiles.
+     * Data: fileUploadMaxBytes 2048; 'max.bin' at 2048 bytes.
      */
-    it('uploads a file at the upload limit', async () => {
+    it('uploads a file at the reported limit', async () => {
       const { fixture, dialogs, proxmox } = await renderOptionsBar2({
         grants: canTransfer,
-        networkVm: agentVm(),
+        networkVm: limitedVm(2048),
       });
       dialogs.getFileUploadInfo.mockReturnValue(of({ filepath: '/tmp', username: '', password: '' }));
 
-      pickFiles(fixture, new File([new Uint8Array(46080)], 'max.bin'));
+      pickFiles(fixture, new File([new Uint8Array(2048)], 'max.bin'));
+
+      expect(proxmox.uploadFiles).toHaveBeenCalledOnce();
+    });
+
+    /**
+     * Verifies: with no limit reported, as from an API that predates fileUploadMaxBytes, the console refuses nothing and leaves the decision to the API.
+     * Interacts with: the file input's change event; ProxmoxService.uploadFiles.
+     * Data: no fileUploadMaxBytes; 'big.bin' at 100000 bytes.
+     */
+    it('leaves the limit to the API when it reports none', async () => {
+      const { fixture, dialogs, proxmox } = await renderOptionsBar2({
+        grants: canTransfer,
+        networkVm: limitedVm(undefined),
+      });
+      dialogs.getFileUploadInfo.mockReturnValue(of({ filepath: '/tmp', username: '', password: '' }));
+
+      pickFiles(fixture, new File([new Uint8Array(100000)], 'big.bin'));
 
       expect(proxmox.uploadFiles).toHaveBeenCalledOnce();
     });

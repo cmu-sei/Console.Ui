@@ -13,7 +13,6 @@ import {
 import { NoVNCService } from '../novnc/novnc.service';
 import {
   filesOverUploadLimit,
-  PROXMOX_UPLOAD_LIMIT_BYTES,
   ProxmoxService,
   toVmSnapshots,
   uploadLimitMessage,
@@ -137,23 +136,32 @@ describe('ProxmoxService', () => {
   });
 
   /**
-   * Verifies: the upload limit picks out files over 46080 bytes, and the message names them in the API's words, with sizes in KB rounded so one byte over never reads as the limit.
+   * Verifies: the upload limit picks out files over the limit given, and the message names them in the API's words, with sizes in KB rounded so one byte over never reads as the limit.
    * Interacts with: filesOverUploadLimit and uploadLimitMessage.
-   * Data: files of 46080, 46081 and 100000 bytes.
+   * Data: a 46080-byte limit (PVE's cap) with files of 46080, 46081 and 100000 bytes.
    */
   it('names the files over the upload limit as the API does', () => {
     const atLimit = new File([new Uint8Array(46080)], 'max.bin');
     const over = new File([new Uint8Array(46081)], 'over.bin');
     const big = new File([new Uint8Array(100000)], 'big.iso');
 
-    expect(PROXMOX_UPLOAD_LIMIT_BYTES).toBe(46080);
-    expect(filesOverUploadLimit([atLimit, over, big])).toEqual([over, big]);
-    expect(uploadLimitMessage([over])).toBe(
+    expect(filesOverUploadLimit([atLimit, over, big], 46080)).toEqual([over, big]);
+    expect(uploadLimitMessage([over], 46080)).toBe(
       'over.bin is 45.01 KB, which exceeds the 45 KB limit for uploading a file to a Proxmox virtual machine.',
     );
-    expect(uploadLimitMessage([over, big])).toBe(
+    expect(uploadLimitMessage([over, big], 46080)).toBe(
       'over.bin, big.iso exceed the 45 KB limit for uploading a file to a Proxmox virtual machine.',
     );
+  });
+
+  /**
+   * Verifies: with no limit, or a nonsensical one, nothing is refused: the API's own check still applies.
+   * Interacts with: filesOverUploadLimit.
+   * Data: a 100000-byte file with the limit undefined, null and 0.
+   */
+  it.each([undefined, null, 0])('refuses nothing with a limit of %s', (limit) => {
+    const big = new File([new Uint8Array(100000)], 'big.iso');
+    expect(filesOverUploadLimit([big], limit)).toEqual([]);
   });
 
   /**
