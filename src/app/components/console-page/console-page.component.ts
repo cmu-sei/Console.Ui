@@ -49,7 +49,7 @@ export class ConsolePageComponent implements OnInit, OnDestroy {
   readOnly$: Observable<boolean>;
   vmId$: Observable<string> = this.routerQuery.selectParams('id');
   vmId: string;
-  vmNotFound = signal(false);
+  readonly vmNotFound = signal(false);
 
   unsubscribe$ = new Subject();
 
