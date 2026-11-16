@@ -64,11 +64,7 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
 
         <!-- Resolution: where the vSphere bar has it, above Power. Shown on read-only consoles too,
              which can still scale. -->
-        <button
-          mat-menu-item
-          [matMenuTriggerFor]="resolutionMenu"
-          (menuOpened)="refreshResizeSupport()"
-        >
+        <button mat-menu-item [matMenuTriggerFor]="resolutionMenu">
           Resolution
         </button>
         <mat-menu #resolutionMenu="matMenu">

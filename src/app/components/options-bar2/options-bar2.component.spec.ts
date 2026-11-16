@@ -9,7 +9,7 @@ import { MatSlideToggleHarness } from '@angular/material/slide-toggle/testing';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { fireEvent, screen } from '@testing-library/angular';
 import userEvent from '@testing-library/user-event';
-import { BehaviorSubject, NEVER, Observable, Subject, of, throwError } from 'rxjs';
+import { BehaviorSubject, NEVER, Observable, of, throwError } from 'rxjs';
 import { Router } from '@angular/router';
 import { signal } from '@angular/core';
 import { ResolutionMode } from '../../services/novnc/novnc.service';
@@ -42,7 +42,6 @@ import {
   COPY_FROM_VM_FAILED_MESSAGE,
   GUEST_AGENT_TOOLTIP,
   OptionsBar2Component,
-  RESIZE_FALLBACK_MESSAGE,
   RESIZE_READ_ONLY_TOOLTIP,
   RESIZE_UNSUPPORTED_TOOLTIP,
   VNC_CLIPBOARD_TOOLTIP,
@@ -111,9 +110,7 @@ async function renderOptionsBar2(
   const apiVsphere = {
     powerOnVsphereVirtualMachine: vi.fn(() => of('submitted')),
   } satisfies ApiStub<ApiVsphereService>;
-  const resizeFallback$ = new Subject<void>();
   const proxmox = {
-    resizeFallback$,
     getVm: vi.fn<ProxmoxService['getVm']>(() => overrides.networkVm ?? of(networkVm())),
     changeNic: vi.fn<ProxmoxService['changeNic']>(() =>
       of(networkVm({ networkCards: { ...networkVm().networkCards, currentNetworks: { net0: 'vmbr1' } } })),
@@ -139,7 +136,7 @@ async function renderOptionsBar2(
     activeResolution: signal<ResolutionMode>(overrides.activeResolution ?? 'scale'),
     resizeSupported: signal(overrides.resizeSupported ?? true),
     setResolutionMode: vi.fn<ProxmoxService['setResolutionMode']>(),
-    refreshResizeSupport: vi.fn<ProxmoxService['refreshResizeSupport']>(),
+    setResizeSupported: vi.fn<ProxmoxService['setResizeSupported']>(),
   } satisfies Pick<
     ProxmoxService,
     | 'getVm'
@@ -160,8 +157,7 @@ async function renderOptionsBar2(
     | 'activeResolution'
     | 'resizeSupported'
     | 'setResolutionMode'
-    | 'refreshResizeSupport'
-    | 'resizeFallback$'
+    | 'setResizeSupported'
   >;
   const vsphere = {
     getVm: vi.fn<VsphereService['getVm']>(() => of(networkVm() as VsphereVirtualMachine)),
@@ -230,7 +226,6 @@ async function renderOptionsBar2(
     apiProxmox,
     apiVsphere,
     proxmox,
-    resizeFallback$,
     vsphere,
     dialogs,
     progress,
@@ -1699,25 +1694,24 @@ describe('OptionsBar2Component', () => {
     });
 
     /**
-     * Verifies: each item sets its mode through ProxmoxService, and opening the submenu re-reads server support.
-     * Interacts with: the Resolution submenu; ProxmoxService.setResolutionMode and refreshResizeSupport.
+     * Verifies: each item sets its mode through ProxmoxService.
+     * Interacts with: the Resolution submenu; ProxmoxService.setResolutionMode.
      * Data: resize supported; Match Window Size then Scale to Fit clicked.
      */
     it('sets the chosen mode', async () => {
       const { fixture, proxmox } = await renderOptionsBar2();
       await clickMenu(fixture, 'Resolution', 'Match Window Size');
       expect(proxmox.setResolutionMode).toHaveBeenLastCalledWith('match');
-      expect(proxmox.refreshResizeSupport).toHaveBeenCalled();
       await clickMenu(fixture, 'Resolution', /Scale to Fit/);
       expect(proxmox.setResolutionMode).toHaveBeenLastCalledWith('scale');
     });
 
     /**
-     * Verifies: with a server that can resize and an interactive console, Match Window Size is enabled with no tooltip.
+     * Verifies: with a display that can resize and an interactive console, Match Window Size is enabled with no tooltip.
      * Interacts with: the Resolution submenu; MatTooltipHarness on its wrapper.
      * Data: resizeSupported true; readOnly false.
      */
-    it('enables Match Window Size when the server can resize', async () => {
+    it('enables Match Window Size when the display can resize', async () => {
       const { fixture } = await renderOptionsBar2();
       const match = await findMenuItem(fixture, 'Resolution', 'Match Window Size');
       expect(await match.isDisabled()).toBe(false);
@@ -1727,7 +1721,7 @@ describe('OptionsBar2Component', () => {
     });
 
     /**
-     * Verifies: Match Window Size is disabled and says why when the server can't resize the guest, or when the console is read-only; Scale to Fit stays available.
+     * Verifies: Match Window Size is disabled and says why when the Vm's display can't resize, or when the console is read-only; Scale to Fit stays available.
      * Interacts with: the resizeSupported signal and readOnly input; the Resolution submenu; MatTooltipHarness on the wrapper.
      * Data: unsupported (interactive and read-only, the adapter reason wins), and supported but read-only.
      * Why: the Files items use the same disabled-with-wrapper-tooltip pattern; a disabled button gets no hover events itself.
@@ -1749,18 +1743,22 @@ describe('OptionsBar2Component', () => {
     });
 
     /**
-     * Verifies: when Match Window Size falls back to scaling because the guest kept its resolution, the bar says so once in a snackbar.
-     * Interacts with: ProxmoxService.resizeFallback$; MatSnackBar.open (through showMessage).
-     * Data: one fallback notice.
+     * Verifies: whether the Vm's display can resize is taken from the Vm's canResizeDisplay and handed to the console, false until the Vm has loaded and where the API doesn't say.
+     * Interacts with: ProxmoxService.getVm; ProxmoxService.setResizeSupported.
+     * Data: canResizeDisplay true, false and absent.
+     * Why: noVNC has no public way to learn whether a guest follows a resize, so vm.api reads it from the Vm's display adapter instead.
      */
-    it('says once that it went back to scaling', async () => {
-      const { resizeFallback$, snackBar } = await renderOptionsBar2();
-      resizeFallback$.next();
-      expect(snackBar.open).toHaveBeenCalledOnce();
-      expect(snackBar.open).toHaveBeenCalledWith(RESIZE_FALLBACK_MESSAGE, 'Close', {
-        duration: 10000,
-        verticalPosition: 'top',
+    it.each<[string, boolean | undefined, boolean]>([
+      ['true', true, true],
+      ['false', false, false],
+      ['absent', undefined, false],
+    ])('passes canResizeDisplay %s to the console', async (_, canResizeDisplay, expected) => {
+      const { proxmox } = await renderOptionsBar2({
+        networkVm: of(networkVm({ canResizeDisplay })),
       });
+      await vi.waitFor(() =>
+        expect(proxmox.setResizeSupported).toHaveBeenLastCalledWith(expected),
+      );
     });
   });
 

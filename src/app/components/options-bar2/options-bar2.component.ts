@@ -9,6 +9,7 @@ import {
   Input,
   OnInit,
   computed,
+  effect,
   linkedSignal,
   signal,
   inject,
@@ -81,8 +82,9 @@ export const GUEST_AGENT_TOOLTIP = 'Requires the QEMU guest agent';
 export const VNC_CLIPBOARD_TOOLTIP =
   'Copy from the VM needs the VNC clipboard (clipboard=vnc) enabled on this VM';
 
-// Tooltip on Match Window Size where the server never offered to resize the guest display (QEMU's
-// default std VGA, for one; virtio-gpu with a guest driver can).
+// Tooltip on Match Window Size where the Vm's display adapter can't resize (vm.api's
+// canResizeDisplay): QEMU passes a resize request only to virtio and virtio-gl, not to std VGA (the
+// default), cirrus, vmware or qxl.
 export const RESIZE_UNSUPPORTED_TOOLTIP =
   "This VM's display adapter can't change resolution from the console";
 
@@ -90,11 +92,6 @@ export const RESIZE_UNSUPPORTED_TOOLTIP =
 // whoever is driving it.
 export const RESIZE_READ_ONLY_TOOLTIP =
   "A read-only console can't change this VM's resolution";
-
-// Shown once when Match Window Size was chosen but the guest kept its resolution, so the console
-// went back to scaling.
-export const RESIZE_FALLBACK_MESSAGE =
-  "This VM didn't change resolution, so the console is scaling to fit instead.";
 
 // Shown when Copy is enabled but nothing has come over the VNC clipboard yet: the guest side of that
 // is spice-vdagent, which the Vm's config cannot tell us about.
@@ -180,9 +177,13 @@ export class OptionsBar2Component implements OnInit {
           this.tasks.set(data);
         }
       });
-    this.proxmoxService.resizeFallback$
-      .pipe(takeUntilDestroyed())
-      .subscribe(() => this.showMessage(RESIZE_FALLBACK_MESSAGE, 10000));
+    // Match Window Size is offered where vm.api says the Vm's display can resize, and not until the
+    // Vm has loaded.
+    effect(() =>
+      this.proxmoxService.setResizeSupported(
+        this.proxmoxVm()?.canResizeDisplay === true,
+      ),
+    );
   }
 
   ngOnInit() {
@@ -308,12 +309,6 @@ export class OptionsBar2Component implements OnInit {
 
   public matchWindowSize() {
     this.proxmoxService.setResolutionMode('match');
-  }
-
-  // Support is normally picked up as the server reports it; checking again on open covers a noVNC
-  // whose internals no longer give that hook.
-  public refreshResizeSupport() {
-    this.proxmoxService.refreshResizeSupport();
   }
 
   // Copy can only return what QEMU passes out over VNC, which it does only with clipboard=vnc.

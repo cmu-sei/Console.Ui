@@ -153,18 +153,17 @@ export class ProxmoxService {
     this.novncService.requestReconnect();
   }
 
-  // The resolution mode in effect on the console, and whether the server can resize the guest.
+  // The resolution mode in effect on the console, and whether the Vm's display can resize.
   public readonly activeResolution = this.novncService.activeResolution;
   public readonly resizeSupported = this.novncService.resizeSupported;
-  // Fires when Match Window Size fell back to scaling because the guest didn't resize.
-  public readonly resizeFallback$ = this.novncService.resizeFallback$;
 
   public setResolutionMode(mode: ResolutionMode) {
     this.novncService.setResolutionMode(mode);
   }
 
-  public refreshResizeSupport() {
-    this.novncService.refreshResizeSupport();
+  // Whether the Vm's display adapter can resize, from the Vm's canResizeDisplay.
+  public setResizeSupported(supported: boolean) {
+    this.novncService.setResizeSupported(supported);
   }
 
   public getGuestClipboard(): string | null {

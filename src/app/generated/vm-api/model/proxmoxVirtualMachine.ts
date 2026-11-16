@@ -28,6 +28,7 @@ export interface ProxmoxVirtualMachine {
     hasSnapshot?: boolean;
     currentSnapshot?: string | null;
     vncClipboardEnabled?: boolean;
+    canResizeDisplay?: boolean;
     fileUploadMaxBytes?: number;
 }
 
