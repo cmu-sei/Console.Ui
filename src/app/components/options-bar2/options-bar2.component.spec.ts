@@ -816,7 +816,7 @@ describe('OptionsBar2Component', () => {
         paste,
         'Ctrl-Alt-Del',
       ]);
-      expect(screen.getByRole('button', { name: new RegExp(`^${paste.replace('*', '\\*')}`) })).toBeEnabled();
+      expect(screen.getByRole('button', { name: paste })).toBeEnabled();
     });
 
     /**
