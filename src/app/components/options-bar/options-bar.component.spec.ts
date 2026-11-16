@@ -399,7 +399,6 @@ describe('OptionsBarComponent', () => {
         'Files',
         'Keyboard',
         'Network Cards',
-        'Clipboard',
       ]);
       expect(screen.getByRole('button', { name: /Ctrl-Alt-Del/ })).toBeInTheDocument();
     });
@@ -546,6 +545,32 @@ describe('OptionsBarComponent', () => {
       const user = userEvent.setup();
       const { wmks } = await renderOptionsBar();
       await user.click(screen.getByRole('button', { name: /Ctrl-Alt-Del/ }));
+      expect(wmks.sendCAD).toHaveBeenCalledOnce();
+    });
+
+    /**
+     * Verifies: the Keyboard menu holds the toolbar's three controls with the toolbar's labels, and the gear menu has no Clipboard submenu.
+     * Interacts with: the gear menu and Keyboard submenu (MatMenuHarness).
+     * Why: the Clipboard submenu only repeated the toolbar's Copy and Paste; the Proxmox bar has the same layout.
+     */
+    it('offers Copy, Paste and Ctrl-Alt-Del in the Keyboard menu', async () => {
+      const { fixture } = await renderOptionsBar();
+      expect(await itemTexts(await openSubmenu(fixture, 'Keyboard'))).toEqual([
+        'Copy',
+        'Paste',
+        'Ctrl-Alt-Del',
+      ]);
+    });
+
+    /**
+     * Verifies: Keyboard > Copy asks WMKS for the guest clipboard, and Keyboard > Ctrl-Alt-Del sends the combination, like the toolbar buttons.
+     * Interacts with: the Keyboard submenu; the fake WMKS client's grab and sendCAD.
+     */
+    it('copies and sends Ctrl-Alt-Del from the Keyboard menu', async () => {
+      const { fixture, wmks } = await renderOptionsBar();
+      await clickMenu(fixture, 'Keyboard', 'Copy');
+      expect(wmks.grab).toHaveBeenCalled();
+      await clickMenu(fixture, 'Keyboard', 'Ctrl-Alt-Del');
       expect(wmks.sendCAD).toHaveBeenCalledOnce();
     });
 
@@ -1177,7 +1202,7 @@ describe('OptionsBarComponent', () => {
       await openSubmenu(fixture, 'Keyboard');
       vi.useFakeTimers();
       try {
-        fireEvent.click(screen.getByRole('menuitem', { name: 'Send Text' }));
+        fireEvent.click(screen.getByRole('menuitem', { name: 'Paste' }));
         expect(wmks.sendInputString.mock.calls).toEqual([['one'], ['\n']]);
 
         await vi.advanceTimersByTimeAsync(0);
@@ -1198,7 +1223,7 @@ describe('OptionsBarComponent', () => {
       dialogs.sendText.mockReturnValue(of({ textToSend: 'hello', timeout: '50' }));
       vsphere.wmks = null;
 
-      await clickMenu(fixture, 'Keyboard', 'Send Text');
+      await clickMenu(fixture, 'Keyboard', 'Paste');
       await flush();
 
       // Current behavior; see agent-docs/ui-test-bugs/console.ui.md.

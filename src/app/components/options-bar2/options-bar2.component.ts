@@ -77,10 +77,16 @@ type NetworkVirtualMachine = ProxmoxVirtualMachine | VsphereVirtualMachine;
 // Tooltip on the controls that only work while the QEMU guest agent answers in the guest.
 export const GUEST_AGENT_TOOLTIP = 'Requires the QEMU guest agent';
 
-// Tooltip on Copy where the Vm's vga config lacks clipboard=vnc, so the guest's clipboard never
-// reaches noVNC.
-export const VNC_CLIPBOARD_TOOLTIP =
-  'Copy from the VM needs the VNC clipboard (clipboard=vnc) enabled on this VM';
+// Tooltip on Copy and Paste *, in the toolbar and the Keyboard menu, where the Vm's vga config
+// lacks clipboard=vnc: QEMU then has no clipboard to exchange with the console, so Copy can't work
+// and Paste types text instead of filling the VM's clipboard.
+export const CLIPBOARD_SETUP_TOOLTIP =
+  "To copy and paste between your clipboard and the VM's, set clipboard=vnc on this VM's display and run spice-vdagent in the guest. Until then, Paste * types text into the VM.";
+
+// Shown after the toolbar Paste has put the local clipboard on the VM's: nothing appears in the VM
+// until the guest pastes it.
+export const PASTED_TO_VM_CLIPBOARD_MESSAGE =
+  "Sent to the VM's clipboard. Press Ctrl+V in the VM to paste it.";
 
 // Tooltip on Match Window Size where the Vm's display adapter can't resize (vm.api's
 // canResizeDisplay): QEMU passes a resize request only to virtio and virtio-gl, not to std VGA (the
@@ -291,7 +297,15 @@ export class OptionsBar2Component implements OnInit {
       });
   }
 
-  public readonly vncClipboardTooltip = VNC_CLIPBOARD_TOOLTIP;
+  // Copy and Paste share one tooltip, shown only where the VNC clipboard is off.
+  public readonly clipboardTooltip = computed(() =>
+    this.vncClipboardEnabled() ? '' : CLIPBOARD_SETUP_TOOLTIP,
+  );
+
+  // Paste * marks a Paste that types text (through Send Text) rather than filling the VM's clipboard.
+  public readonly pasteLabel = computed(() =>
+    this.vncClipboardEnabled() ? 'Paste' : 'Paste *',
+  );
 
   public readonly activeResolution = this.proxmoxService.activeResolution;
 
@@ -696,10 +710,6 @@ export class OptionsBar2Component implements OnInit {
     this.vmService.sendCtrlAltDel(this.vm.id);
   }
 
-  public sendClipboardText() {
-    this.vmService.sendClipboardText(this.vm.id);
-  }
-
   public sendInputString() {
     this.dialogService
       .sendText('Enter Text to Send')
@@ -711,10 +721,15 @@ export class OptionsBar2Component implements OnInit {
       });
   }
 
-  // Types the local clipboard into the guest. When the browser won't hand the clipboard over
-  // (permission refused, or no Clipboard API), falls back to the Send Text dialog, as the vSphere
-  // bar does.
-  public async pasteFromClipboard() {
+  // The toolbar Paste. With the VNC clipboard on, the local clipboard goes to the VM's clipboard for
+  // the guest to paste. Without it (Paste *), or when the browser won't hand the clipboard over
+  // (permission refused, or no Clipboard API), it opens Send Text, which types instead. The Keyboard
+  // menu's Paste always opens Send Text.
+  public async pasteFromToolbar() {
+    if (!this.vncClipboardEnabled()) {
+      this.sendInputString();
+      return;
+    }
     let clip: string;
     try {
       clip = await navigator.clipboard.readText();
@@ -722,7 +737,15 @@ export class OptionsBar2Component implements OnInit {
       this.sendInputString();
       return;
     }
-    await this.paste(clip);
+    if (!clip) {
+      this.showMessage('Nothing to paste: your clipboard is empty');
+      return;
+    }
+    if (!this.proxmoxService.sendClipboardText(clip)) {
+      this.showMessage('Paste failed: the console is not connected', 10000);
+      return;
+    }
+    this.showMessage(PASTED_TO_VM_CLIPBOARD_MESSAGE);
   }
 
   // Same pacing as the vSphere bar: each line is typed and followed by Enter, then a pause of

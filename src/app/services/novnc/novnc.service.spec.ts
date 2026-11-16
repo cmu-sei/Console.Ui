@@ -115,14 +115,32 @@ describe('NoVNCService', () => {
   });
 
   /**
-   * Verifies: pasted text is forwarded to the client's clipboard.
-   * Interacts with: the seeded RFB client's clipboardPasteFrom.
-   * Data: pasted text 'hello'.
+   * Verifies: text for the VM's clipboard is forwarded to the connected client, and sendClipboardText() says it was sent.
+   * Interacts with: the seeded RFB client's clipboardPasteFrom; noVNC's public 'connect' event.
+   * Data: 'hello'.
    */
   it('forwards clipboard paste', () => {
-    const { service, rfb } = withClient();
-    service.sendClipboardText('hello');
+    const { service, rfb } = connectedClient();
+    expect(service.sendClipboardText('hello')).toBe(true);
     expect(rfb.clipboardPasteFrom).toHaveBeenCalledWith('hello');
+  });
+
+  /**
+   * Verifies: with no client, or one whose session is not up, nothing is sent to the VM's clipboard and sendClipboardText() says so.
+   * Interacts with: noVNC's public 'connect' and 'disconnect' events.
+   * Data: 'hello' with no client, before 'connect', and after 'disconnect'.
+   * Why: noVNC drops a ClientCutText while not connected, so the toolbar Paste would otherwise report text it never sent.
+   */
+  it('sends nothing to the clipboard of a console that is not connected', () => {
+    expect(new NoVNCService().sendClipboardText('hello')).toBe(false);
+
+    const { service, rfb } = withClient();
+    (service as unknown as { trackConnection(): void }).trackConnection();
+    expect(service.sendClipboardText('hello')).toBe(false);
+    fire(rfb, 'connect');
+    fire(rfb, 'disconnect');
+    expect(service.sendClipboardText('hello')).toBe(false);
+    expect(rfb.clipboardPasteFrom).not.toHaveBeenCalled();
   });
 
   /**

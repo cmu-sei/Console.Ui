@@ -248,11 +248,11 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
           <button mat-menu-item [matMenuTriggerFor]="keyboardMenu">
             Keyboard
           </button>
+          <!-- The toolbar's three controls, with the same labels. Paste here always opens Send Text. -->
           <mat-menu #keyboardMenu="matMenu">
-            <!-- send ctrl-alt-del -->
-            <button mat-menu-item (click)="cad()">Send Ctrl-Alt-Del</button>
-            <!-- paste text -->
-            <button mat-menu-item (click)="sendInputString()">Send Text</button>
+            <button mat-menu-item (click)="copyVmClipboard()">Copy</button>
+            <button mat-menu-item (click)="sendInputString()">Paste</button>
+            <button mat-menu-item (click)="cad()">Ctrl-Alt-Del</button>
           </mat-menu>
           @if (vsphereService.model.networkCards) {
             <span>
@@ -318,14 +318,6 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
               </mat-menu>
             </span>
           }
-          <!-- Clipboard -->
-          <button mat-menu-item [matMenuTriggerFor]="clipboardMenu">
-            Clipboard
-          </button>
-          <mat-menu #clipboardMenu="matMenu">
-            <button mat-menu-item (click)="copyVmClipboard()">Copy</button>
-            <button mat-menu-item (click)="pasteFromClipboard()">Paste</button>
-          </mat-menu>
         }
       </mat-menu>
     </div>

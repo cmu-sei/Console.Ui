@@ -174,8 +174,9 @@ export class ProxmoxService {
     this.novncService.sendCtrlAltDel();
   }
 
-  public sendClipboardText(text: string) {
-    this.novncService.sendClipboardText(text);
+  // Puts the text on the guest's clipboard. False when the console is not connected.
+  public sendClipboardText(text: string): boolean {
+    return this.novncService.sendClipboardText(text);
   }
 
   // Types the text into the guest as key presses. False when the console is not connected.

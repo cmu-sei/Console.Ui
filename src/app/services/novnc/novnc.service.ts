@@ -263,8 +263,17 @@ export class NoVNCService {
     this.rfb.sendCtrlAltDel();
   }
 
-  public sendClipboardText(text: string) {
+  /**
+   * Puts text on the guest's clipboard (a VNC ClientCutText), for the guest to paste itself. Only
+   * reaches the guest where QEMU's VNC clipboard is on (clipboard=vnc) and spice-vdagent runs in the
+   * guest. False, sending nothing, when the console is not connected.
+   */
+  public sendClipboardText(text: string): boolean {
+    if (!this.canType(this.rfb)) {
+      return false;
+    }
     this.rfb.clipboardPasteFrom(text);
+    return true;
   }
 
   /**

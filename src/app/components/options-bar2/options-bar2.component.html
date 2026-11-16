@@ -174,14 +174,24 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
           <button mat-menu-item [matMenuTriggerFor]="keyboardMenu">
             Keyboard
           </button>
+          <!-- The toolbar's three controls, with the same labels, states and tooltips. Paste here
+               always opens Send Text, which types, whatever the toolbar Paste does. -->
           <mat-menu #keyboardMenu="matMenu">
-            <button mat-menu-item (click)="ctrlAltDel()">
-              Send Ctrl-Alt-Del
-            </button>
-            <button mat-menu-item (click)="sendInputString()">Send Text</button>
-            <button mat-menu-item (click)="sendClipboardText()">
-              Paste to Clipboard
-            </button>
+            <div [matTooltip]="clipboardTooltip()" matTooltipPosition="after">
+              <button
+                mat-menu-item
+                [disabled]="!vncClipboardEnabled()"
+                (click)="copyVmClipboard()"
+              >
+                Copy
+              </button>
+            </div>
+            <div [matTooltip]="clipboardTooltip()" matTooltipPosition="after">
+              <button mat-menu-item (click)="sendInputString()">
+                {{ pasteLabel() }}
+              </button>
+            </div>
+            <button mat-menu-item (click)="ctrlAltDel()">Ctrl-Alt-Del</button>
           </mat-menu>
 
           @if (canAccessNicConfiguration() && networkMenuItems().length > 0) {
@@ -235,26 +245,6 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
               </mat-menu>
             }
           </mat-menu>
-
-          <!-- Clipboard -->
-          <button mat-menu-item [matMenuTriggerFor]="clipboardMenu">
-            Clipboard
-          </button>
-          <mat-menu #clipboardMenu="matMenu">
-            <div
-              [matTooltip]="vncClipboardEnabled() ? '' : vncClipboardTooltip"
-              matTooltipPosition="after"
-            >
-              <button
-                mat-menu-item
-                [disabled]="!vncClipboardEnabled()"
-                (click)="copyVmClipboard()"
-              >
-                Copy
-              </button>
-            </div>
-            <button mat-menu-item (click)="pasteFromClipboard()">Paste</button>
-          </mat-menu>
         }
       </mat-menu>
     </div>
@@ -275,7 +265,7 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
 
   @if (!readOnly()) {
     <div class="w-50 d-flex justify-content-center gap-3">
-      <div [matTooltip]="vncClipboardEnabled() ? '' : vncClipboardTooltip">
+      <div [matTooltip]="clipboardTooltip()">
         <button
           mat-stroked-button
           [title]="
@@ -290,14 +280,20 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
           <mat-icon svgIcon="ic_clipboard_copy" />
         </button>
       </div>
-      <button
-        mat-stroked-button
-        title="Paste into the Virtual Machine"
-        (click)="pasteFromClipboard()"
-      >
-        Paste
-        <mat-icon svgIcon="ic_clipboard_paste" />
-      </button>
+      <div [matTooltip]="clipboardTooltip()">
+        <button
+          mat-stroked-button
+          [title]="
+            vncClipboardEnabled()
+              ? 'Paste into the Virtual Machine\'s clipboard'
+              : ''
+          "
+          (click)="pasteFromToolbar()"
+        >
+          {{ pasteLabel() }}
+          <mat-icon svgIcon="ic_clipboard_paste" />
+        </button>
+      </div>
       <button
         mat-stroked-button
         title="Send Ctrl-Alt-Del to the Virtual Machine"
