@@ -12,7 +12,11 @@ import {
 import { MatSlideToggleHarness } from '@angular/material/slide-toggle/testing';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
-import { fireEvent, getDefaultNormalizer, screen } from '@testing-library/angular';
+import {
+  fireEvent,
+  getDefaultNormalizer,
+  screen,
+} from '@testing-library/angular';
 import userEvent from '@testing-library/user-event';
 import { BehaviorSubject, of, throwError } from 'rxjs';
 import {
@@ -131,7 +135,9 @@ async function renderOptionsBar(
     revertToSnapshot: vi.fn(() => of(undefined)),
     verifyCredentials: vi.fn(() => of(undefined)),
     sendFileToVm: vi.fn(() => of({})),
-    getVmFileUrl: vi.fn(() => of({ url: 'https://files.test/x', fileName: 'x.txt' })),
+    getVmFileUrl: vi.fn(() =>
+      of({ url: 'https://files.test/x', fileName: 'x.txt' }),
+    ),
     getIsos: vi.fn(() => of([])),
     mountIso: vi.fn(() => of(model({ name: 'Mounted' }))),
     setResolution: vi.fn(() => of(undefined)),
@@ -140,7 +146,9 @@ async function renderOptionsBar(
   // Every dialog closes without a result unless a test says otherwise.
   const dialogs = {
     sendText: vi.fn<DialogService['sendText']>(() => of(undefined)),
-    getFileUploadInfo: vi.fn<DialogService['getFileUploadInfo']>(() => of(undefined)),
+    getFileUploadInfo: vi.fn<DialogService['getFileUploadInfo']>(() =>
+      of(undefined),
+    ),
     mountIso: vi.fn<DialogService['mountIso']>(() => of(undefined)),
     selectSnapshot: vi.fn<DialogService['selectSnapshot']>(() => of(undefined)),
     uploadProgress: vi.fn<DialogService['uploadProgress']>(
@@ -148,24 +156,40 @@ async function renderOptionsBar(
     ),
   } satisfies Pick<
     DialogService,
-    'sendText' | 'getFileUploadInfo' | 'mountIso' | 'selectSnapshot' | 'uploadProgress'
+    | 'sendText'
+    | 'getFileUploadInfo'
+    | 'mountIso'
+    | 'selectSnapshot'
+    | 'uploadProgress'
   >;
   const confirm = vi.fn<CrucibleDialogService['confirm']>(() =>
     overrides.confirmation === 'dismissed'
       ? dismissedDialogRefStub<unknown, boolean>().dialogRef
       : dialogRefStub<unknown, boolean>(overrides.confirmation).dialogRef,
   );
-  const crucibleDialog = { confirm } satisfies Pick<CrucibleDialogService, 'confirm'>;
+  const crucibleDialog = { confirm } satisfies Pick<
+    CrucibleDialogService,
+    'confirm'
+  >;
   const tasksInProgress = new BehaviorSubject<NotificationData[]>([]);
   const notifications = {
     tasksInProgress,
     // The hub connection is not under test; a never-settling promise keeps it inert.
     connectToProgressHub:
       overrides.progressHub ?? vi.fn(() => new Promise<void>(() => undefined)),
-  } satisfies Pick<NotificationService, 'tasksInProgress' | 'connectToProgressHub'>;
+  } satisfies Pick<
+    NotificationService,
+    'tasksInProgress' | 'connectToProgressHub'
+  >;
   const currentVmUsers$ = new BehaviorSubject<string[]>([]);
-  const signalr = { currentVmUsers$ } satisfies Pick<SignalRService, 'currentVmUsers$'>;
-  const auth = { setUserTheme: vi.fn() } satisfies Pick<ComnAuthService, 'setUserTheme'>;
+  const signalr = { currentVmUsers$ } satisfies Pick<
+    SignalRService,
+    'currentVmUsers$'
+  >;
+  const auth = { setUserTheme: vi.fn() } satisfies Pick<
+    ComnAuthService,
+    'setUserTheme'
+  >;
   const snackBar = { open: vi.fn() } satisfies Pick<MatSnackBar, 'open'>;
 
   const rendered = await renderComponent(OptionsBarComponent, {
@@ -184,7 +208,10 @@ async function renderOptionsBar(
       { provide: ComnAuthService, useValue: auth },
       {
         provide: ComnAuthQuery,
-        useValue: { userTheme$: of(Theme.LIGHT) } satisfies Pick<ComnAuthQuery, 'userTheme$'>,
+        useValue: { userTheme$: of(Theme.LIGHT) } satisfies Pick<
+          ComnAuthQuery,
+          'userTheme$'
+        >,
       },
       { provide: MatSnackBar, useValue: snackBar },
       ...permissionDataProviders(overrides.grants ?? {}),
@@ -208,9 +235,8 @@ async function renderOptionsBar(
 }
 
 async function openMainMenu(fixture: ComponentFixture<OptionsBarComponent>) {
-  const menu = await TestbedHarnessEnvironment.loader(fixture).getHarness(
-    MatMenuHarness,
-  );
+  const menu =
+    await TestbedHarnessEnvironment.loader(fixture).getHarness(MatMenuHarness);
   await menu.open();
   return menu;
 }
@@ -331,7 +357,9 @@ describe('OptionsBarComponent', () => {
       await toggle.toggle();
       await fixture.whenStable();
 
-      expect(fixture.debugElement.injector.get(Router).url).toBe('/?readOnly=false');
+      expect(fixture.debugElement.injector.get(Router).url).toBe(
+        '/?readOnly=false',
+      );
     });
 
     /**
@@ -372,7 +400,9 @@ describe('OptionsBarComponent', () => {
      * Data: readOnly true; one connected user.
      */
     it('hides the clipboard bar and connected users when read-only', async () => {
-      const { fixture, currentVmUsers$ } = await renderOptionsBar({ readOnly: true });
+      const { fixture, currentVmUsers$ } = await renderOptionsBar({
+        readOnly: true,
+      });
       currentVmUsers$.next(['alice']);
       fixture.detectChanges();
 
@@ -401,7 +431,9 @@ describe('OptionsBarComponent', () => {
         'Network Cards',
         'Clipboard',
       ]);
-      expect(screen.getByRole('button', { name: /Ctrl-Alt-Del/ })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /Ctrl-Alt-Del/ }),
+      ).toBeInTheDocument();
     });
 
     /**
@@ -410,7 +442,9 @@ describe('OptionsBarComponent', () => {
      * Data: isOwner true.
      */
     it('hides Resolution from the Vm owner', async () => {
-      const { fixture } = await renderOptionsBar({ model: model({ isOwner: true }) });
+      const { fixture } = await renderOptionsBar({
+        model: model({ isOwner: true }),
+      });
       expect(await mainMenuItems(fixture)).not.toContain('Resolution');
     });
   });
@@ -462,8 +496,14 @@ describe('OptionsBarComponent', () => {
     it('does not show Snapshots for system or team permissions alone', async () => {
       const { fixture } = await renderOptionsBar({
         grants: {
-          system: [AppSystemPermission.ControlVms, AppSystemPermission.ManageViews],
-          team: [AppTeamPermission.ControlTeamVms, AppTeamPermission.ManageTeam],
+          system: [
+            AppSystemPermission.ControlVms,
+            AppSystemPermission.ManageViews,
+          ],
+          team: [
+            AppTeamPermission.ControlTeamVms,
+            AppTeamPermission.ManageTeam,
+          ],
         },
       });
       expect(await mainMenuItems(fixture)).not.toContain('Snapshots');
@@ -482,7 +522,10 @@ describe('OptionsBarComponent', () => {
             AppViewPermission.UploadVmFiles,
             AppViewPermission.DownloadVmFiles,
           ),
-          team: [AppTeamPermission.UploadTeamIsos, AppTeamPermission.ControlTeamVms],
+          team: [
+            AppTeamPermission.UploadTeamIsos,
+            AppTeamPermission.ControlTeamVms,
+          ],
         },
         ['Mount ISO'],
       ],
@@ -498,13 +541,26 @@ describe('OptionsBarComponent', () => {
       ],
       [
         'both file permissions',
-        { view: [AppViewPermission.UploadVmFiles, AppViewPermission.DownloadVmFiles] },
-        ['Enter VM Credentials', 'Send File To VM', 'Download File From VM', 'Mount ISO'],
+        {
+          view: [
+            AppViewPermission.UploadVmFiles,
+            AppViewPermission.DownloadVmFiles,
+          ],
+        },
+        [
+          'Enter VM Credentials',
+          'Send File To VM',
+          'Download File From VM',
+          'Mount ISO',
+        ],
       ],
-    ])('offers the right Files items with %s', async (_label, grants, expected) => {
-      const { fixture } = await renderOptionsBar({ grants });
-      expect(await submenuItems(fixture, 'Files')).toEqual(expected);
-    });
+    ])(
+      'offers the right Files items with %s',
+      async (_label, grants, expected) => {
+        const { fixture } = await renderOptionsBar({ grants });
+        expect(await submenuItems(fixture, 'Files')).toEqual(expected);
+      },
+    );
   });
 
   describe('actions', () => {
@@ -564,7 +620,10 @@ describe('OptionsBarComponent', () => {
       await toggle.toggle();
       await toggle.toggle();
 
-      expect(auth.setUserTheme.mock.calls).toEqual([[Theme.DARK], [Theme.LIGHT]]);
+      expect(auth.setUserTheme.mock.calls).toEqual([
+        [Theme.DARK],
+        [Theme.LIGHT],
+      ]);
     });
 
     /**
@@ -573,7 +632,8 @@ describe('OptionsBarComponent', () => {
      * Data: one running task at 40%, then the same task succeeded.
      */
     it('lists in-progress tasks from the progress hub', async () => {
-      const { fixture, notifications, tasksInProgress } = await renderOptionsBar();
+      const { fixture, notifications, tasksInProgress } =
+        await renderOptionsBar();
       expect(notifications.connectToProgressHub).toHaveBeenCalledWith('vm-1');
 
       const running: NotificationData = {
@@ -650,7 +710,11 @@ describe('OptionsBarComponent', () => {
         confirmText: 'Confirm',
         cancelText: 'Cancel',
       });
-      expect(vsphere.changeNic).toHaveBeenCalledWith('vm-1', 'adapter1', 'allowed');
+      expect(vsphere.changeNic).toHaveBeenCalledWith(
+        'vm-1',
+        'adapter1',
+        'allowed',
+      );
     });
 
     /**
@@ -665,7 +729,12 @@ describe('OptionsBarComponent', () => {
           model: restricted,
           confirmation,
         });
-        await clickMenu(fixture, 'Network Cards', 'adapter1', /Allowed Network/);
+        await clickMenu(
+          fixture,
+          'Network Cards',
+          'adapter1',
+          /Allowed Network/,
+        );
         expect(vsphere.changeNic).not.toHaveBeenCalled();
       },
     );
@@ -682,7 +751,11 @@ describe('OptionsBarComponent', () => {
       await clickMenu(fixture, 'Network Cards', 'adapter1', /Other Network/);
 
       expect(confirm).not.toHaveBeenCalled();
-      expect(vsphere.changeNic).toHaveBeenCalledWith('vm-1', 'adapter1', 'other');
+      expect(vsphere.changeNic).toHaveBeenCalledWith(
+        'vm-1',
+        'adapter1',
+        'other',
+      );
       expect(vsphere.model.name).toBe('Changed');
     });
 
@@ -715,7 +788,10 @@ describe('OptionsBarComponent', () => {
         'Charlie Net',
       ]);
 
-      await user.type(screen.getByPlaceholderText('Search networks...'), 'char');
+      await user.type(
+        screen.getByPlaceholderText('Search networks...'),
+        'char',
+      );
       expect(await itemTexts(adapter)).toEqual(['Charlie Net']);
 
       await adapter.close();
@@ -740,10 +816,15 @@ describe('OptionsBarComponent', () => {
 
       await clickMenu(fixture, 'Snapshots');
 
-      expect(dialogs.selectSnapshot).toHaveBeenCalledWith([{ id: 's1', name: 'Clean' }]);
+      expect(dialogs.selectSnapshot).toHaveBeenCalledWith([
+        { id: 's1', name: 'Clean' },
+      ]);
       expect(vsphere.revertToSnapshot).toHaveBeenCalledWith('vm-1', 's1');
       expect(confirm).toHaveBeenCalledWith(
-        expect.objectContaining({ title: 'Revert VM', message: 'Revert Successful' }),
+        expect.objectContaining({
+          title: 'Revert VM',
+          message: 'Revert Successful',
+        }),
       );
     });
 
@@ -757,7 +838,9 @@ describe('OptionsBarComponent', () => {
         grants: revertVms,
         model: model({ hasSnapshot: false }),
       });
-      expect(await (await findMenuItem(fixture, 'Snapshots')).isDisabled()).toBe(true);
+      expect(
+        await (await findMenuItem(fixture, 'Snapshots')).isDisabled(),
+      ).toBe(true);
     });
 
     /**
@@ -784,19 +867,27 @@ describe('OptionsBarComponent', () => {
         grants: revertVms,
       });
       dialogs.selectSnapshot.mockReturnValue(of({ id: 's1' }));
-      vsphere.revertToSnapshot = vi.fn(() => throwError(() => new Error('nope')));
+      vsphere.revertToSnapshot = vi.fn(() =>
+        throwError(() => new Error('nope')),
+      );
 
       await clickMenu(fixture, 'Snapshots');
 
       expect(confirm).toHaveBeenCalledWith(
-        expect.objectContaining({ title: 'Revert VM', message: 'Revert Failed' }),
+        expect.objectContaining({
+          title: 'Revert VM',
+          message: 'Revert Failed',
+        }),
       );
     });
   });
 
   describe('file transfer', () => {
     const fileGrants: PermissionGrants = {
-      view: [AppViewPermission.UploadVmFiles, AppViewPermission.DownloadVmFiles],
+      view: [
+        AppViewPermission.UploadVmFiles,
+        AppViewPermission.DownloadVmFiles,
+      ],
     };
 
     /** Enters credentials through Files > Enter VM Credentials. */
@@ -816,7 +907,9 @@ describe('OptionsBarComponent', () => {
     it('disables Enter VM Credentials without running VMware Tools', async () => {
       const { fixture } = await renderOptionsBar({
         grants: fileGrants,
-        model: model({ vmToolsStatus: VirtualMachineToolsStatus.toolsNotRunning }),
+        model: model({
+          vmToolsStatus: VirtualMachineToolsStatus.toolsNotRunning,
+        }),
       });
       const item = await findMenuItem(fixture, 'Files', 'Enter VM Credentials');
       expect(await item.isDisabled()).toBe(true);
@@ -837,7 +930,9 @@ describe('OptionsBarComponent', () => {
 
       expect(dialogs.getFileUploadInfo).not.toHaveBeenCalled();
       expect(confirm).toHaveBeenCalledWith(
-        expect.objectContaining({ message: 'Action requires VMware Tools to be running!' }),
+        expect.objectContaining({
+          message: 'Action requires VMware Tools to be running!',
+        }),
       );
       const send = await findMenuItem(fixture, 'Files', 'Send File To VM');
       expect(await send.isDisabled()).toBe(true);
@@ -851,18 +946,25 @@ describe('OptionsBarComponent', () => {
     it.each([
       ['C:\\Temp', 'C:\\Temp\\'],
       ['/tmp', '/tmp/'],
-    ])('normalizes %s to %s and enables upload once credentials verify', async (entered, stored) => {
-      const ctx = await renderOptionsBar({ grants: fileGrants });
-      const { fixture, vsphere } = ctx;
-      const send = () => findMenuItem(fixture, 'Files', 'Send File To VM');
-      expect(await (await send()).isDisabled()).toBe(true);
+    ])(
+      'normalizes %s to %s and enables upload once credentials verify',
+      async (entered, stored) => {
+        const ctx = await renderOptionsBar({ grants: fileGrants });
+        const { fixture, vsphere } = ctx;
+        const send = () => findMenuItem(fixture, 'Files', 'Send File To VM');
+        expect(await (await send()).isDisabled()).toBe(true);
 
-      await enterCredentials(ctx, { username: 'admin', password: 'pw', filepath: entered });
+        await enterCredentials(ctx, {
+          username: 'admin',
+          password: 'pw',
+          filepath: entered,
+        });
 
-      expect(vsphere.uploadConfig.filepath).toBe(stored);
-      expect(vsphere.verifyCredentials).toHaveBeenCalledWith('vm-1');
-      expect(await (await send()).isDisabled()).toBe(false);
-    });
+        expect(vsphere.uploadConfig.filepath).toBe(stored);
+        expect(vsphere.verifyCredentials).toHaveBeenCalledWith('vm-1');
+        expect(await (await send()).isDisabled()).toBe(false);
+      },
+    );
 
     /**
      * Verifies: a relative path re-opens the dialog with an explanation, without verifying.
@@ -872,7 +974,11 @@ describe('OptionsBarComponent', () => {
     it('asks again for a relative path', async () => {
       const ctx = await renderOptionsBar({ grants: fileGrants });
 
-      await enterCredentials(ctx, { username: 'admin', password: 'pw', filepath: 'temp' });
+      await enterCredentials(ctx, {
+        username: 'admin',
+        password: 'pw',
+        filepath: 'temp',
+      });
 
       expect(ctx.dialogs.getFileUploadInfo).toHaveBeenLastCalledWith(
         'The file path must be an absolute path.',
@@ -892,7 +998,9 @@ describe('OptionsBarComponent', () => {
     ])('re-prompts for the error %j with %j', async (title, prompt) => {
       const ctx = await renderOptionsBar({ grants: fileGrants });
       ctx.vsphere.verifyCredentials = vi.fn(() =>
-        throwError(() => new HttpErrorResponse({ status: 400, error: { title } })),
+        throwError(
+          () => new HttpErrorResponse({ status: 400, error: { title } }),
+        ),
       );
 
       await enterCredentials(ctx);
@@ -948,9 +1056,10 @@ describe('OptionsBarComponent', () => {
      */
     it('uploads the selected files and cleans up', async () => {
       const user = userEvent.setup();
-      const { fixture, vsphere, confirm, progress, component } = await renderOptionsBar({
-        grants: fileGrants,
-      });
+      const { fixture, vsphere, confirm, progress, component } =
+        await renderOptionsBar({
+          grants: fileGrants,
+        });
       const input = await openFileInput(fixture);
       const file = new File(['a'], 'a.txt');
 
@@ -977,9 +1086,10 @@ describe('OptionsBarComponent', () => {
     it('shows no message when an upload fails with no error body', async () => {
       const errors = captureUnhandledRxErrors();
       const user = userEvent.setup();
-      const { fixture, vsphere, confirm, progress, component } = await renderOptionsBar({
-        grants: fileGrants,
-      });
+      const { fixture, vsphere, confirm, progress, component } =
+        await renderOptionsBar({
+          grants: fileGrants,
+        });
       vsphere.sendFileToVm = vi.fn(() =>
         throwError(() => new HttpErrorResponse({ status: 401, error: null })),
       );
@@ -1002,7 +1112,9 @@ describe('OptionsBarComponent', () => {
      * Data: file input with no value.
      */
     it('ignores an empty file selection', async () => {
-      const { fixture, dialogs, vsphere } = await renderOptionsBar({ grants: fileGrants });
+      const { fixture, dialogs, vsphere } = await renderOptionsBar({
+        grants: fileGrants,
+      });
       const input = await openFileInput(fixture);
 
       fireEvent.change(input);
@@ -1029,10 +1141,16 @@ describe('OptionsBarComponent', () => {
 
       await clickMenu(fixture, 'Files', 'Download File From VM');
 
-      expect(dialogs.getFileUploadInfo).toHaveBeenLastCalledWith('Download File Settings', {
-        showCredentials: false,
-      });
-      expect(vsphere.getVmFileUrl).toHaveBeenCalledWith('vm-1', '/var/log/syslog');
+      expect(dialogs.getFileUploadInfo).toHaveBeenLastCalledWith(
+        'Download File Settings',
+        {
+          showCredentials: false,
+        },
+      );
+      expect(vsphere.getVmFileUrl).toHaveBeenCalledWith(
+        'vm-1',
+        '/var/log/syslog',
+      );
       const link = click.mock.contexts[0] as HTMLAnchorElement;
       expect(link.href).toBe('https://files.test/x');
       expect(link.download).toBe('x.txt');
@@ -1090,7 +1208,12 @@ describe('OptionsBarComponent', () => {
         'changeNic()',
         async ({ fixture, vsphere }, failure) => {
           vsphere.changeNic = vi.fn(() => throwError(() => failure));
-          await clickMenu(fixture, 'Network Cards', 'adapter1', /Other Network/);
+          await clickMenu(
+            fixture,
+            'Network Cards',
+            'adapter1',
+            /Other Network/,
+          );
         },
       ],
       [
@@ -1127,7 +1250,10 @@ describe('OptionsBarComponent', () => {
       const failure = new Error('nope');
       const bar = await renderOptionsBar({
         grants: {
-          view: [AppViewPermission.UploadVmFiles, AppViewPermission.DownloadVmFiles],
+          view: [
+            AppViewPermission.UploadVmFiles,
+            AppViewPermission.DownloadVmFiles,
+          ],
         },
       });
 
@@ -1156,7 +1282,12 @@ describe('OptionsBarComponent', () => {
       await user.click(screen.getByRole('button', { name: /^Paste/ }));
 
       await vi.waitFor(() =>
-        expect(wmks.sendInputString.mock.calls).toEqual([['one'], ['\n'], ['two'], ['\n']]),
+        expect(wmks.sendInputString.mock.calls).toEqual([
+          ['one'],
+          ['\n'],
+          ['two'],
+          ['\n'],
+        ]),
       );
     });
 
@@ -1181,7 +1312,12 @@ describe('OptionsBarComponent', () => {
         expect(wmks.sendInputString.mock.calls).toEqual([['one'], ['\n']]);
 
         await vi.advanceTimersByTimeAsync(0);
-        expect(wmks.sendInputString.mock.calls).toEqual([['one'], ['\n'], ['two'], ['\n']]);
+        expect(wmks.sendInputString.mock.calls).toEqual([
+          ['one'],
+          ['\n'],
+          ['two'],
+          ['\n'],
+        ]);
       } finally {
         vi.useRealTimers();
       }
@@ -1195,7 +1331,9 @@ describe('OptionsBarComponent', () => {
     it('lets Send Text fail unhandled without a console client', async () => {
       const errors = captureUnhandledRxErrors();
       const { fixture, dialogs, vsphere, confirm } = await renderOptionsBar();
-      dialogs.sendText.mockReturnValue(of({ textToSend: 'hello', timeout: '50' }));
+      dialogs.sendText.mockReturnValue(
+        of({ textToSend: 'hello', timeout: '50' }),
+      );
       vsphere.wmks = null;
 
       await clickMenu(fixture, 'Keyboard', 'Send Text');
@@ -1277,7 +1415,9 @@ describe('OptionsBarComponent', () => {
       expect(screen.getByText(label)).toBeInTheDocument();
       // The tooltip separates names with newlines, which the default normalizer would collapse.
       const keepNewlines = getDefaultNormalizer({ collapseWhitespace: false });
-      expect(screen.getByTitle(tooltip, { normalizer: keepNewlines })).toHaveTextContent(label);
+      expect(
+        screen.getByTitle(tooltip, { normalizer: keepNewlines }),
+      ).toHaveTextContent(label);
     });
 
     /**
@@ -1300,9 +1440,9 @@ describe('OptionsBarComponent', () => {
      */
     it('garbles the summary for more than two users', async () => {
       const { component } = await renderOptionsBar();
-      expect(component.formatConnectedUser(['alice', 'bob', 'carol', 'dave'])).toBe(
-        'Connected: alice, bob,  and 2others.',
-      );
+      expect(
+        component.formatConnectedUser(['alice', 'bob', 'carol', 'dave']),
+      ).toBe('Connected: alice, bob,  and 2others.');
     });
   });
 });

@@ -13,6 +13,8 @@
     "test:watch": "ng test",
     "test:coverage": "ng test --watch=false --configuration coverage",
     "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "e2e": "ng e2e",
     "swagger:gen": "curl --insecure http://localhost:4302/swagger/v1/swagger.json --output swagger.json && node_modules/@openapitools/openapi-generator-cli/bin/openapi-generator generate -i ./swagger.json -g typescript-angular -o src/app/generated/vm-api --additional-properties ngVersion=9.1 --additional-properties useRxJS6=true --additional-properties modelPropertyNaming=original",
     "swagger:gen-docker": "node -e \"require('fs').rmSync('src/app/generated/vm-api',{recursive:true,force:true})\" && cross-env-shell docker run --rm -v $INIT_CWD:/local openapitools/openapi-generator-cli:v7.2.0 generate -i http://host.docker.internal:4302/swagger/v1/swagger.json?format=openapi -g typescript-angular -o /local/src/app/generated/vm-api $npm_package_config_openapiArgs"
@@ -62,7 +64,7 @@
     "jasmine-spec-reporter": "^7.0.0",
     "jsdom": "^28.1.0",
     "patch-package": "^8.0.1",
-    "prettier": "^3.9.10",
+    "prettier": "^3.10.1",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3",
     "vitest": "^4.1.12"

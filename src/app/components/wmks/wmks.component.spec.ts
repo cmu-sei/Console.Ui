@@ -10,17 +10,32 @@ import {
   VsphereService as ApiVsphereService,
   VsphereVirtualMachine,
 } from '../../generated/vm-api';
-import { VirtualMachineToolsStatus, VmResolution } from '../../models/vm/vm-model';
+import {
+  VirtualMachineToolsStatus,
+  VmResolution,
+} from '../../models/vm/vm-model';
 import { VmService } from '../../state/vm/vm.service';
 import { VsphereService } from '../../state/vsphere/vsphere.service';
 import { WmksComponent } from './wmks.component';
 import { renderComponent } from '../../test-utils/render-component';
 import { ApiStub } from '../../test-utils/api-stub';
 import { unstubbed } from '../../test-utils/unstubbed';
-import { FakeWmksLib, installFakeWmks, WMKS_CONST } from '../../test-utils/fake-wmks';
+import {
+  FakeWmksLib,
+  installFakeWmks,
+  WMKS_CONST,
+} from '../../test-utils/fake-wmks';
 
-function vsphereVm(overrides: Partial<VsphereVirtualMachine> = {}): VsphereVirtualMachine {
-  return { id: 'vm-1', name: 'Alpha', state: 'on', isOwner: true, ...overrides };
+function vsphereVm(
+  overrides: Partial<VsphereVirtualMachine> = {},
+): VsphereVirtualMachine {
+  return {
+    id: 'vm-1',
+    name: 'Alpha',
+    state: 'on',
+    isOwner: true,
+    ...overrides,
+  };
 }
 
 // The fake WMKS SDK; installed in beforeEach.
@@ -33,15 +48,22 @@ async function renderWmks(
   // and derives connected$/disconnected$. Only the vm-api endpoints it calls
   // are stubbed.
   const api = {
-    getVsphereVirtualMachine: vi.fn((_id: string) => of(options.vm ?? vsphereVm())),
-    getVsphereVirtualMachineToolsStatus: vi.fn(() => of(VirtualMachineToolsStatus.toolsOk)),
+    getVsphereVirtualMachine: vi.fn((_id: string) =>
+      of(options.vm ?? vsphereVm()),
+    ),
+    getVsphereVirtualMachineToolsStatus: vi.fn(() =>
+      of(VirtualMachineToolsStatus.toolsOk),
+    ),
     powerOffVsphereVirtualMachine: vi.fn(() => of('poweroff submitted')),
   } satisfies ApiStub<ApiVsphereService>;
   const connect = vi.spyOn(VsphereService.prototype, 'connect');
   const disconnect = vi.spyOn(VsphereService.prototype, 'disconnect');
 
   const rendered = await renderComponent(WmksComponent, {
-    inputs: { vmId: 'vm-1', ...('readOnly' in options ? { readOnly: options.readOnly } : {}) },
+    inputs: {
+      vmId: 'vm-1',
+      ...('readOnly' in options ? { readOnly: options.readOnly } : {}),
+    },
     providers: [
       provideHttpClient(),
       provideHttpClientTesting(),
@@ -102,7 +124,9 @@ describe('WmksComponent', () => {
     await vi.advanceTimersByTimeAsync(5000);
     expect(api.getVsphereVirtualMachine).toHaveBeenCalledTimes(2);
 
-    api.getVsphereVirtualMachine.mockReturnValue(of(vsphereVm({ ticket: 'ticket-1' })));
+    api.getVsphereVirtualMachine.mockReturnValue(
+      of(vsphereVm({ ticket: 'ticket-1' })),
+    );
     await vi.advanceTimersByTimeAsync(5000);
     expect(api.getVsphereVirtualMachine).toHaveBeenCalledTimes(3);
     const [client] = wmksLib.clients;
@@ -156,17 +180,25 @@ describe('WmksComponent', () => {
     vi.useFakeTimers();
     const { fixture, api, vsphere } = await renderWmks({ readOnly: false });
     api.getVsphereVirtualMachine.mockReturnValue(
-      throwError(() => new HttpErrorResponse({ status: 0, statusText: 'Unknown Error' })),
+      throwError(
+        () => new HttpErrorResponse({ status: 0, statusText: 'Unknown Error' }),
+      ),
     );
     await vi.advanceTimersByTimeAsync(5000);
     await vi.advanceTimersByTimeAsync(5000);
     fixture.detectChanges();
 
-    expect(vsphere.model.state).toBe('Http failure response for (unknown url): 0 Unknown Error');
+    expect(vsphere.model.state).toBe(
+      'Http failure response for (unknown url): 0 Unknown Error',
+    );
     expect(
-      screen.queryByRole('heading', { name: 'The VM Console API is currently not reachable.' }),
+      screen.queryByRole('heading', {
+        name: 'The VM Console API is currently not reachable.',
+      }),
     ).not.toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: /^Connecting/ })).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: /^Connecting/ }),
+    ).toBeInTheDocument();
   });
 
   /**
@@ -178,14 +210,20 @@ describe('WmksComponent', () => {
   it.each([
     ['off', 'ic_power_settings_new_black_48px'],
     ['error', 'ic_error_outline_black_48px'],
-  ])("shows the placeholder icon for a Vm in state '%s'", async (state, icon) => {
-    const { fixture, container } = await renderWmks({
-      readOnly: false,
-      vm: vsphereVm({ state }),
-    });
-    fixture.detectChanges();
-    expect(container.querySelector('mat-icon')).toHaveAttribute('data-mat-icon-name', icon);
-  });
+  ])(
+    "shows the placeholder icon for a Vm in state '%s'",
+    async (state, icon) => {
+      const { fixture, container } = await renderWmks({
+        readOnly: false,
+        vm: vsphereVm({ state }),
+      });
+      fixture.detectChanges();
+      expect(container.querySelector('mat-icon')).toHaveAttribute(
+        'data-mat-icon-name',
+        icon,
+      );
+    },
+  );
 
   /**
    * Verifies: the lock placeholder renders when showLock is set.
@@ -227,7 +265,9 @@ describe('WmksComponent', () => {
    * Data: vmId 'vm-1' → 'vm-2', then destroy.
    */
   it('disconnects when the Vm changes and on destroy', async () => {
-    const { fixture, disconnect, rerender } = await renderWmks({ readOnly: false });
+    const { fixture, disconnect, rerender } = await renderWmks({
+      readOnly: false,
+    });
     disconnect.mockClear();
 
     await rerender({ inputs: { vmId: 'vm-2' }, partialUpdate: true });

@@ -31,7 +31,10 @@ import { VsphereService } from '../../state/vsphere/vsphere.service';
 import { OptionsBar2Component } from './options-bar2.component';
 import { renderComponent } from '../../test-utils/render-component';
 import { ApiStub } from '../../test-utils/api-stub';
-import { dialogRefStub, dismissedDialogRefStub } from '../../test-utils/dialog-refs';
+import {
+  dialogRefStub,
+  dismissedDialogRefStub,
+} from '../../test-utils/dialog-refs';
 import { stubClipboard } from '../../test-utils/clipboard';
 import {
   captureUnhandledRxErrors,
@@ -78,9 +81,18 @@ async function renderOptionsBar2(
     powerOnVsphereVirtualMachine: vi.fn(() => of('submitted')),
   } satisfies ApiStub<ApiVsphereService>;
   const proxmox = {
-    getVm: vi.fn<ProxmoxService['getVm']>(() => overrides.networkVm ?? of(networkVm())),
+    getVm: vi.fn<ProxmoxService['getVm']>(
+      () => overrides.networkVm ?? of(networkVm()),
+    ),
     changeNic: vi.fn<ProxmoxService['changeNic']>(() =>
-      of(networkVm({ networkCards: { ...networkVm().networkCards, currentNetworks: { net0: 'vmbr1' } } })),
+      of(
+        networkVm({
+          networkCards: {
+            ...networkVm().networkCards,
+            currentNetworks: { net0: 'vmbr1' },
+          },
+        }),
+      ),
     ),
     getIsos: vi.fn<ProxmoxService['getIsos']>(() => of([])),
     mountIso: vi.fn<ProxmoxService['mountIso']>(() => of(networkVm())),
@@ -88,10 +100,17 @@ async function renderOptionsBar2(
     sendClipboardText: vi.fn<ProxmoxService['sendClipboardText']>(),
   } satisfies Pick<
     ProxmoxService,
-    'getVm' | 'changeNic' | 'getIsos' | 'mountIso' | 'sendCtrlAltDel' | 'sendClipboardText'
+    | 'getVm'
+    | 'changeNic'
+    | 'getIsos'
+    | 'mountIso'
+    | 'sendCtrlAltDel'
+    | 'sendClipboardText'
   >;
   const vsphere = {
-    getVm: vi.fn<VsphereService['getVm']>(() => of(networkVm() as VsphereVirtualMachine)),
+    getVm: vi.fn<VsphereService['getVm']>(() =>
+      of(networkVm() as VsphereVirtualMachine),
+    ),
     changeNic: vi.fn(() => of({})),
   } satisfies Pick<VsphereService, 'getVm' | 'changeNic'>;
   const dialogs = {
@@ -102,8 +121,14 @@ async function renderOptionsBar2(
       ? dismissedDialogRefStub<unknown, boolean>().dialogRef
       : dialogRefStub<unknown, boolean>(overrides.confirmation).dialogRef,
   );
-  const crucibleDialog = { confirm } satisfies Pick<CrucibleDialogService, 'confirm'>;
-  const auth = { setUserTheme: vi.fn() } satisfies Pick<ComnAuthService, 'setUserTheme'>;
+  const crucibleDialog = { confirm } satisfies Pick<
+    CrucibleDialogService,
+    'confirm'
+  >;
+  const auth = { setUserTheme: vi.fn() } satisfies Pick<
+    ComnAuthService,
+    'setUserTheme'
+  >;
   const snackBar = { open: vi.fn() } satisfies Pick<MatSnackBar, 'open'>;
 
   const rendered = await renderComponent(OptionsBar2Component, {
@@ -119,7 +144,10 @@ async function renderOptionsBar2(
       { provide: ComnAuthService, useValue: auth },
       {
         provide: ComnAuthQuery,
-        useValue: { userTheme$: of(Theme.LIGHT) } satisfies Pick<ComnAuthQuery, 'userTheme$'>,
+        useValue: { userTheme$: of(Theme.LIGHT) } satisfies Pick<
+          ComnAuthQuery,
+          'userTheme$'
+        >,
       },
       { provide: MatSnackBar, useValue: snackBar },
     ],
@@ -150,9 +178,8 @@ type ProxmoxPowerMethod =
 type MenuText = string | RegExp;
 
 async function menu(fixture: Fixture) {
-  const harness = await TestbedHarnessEnvironment.loader(fixture).getHarness(
-    MatMenuHarness,
-  );
+  const harness =
+    await TestbedHarnessEnvironment.loader(fixture).getHarness(MatMenuHarness);
   await harness.open();
   return harness;
 }
@@ -167,7 +194,11 @@ async function menuTexts(fixture: Fixture) {
 }
 
 /** Opens the gear menu and clicks through submenu labels to the item, as a user does. */
-async function clickMenu(fixture: Fixture, first: MenuText, ...rest: MenuText[]) {
+async function clickMenu(
+  fixture: Fixture,
+  first: MenuText,
+  ...rest: MenuText[]
+) {
   const harness = await menu(fixture);
   await harness.clickItem({ text: first }, ...rest.map((text) => ({ text })));
 }
@@ -186,7 +217,9 @@ async function openSubmenu(fixture: Fixture, ...path: MenuText[]) {
 /** The menu item at the end of `path` (submenu labels, then the item). */
 async function findMenuItem(fixture: Fixture, ...path: MenuText[]) {
   const label = path.pop()!;
-  const [item] = await (await openSubmenu(fixture, ...path)).getItems({ text: label });
+  const [item] = await (
+    await openSubmenu(fixture, ...path)
+  ).getItems({ text: label });
   return item;
 }
 
@@ -232,7 +265,11 @@ describe('OptionsBar2Component', () => {
       const { fixture } = await renderOptionsBar2({
         networkVm: of(networkVm({ canAccessNicConfiguration: false })),
       });
-      expect(await menuTexts(fixture)).toEqual(['Keyboard', 'Power', 'Dark Theme']);
+      expect(await menuTexts(fixture)).toEqual([
+        'Keyboard',
+        'Power',
+        'Dark Theme',
+      ]);
     });
   });
 
@@ -284,7 +321,11 @@ describe('OptionsBar2Component', () => {
       const { fixture } = await renderOptionsBar2({
         networkVm: throwError(() => new Error('nope')),
       });
-      expect(await menuTexts(fixture)).toEqual(['Keyboard', 'Power', 'Dark Theme']);
+      expect(await menuTexts(fixture)).toEqual([
+        'Keyboard',
+        'Power',
+        'Dark Theme',
+      ]);
     });
   });
 
@@ -303,7 +344,10 @@ describe('OptionsBar2Component', () => {
       const [current] = await adapter.getItems({ text: /Lab/ });
       expect(await current.isDisabled()).toBe(true);
 
-      await user.type(screen.getByRole('searchbox', { name: 'Search networks' }), 'inter');
+      await user.type(
+        screen.getByRole('searchbox', { name: 'Search networks' }),
+        'inter',
+      );
       expect(await itemTexts(adapter)).toEqual(['Internet']);
 
       await adapter.close();
@@ -408,12 +452,17 @@ describe('OptionsBar2Component', () => {
       await clickMenu(fixture, 'Mount ISO');
 
       expect(proxmox.getIsos).toHaveBeenCalledWith('vm-1');
-      expect(proxmox.mountIso).toHaveBeenCalledWith('vm-1', 'local:iso/tools.iso');
+      expect(proxmox.mountIso).toHaveBeenCalledWith(
+        'vm-1',
+        'local:iso/tools.iso',
+      );
       expect(snackBar.open).toHaveBeenCalledWith('Mounted tools.iso', 'Close', {
         duration: 5000,
         verticalPosition: 'top',
       });
-      expect(await (await findMenuItem(fixture, 'Mount ISO')).isDisabled()).toBe(false);
+      expect(
+        await (await findMenuItem(fixture, 'Mount ISO')).isDisabled(),
+      ).toBe(false);
     });
 
     /**
@@ -422,7 +471,9 @@ describe('OptionsBar2Component', () => {
      * Data: one click while the listing is in flight.
      */
     it('disables Mount ISO while ISOs load', async () => {
-      const { fixture, proxmox } = await renderOptionsBar2({ networkVm: isoVm() });
+      const { fixture, proxmox } = await renderOptionsBar2({
+        networkVm: isoVm(),
+      });
       // NEVER keeps the first listing in flight.
       proxmox.getIsos.mockReturnValue(NEVER);
 
@@ -442,7 +493,9 @@ describe('OptionsBar2Component', () => {
       const { fixture, proxmox, snackBar } = await renderOptionsBar2({
         networkVm: isoVm(),
       });
-      proxmox.getIsos.mockReturnValueOnce(throwError(() => new Error('denied')));
+      proxmox.getIsos.mockReturnValueOnce(
+        throwError(() => new Error('denied')),
+      );
 
       await clickMenu(fixture, 'Mount ISO');
 
@@ -451,7 +504,9 @@ describe('OptionsBar2Component', () => {
         'Close',
         expect.objectContaining({ duration: 10000 }),
       );
-      expect(await (await findMenuItem(fixture, 'Mount ISO')).isDisabled()).toBe(false);
+      expect(
+        await (await findMenuItem(fixture, 'Mount ISO')).isDisabled(),
+      ).toBe(false);
     });
 
     /**
@@ -463,7 +518,9 @@ describe('OptionsBar2Component', () => {
       const { fixture, proxmox, dialogs, snackBar } = await renderOptionsBar2({
         networkVm: isoVm(),
       });
-      dialogs.mountIso.mockReturnValue(of({ filename: 'a.iso', mountValue: 'local:iso/a.iso' }));
+      dialogs.mountIso.mockReturnValue(
+        of({ filename: 'a.iso', mountValue: 'local:iso/a.iso' }),
+      );
       proxmox.mountIso.mockReturnValue(throwError(() => new Error('busy')));
 
       await clickMenu(fixture, 'Mount ISO');
@@ -481,7 +538,9 @@ describe('OptionsBar2Component', () => {
      * Data: picker dismissed.
      */
     it('mounts nothing when the picker is dismissed', async () => {
-      const { fixture, proxmox } = await renderOptionsBar2({ networkVm: isoVm() });
+      const { fixture, proxmox } = await renderOptionsBar2({
+        networkVm: isoVm(),
+      });
       await clickMenu(fixture, 'Mount ISO');
       expect(proxmox.mountIso).not.toHaveBeenCalled();
     });
@@ -494,11 +553,18 @@ describe('OptionsBar2Component', () => {
      * Data: Proxmox Vm 'vm-1'.
      */
     it('powers on without confirmation', async () => {
-      const { fixture, apiProxmox, snackBar, confirm } = await renderOptionsBar2();
+      const { fixture, apiProxmox, snackBar, confirm } =
+        await renderOptionsBar2();
       await clickMenu(fixture, 'Power', 'Power On');
       expect(confirm).not.toHaveBeenCalled();
-      expect(apiProxmox.powerOnProxmoxVirtualMachine).toHaveBeenCalledWith('vm-1');
-      expect(snackBar.open).toHaveBeenCalledWith('Power On submitted', 'Close', expect.anything());
+      expect(apiProxmox.powerOnProxmoxVirtualMachine).toHaveBeenCalledWith(
+        'vm-1',
+      );
+      expect(snackBar.open).toHaveBeenCalledWith(
+        'Power On submitted',
+        'Close',
+        expect.anything(),
+      );
     });
 
     /**
@@ -511,14 +577,24 @@ describe('OptionsBar2Component', () => {
         vm: { id: 'vm-2', name: 'Bravo', type: VmType.Vsphere },
       });
       await clickMenu(fixture, 'Power', 'Power On');
-      expect(apiVsphere.powerOnVsphereVirtualMachine).toHaveBeenCalledWith('vm-2');
+      expect(apiVsphere.powerOnVsphereVirtualMachine).toHaveBeenCalledWith(
+        'vm-2',
+      );
       expect(apiProxmox.powerOnProxmoxVirtualMachine).not.toHaveBeenCalled();
     });
 
     const confirmed: Array<[PowerAction, ProxmoxPowerMethod, string]> = [
-      [PowerAction.PowerOff, 'powerOffProxmoxVirtualMachine', 'Power off "Alpha"? The guest OS will not be shut down cleanly.'],
+      [
+        PowerAction.PowerOff,
+        'powerOffProxmoxVirtualMachine',
+        'Power off "Alpha"? The guest OS will not be shut down cleanly.',
+      ],
       [PowerAction.Reboot, 'rebootProxmoxVirtualMachine', 'Reboot "Alpha"?'],
-      [PowerAction.Shutdown, 'shutdownProxmoxVirtualMachine', 'Shut down the guest OS on "Alpha"?'],
+      [
+        PowerAction.Shutdown,
+        'shutdownProxmoxVirtualMachine',
+        'Shut down the guest OS on "Alpha"?',
+      ],
     ];
 
     /**
@@ -526,17 +602,20 @@ describe('OptionsBar2Component', () => {
      * Interacts with: the Power submenu item named for the action; CrucibleDialogService.confirm stub; real VmService over the generated ProxmoxService.
      * Data: the action under test, confirmed.
      */
-    it.each(confirmed)('confirms %s before sending it', async (action, endpoint, message) => {
-      const ctx = await renderOptionsBar2({ confirmation: true });
-      await clickMenu(ctx.fixture, 'Power', action);
-      expect(ctx.confirm).toHaveBeenCalledWith({
-        title: `Confirm ${action}`,
-        message,
-        confirmText: 'Confirm',
-        cancelText: 'Cancel',
-      });
-      expect(ctx.apiProxmox[endpoint]).toHaveBeenCalledWith('vm-1');
-    });
+    it.each(confirmed)(
+      'confirms %s before sending it',
+      async (action, endpoint, message) => {
+        const ctx = await renderOptionsBar2({ confirmation: true });
+        await clickMenu(ctx.fixture, 'Power', action);
+        expect(ctx.confirm).toHaveBeenCalledWith({
+          title: `Confirm ${action}`,
+          message,
+          confirmText: 'Confirm',
+          cancelText: 'Cancel',
+        });
+        expect(ctx.apiProxmox[endpoint]).toHaveBeenCalledWith('vm-1');
+      },
+    );
 
     /**
      * Verifies: a cancelled or dismissed confirmation sends nothing.
@@ -546,7 +625,9 @@ describe('OptionsBar2Component', () => {
     it.each([false, 'dismissed'] as const)(
       'sends nothing when the confirmation is %s',
       async (confirmation) => {
-        const { fixture, apiProxmox } = await renderOptionsBar2({ confirmation });
+        const { fixture, apiProxmox } = await renderOptionsBar2({
+          confirmation,
+        });
         await clickMenu(fixture, 'Power', 'Reboot');
         expect(apiProxmox.rebootProxmoxVirtualMachine).not.toHaveBeenCalled();
       },
@@ -613,7 +694,9 @@ describe('OptionsBar2Component', () => {
 
       await clickMenu(fixture, 'Keyboard', 'Paste to Clipboard');
 
-      await vi.waitFor(() => expect(proxmox.sendClipboardText).toHaveBeenCalledWith('hello'));
+      await vi.waitFor(() =>
+        expect(proxmox.sendClipboardText).toHaveBeenCalledWith('hello'),
+      );
     });
 
     /**
@@ -644,9 +727,9 @@ describe('OptionsBar2Component', () => {
     it('switches to the dark theme', async () => {
       const { fixture, auth } = await renderOptionsBar2();
       await menu(fixture);
-      const toggle = await TestbedHarnessEnvironment.documentRootLoader(fixture).getHarness(
-        MatSlideToggleHarness.with({ label: 'Dark Theme' }),
-      );
+      const toggle = await TestbedHarnessEnvironment.documentRootLoader(
+        fixture,
+      ).getHarness(MatSlideToggleHarness.with({ label: 'Dark Theme' }));
       await toggle.toggle();
       expect(auth.setUserTheme).toHaveBeenCalledWith(Theme.DARK);
     });

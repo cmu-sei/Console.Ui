@@ -122,11 +122,8 @@ describe('NoVNCService', () => {
     service.setDisconnectListener(handler);
     service.setSecurityFailureListener(handler);
     service.setClipboardListener(handler);
-    expect(vi.mocked(rfb.addEventListener).mock.calls.map(([event]) => event)).toEqual([
-      'connect',
-      'disconnect',
-      'securityfailure',
-      'clipboard',
-    ]);
+    expect(
+      vi.mocked(rfb.addEventListener).mock.calls.map(([event]) => event),
+    ).toEqual(['connect', 'disconnect', 'securityfailure', 'clipboard']);
   });
 });

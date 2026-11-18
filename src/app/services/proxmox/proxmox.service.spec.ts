@@ -65,10 +65,13 @@ describe('ProxmoxService', () => {
   it('changes a network adapter', () => {
     const { service, api } = setup();
     service.changeNic('vm-1', 'net0', 'vmbr1');
-    expect(api.changeProxmoxVirtualMachineNetwork).toHaveBeenCalledWith('vm-1', {
-      adapter: 'net0',
-      network: 'vmbr1',
-    });
+    expect(api.changeProxmoxVirtualMachineNetwork).toHaveBeenCalledWith(
+      'vm-1',
+      {
+        adapter: 'net0',
+        network: 'vmbr1',
+      },
+    );
   });
 
   /**

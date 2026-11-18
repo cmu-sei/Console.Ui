@@ -9,17 +9,10 @@
     "moduleResolution": "bundler",
     "experimentalDecorators": true,
     "target": "ES2022",
-    "typeRoots": [
-      "node_modules/@types"
-    ],
+    "typeRoots": ["node_modules/@types"],
     "useDefineForClassFields": false,
-    "lib": [
-      "ES2022",
-      "dom"
-    ],
+    "lib": ["ES2022", "dom"],
     "skipLibCheck": true
   },
-  "exclude": [
-    "../../libraries/**/node_modules"
-  ],
+  "exclude": ["../../libraries/**/node_modules"]
 }
