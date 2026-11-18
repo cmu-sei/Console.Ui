@@ -7,4 +7,3 @@ package-lock.json
 # Written by eslint --suppress-all / --prune-suppressions; keep it as ESLint writes it.
 eslint-suppressions.json
 src/assets/vmware-wmks
-swagger.json

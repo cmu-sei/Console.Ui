@@ -4,3 +4,8 @@ overrides:
   - files: '*.html'
     options:
       parser: 'angular'
+  # .editorconfig turns max_line_length off for Markdown, which Prettier takes as an
+  # unlimited width for the code examples in it.
+  - files: '*.md'
+    options:
+      printWidth: 80
