@@ -31,6 +31,11 @@ updates:
       angular:
         patterns: ["@angular*", "zone.js"]
         update-types: [minor, patch]
+      # Its own PR: a Prettier release that formats differently fails the format
+      # check until someone runs npm run format, which must not hold up the rest.
+      prettier:
+        patterns: ["prettier"]
+        update-types: [minor, patch]
       minor-and-patch:
         patterns: ["*"]
         update-types: [minor, patch]

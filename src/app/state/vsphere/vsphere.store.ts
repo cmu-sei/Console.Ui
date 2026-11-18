@@ -13,8 +13,7 @@ import {
 import { VsphereVirtualMachine } from '../../generated/vm-api/model/vsphereVirtualMachine';
 
 export interface VsphereState
-  extends EntityState<VsphereVirtualMachine, string>,
-    ActiveState<string> {}
+  extends EntityState<VsphereVirtualMachine, string>, ActiveState<string> {}
 
 @Injectable({ providedIn: 'root' })
 @StoreConfig({ name: 'vm' })

@@ -111,7 +111,9 @@ describe('VmService', () => {
     it('replaces stored fields on a later fetch', async () => {
       const { service, query, vmsService } = setup();
       await firstValueFrom(service.get('vm-1'));
-      vmsService.getVm.mockReturnValue(of(vm({ name: 'Beta', powerState: 'On' })));
+      vmsService.getVm.mockReturnValue(
+        of(vm({ name: 'Beta', powerState: 'On' })),
+      );
 
       await firstValueFrom(service.get('vm-1'));
 
@@ -170,17 +172,20 @@ describe('VmService', () => {
      * Interacts with: real VmQuery lookup of the Vm type; generated ProxmoxService stub.
      * Data: Proxmox Vm 'vm-1'; the action under test.
      */
-    it.each(proxmoxCases)('sends %s to %s for a Proxmox Vm', async (action, method) => {
-      const { service, apiProxmox, apiVsphere } = setup();
-      service.add(vm({ type: VmType.Proxmox }));
+    it.each(proxmoxCases)(
+      'sends %s to %s for a Proxmox Vm',
+      async (action, method) => {
+        const { service, apiProxmox, apiVsphere } = setup();
+        service.add(vm({ type: VmType.Proxmox }));
 
-      await firstValueFrom(service.powerAction('vm-1', action));
+        await firstValueFrom(service.powerAction('vm-1', action));
 
-      expect(apiProxmox[method]).toHaveBeenCalledWith('vm-1');
-      for (const fn of Object.values(apiVsphere)) {
-        expect(fn).not.toHaveBeenCalled();
-      }
-    });
+        expect(apiProxmox[method]).toHaveBeenCalledWith('vm-1');
+        for (const fn of Object.values(apiVsphere)) {
+          expect(fn).not.toHaveBeenCalled();
+        }
+      },
+    );
 
     const vsphereCases: Array<[PowerAction, VspherePowerMethod]> = [
       [PowerAction.PowerOn, 'powerOnVsphereVirtualMachine'],
@@ -194,17 +199,20 @@ describe('VmService', () => {
      * Interacts with: real VmQuery lookup of the Vm type; generated VsphereService stub.
      * Data: vSphere Vm 'vm-1'; the action under test.
      */
-    it.each(vsphereCases)('sends %s to %s for a vSphere Vm', async (action, method) => {
-      const { service, apiProxmox, apiVsphere } = setup();
-      service.add(vm({ type: VmType.Vsphere }));
+    it.each(vsphereCases)(
+      'sends %s to %s for a vSphere Vm',
+      async (action, method) => {
+        const { service, apiProxmox, apiVsphere } = setup();
+        service.add(vm({ type: VmType.Vsphere }));
 
-      await firstValueFrom(service.powerAction('vm-1', action));
+        await firstValueFrom(service.powerAction('vm-1', action));
 
-      expect(apiVsphere[method]).toHaveBeenCalledWith('vm-1');
-      for (const fn of Object.values(apiProxmox)) {
-        expect(fn).not.toHaveBeenCalled();
-      }
-    });
+        expect(apiVsphere[method]).toHaveBeenCalledWith('vm-1');
+        for (const fn of Object.values(apiProxmox)) {
+          expect(fn).not.toHaveBeenCalled();
+        }
+      },
+    );
 
     /**
      * Verifies: the API's response string is passed through to the caller.

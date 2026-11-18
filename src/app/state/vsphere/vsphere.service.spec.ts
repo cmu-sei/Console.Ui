@@ -1,7 +1,15 @@
 // Copyright 2026 Carnegie Mellon University. All Rights Reserved.
 // Released under a MIT (SEI)-style license. See LICENSE.md in the project root for license information.
 
-import { describe, it, expect, vi, beforeEach, afterEach, onTestFinished } from 'vitest';
+import {
+  describe,
+  it,
+  expect,
+  vi,
+  beforeEach,
+  afterEach,
+  onTestFinished,
+} from 'vitest';
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import {
@@ -46,7 +54,13 @@ import { unstubbed } from '../../test-utils/unstubbed';
 function vsphereVm(
   overrides: Partial<VsphereVirtualMachine> = {},
 ): VsphereVirtualMachine {
-  return { id: 'vm-1', name: 'Alpha', state: 'on', isOwner: true, ...overrides };
+  return {
+    id: 'vm-1',
+    name: 'Alpha',
+    state: 'on',
+    isOwner: true,
+    ...overrides,
+  };
 }
 
 // A Vm controller by default, so the readOnly query param decides read-only.
@@ -332,21 +346,24 @@ describe('VsphereService', () => {
      * Interacts with: getVsphereVirtualMachine stub; the service's show* flags; the fake WMKS SDK.
      * Data: a Vm with the state under test and a ticket.
      */
-    it.each(states)('shows the %j placeholder without connecting', async (state, flags) => {
-      const wmks = installFakeWmks();
-      const { service, api } = setup();
-      api.getVsphereVirtualMachine.mockReturnValue(
-        of(vsphereVm({ state, ticket: 'ticket-1' })),
-      );
+    it.each(states)(
+      'shows the %j placeholder without connecting',
+      async (state, flags) => {
+        const wmks = installFakeWmks();
+        const { service, api } = setup();
+        api.getVsphereVirtualMachine.mockReturnValue(
+          of(vsphereVm({ state, ticket: 'ticket-1' })),
+        );
 
-      await service.connect('vm-1', false);
+        await service.connect('vm-1', false);
 
-      expect(service.showError).toBe(flags.showError);
-      expect(service.showPower).toBe(flags.showPower);
-      expect(service.showLoading).toBe(flags.showLoading);
-      expect(service.showPoweringOff).toBe(false);
-      expect(wmks.createWMKS).not.toHaveBeenCalled();
-    });
+        expect(service.showError).toBe(flags.showError);
+        expect(service.showPower).toBe(flags.showPower);
+        expect(service.showLoading).toBe(flags.showLoading);
+        expect(service.showPoweringOff).toBe(false);
+        expect(wmks.createWMKS).not.toHaveBeenCalled();
+      },
+    );
 
     /**
      * Verifies: a powered-on Vm with a ticket creates a WMKS client with the configured options and connects it once.
@@ -629,12 +646,15 @@ describe('VsphereService', () => {
     it.each([
       ['poweroff submitted', true],
       ['already off', false],
-    ])('answers a power off response of %j with showPoweringOff %s', (response, shown) => {
-      const { service, api } = setup();
-      api.powerOffVsphereVirtualMachine.mockReturnValue(of(response));
-      service.powerOff('vm-1');
-      expect(service.showPoweringOff).toBe(shown);
-    });
+    ])(
+      'answers a power off response of %j with showPoweringOff %s',
+      (response, shown) => {
+        const { service, api } = setup();
+        api.powerOffVsphereVirtualMachine.mockReturnValue(of(response));
+        service.powerOff('vm-1');
+        expect(service.showPoweringOff).toBe(shown);
+      },
+    );
 
     /**
      * Verifies: a failed reboot drops the one-time ticket so the next connect fetches a fresh one.
@@ -756,7 +776,14 @@ describe('VsphereService', () => {
      * Interacts with: the generated VsphereService stub named in the row.
      * Data: adapter 'Network adapter 1' -> 'net-2'; iso '[ds] a.iso'; 1280x720; snapshot 's1'; revert.
      */
-    it.each<[string, (service: VsphereService) => void, keyof ApiVsphereService, unknown[]]>([
+    it.each<
+      [
+        string,
+        (service: VsphereService) => void,
+        keyof ApiVsphereService,
+        unknown[],
+      ]
+    >([
       [
         'changeNic()',
         (s) => s.changeNic('vm-1', 'Network adapter 1', 'net-2'),
@@ -781,12 +808,20 @@ describe('VsphereService', () => {
         'revertToVsphereVirtualMachineSnapshot',
         ['vm-1', { snapshotId: 's1' }],
       ],
-      ['revert()', (s) => s.revert('vm-1'), 'revertVsphereVirtualMachine', ['vm-1']],
-    ])('%s sends the payload vm.api expects', (_command, act, endpoint, args) => {
-      const { service, api } = setup();
-      act(service);
-      expect(api[endpoint as keyof typeof api]).toHaveBeenCalledWith(...args);
-    });
+      [
+        'revert()',
+        (s) => s.revert('vm-1'),
+        'revertVsphereVirtualMachine',
+        ['vm-1'],
+      ],
+    ])(
+      '%s sends the payload vm.api expects',
+      (_command, act, endpoint, args) => {
+        const { service, api } = setup();
+        act(service);
+        expect(api[endpoint as keyof typeof api]).toHaveBeenCalledWith(...args);
+      },
+    );
 
     /**
      * Verifies: getSnapshots() returns the API's snapshot list unchanged.
@@ -798,7 +833,9 @@ describe('VsphereService', () => {
       expect(await firstValueFrom(service.getSnapshots('vm-1'))).toEqual([
         { id: 's1' },
       ]);
-      expect(api.getVsphereVirtualMachineSnapshots).toHaveBeenCalledWith('vm-1');
+      expect(api.getVsphereVirtualMachineSnapshots).toHaveBeenCalledWith(
+        'vm-1',
+      );
     });
 
     /**
@@ -819,7 +856,11 @@ describe('VsphereService', () => {
      */
     it('uploads files as multipart form data', async () => {
       const { service, http } = setup();
-      service.uploadConfig = { username: 'admin', password: 'pw', filepath: '/tmp/' };
+      service.uploadConfig = {
+        username: 'admin',
+        password: 'pw',
+        filepath: '/tmp/',
+      };
       const files = fileList(
         new File(['a'], 'a.txt'),
         new File(['b'], 'b.txt'),

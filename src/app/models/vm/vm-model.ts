@@ -33,7 +33,11 @@ export class VmModel {
     this.state = null;
     this.isOwner = false;
     this.canAccessNicConfiguration = false;
-    this.networkCards = { currentNetworks: {}, availableNetworks: {}, readOnlyNetworks: [] };
+    this.networkCards = {
+      currentNetworks: {},
+      availableNetworks: {},
+      readOnlyNetworks: [],
+    };
     this.vmToolsStatus = VirtualMachineToolsStatus.toolsNotRunning;
   }
 }

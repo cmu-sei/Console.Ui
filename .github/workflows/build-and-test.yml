@@ -18,5 +18,7 @@ jobs:
       node-version: "24"
       # Fails on new lint errors. eslint-suppressions.json holds the existing ones.
       lint-command: npm run lint
+      # Fails when a file is not formatted. Run npm run format to fix it.
+      format-command: npm run format:check
       # The Dockerfile's build, so a pull request catches a broken production build.
       build-command: npx ng build

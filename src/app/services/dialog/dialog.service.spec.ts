@@ -15,7 +15,10 @@ import { IsoResult } from '../../models/vm/iso-result';
 import { DialogService } from './dialog.service';
 
 // The opened dialog's componentInstance is where DialogService writes its inputs.
-type OpenedRef = Pick<MatDialogRef<unknown>, 'afterClosed' | 'componentInstance'>;
+type OpenedRef = Pick<
+  MatDialogRef<unknown>,
+  'afterClosed' | 'componentInstance'
+>;
 
 function setup(result: unknown = undefined) {
   const ref: OpenedRef = {
@@ -43,7 +46,9 @@ describe('DialogService', () => {
     const result = { textToSend: 'ls', timeout: '60' };
     const { service, dialog, ref } = setup(result);
 
-    expect(await firstValueFrom(service.sendText('Enter Text'))).toEqual(result);
+    expect(await firstValueFrom(service.sendText('Enter Text'))).toEqual(
+      result,
+    );
 
     expect(dialog.open).toHaveBeenCalledWith(SendTextDialogComponent, {
       width: '600px',
@@ -140,10 +145,13 @@ describe('DialogService', () => {
 
     const result = service.uploadProgress();
 
-    expect(dialog.open).toHaveBeenCalledWith(FileUploadProgressDialogComponent, {
-      width: '480px',
-      maxWidth: '90vw',
-    });
+    expect(dialog.open).toHaveBeenCalledWith(
+      FileUploadProgressDialogComponent,
+      {
+        width: '480px',
+        maxWidth: '90vw',
+      },
+    );
     expect(result).toBe(ref);
   });
 });

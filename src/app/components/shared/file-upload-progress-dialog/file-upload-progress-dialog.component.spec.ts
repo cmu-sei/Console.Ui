@@ -49,7 +49,9 @@ describe('FileUploadProgressDialogComponent', () => {
    */
   it('closes from the explicit action while loading', async () => {
     const { close } = await renderProgressDialog();
-    await userEvent.setup().click(screen.getByRole('button', { name: 'Close' }));
+    await userEvent
+      .setup()
+      .click(screen.getByRole('button', { name: 'Close' }));
     expect(close).toHaveBeenCalledOnce();
     expect(close).toHaveBeenCalledWith('');
   });

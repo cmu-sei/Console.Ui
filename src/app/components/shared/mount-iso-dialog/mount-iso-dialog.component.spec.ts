@@ -23,7 +23,12 @@ function isoResults(): IsoResult[] {
         {
           teamId: 'team-1',
           teamName: 'Blue',
-          isos: [{ filename: 'blue-tools.iso', mountValue: '[ds] blue/blue-tools.iso' }],
+          isos: [
+            {
+              filename: 'blue-tools.iso',
+              mountValue: '[ds] blue/blue-tools.iso',
+            },
+          ],
           hide: true,
           display: [],
         },
@@ -43,7 +48,8 @@ async function renderMountIso() {
   return { ...rendered, close, user: userEvent.setup() };
 }
 
-const filenames = () => screen.getAllByRole('option').map((o) => o.textContent?.trim());
+const filenames = () =>
+  screen.getAllByRole('option').map((o) => o.textContent?.trim());
 
 describe('MountIsoDialogComponent', () => {
   /**
@@ -53,8 +59,12 @@ describe('MountIsoDialogComponent', () => {
    */
   it('lists view and team ISOs expanded', async () => {
     await renderMountIso();
-    expect(screen.getByRole('button', { name: /Exercise Files \(2\)/ })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Blue Files \(1\)/ })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /Exercise Files \(2\)/ }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /Blue Files \(1\)/ }),
+    ).toBeInTheDocument();
     expect(filenames()).toEqual(['tools.iso', 'ubuntu.iso', 'blue-tools.iso']);
   });
 
@@ -66,7 +76,9 @@ describe('MountIsoDialogComponent', () => {
   it('filters ISOs by the search text', async () => {
     const { user } = await renderMountIso();
     await user.type(screen.getByLabelText('Search'), 'TOOLS');
-    await waitFor(() => expect(filenames()).toEqual(['tools.iso', 'blue-tools.iso']));
+    await waitFor(() =>
+      expect(filenames()).toEqual(['tools.iso', 'blue-tools.iso']),
+    );
   });
 
   /**

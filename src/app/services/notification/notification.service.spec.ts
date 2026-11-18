@@ -189,15 +189,18 @@ describe('NotificationService', () => {
      * Interacts with: mockHubConnectionBuilder (start() rejecting, or rejectInvokes); ComnAuthService.user$ Subject; captureUnhandledRejections.
      * Data: the failing step named in the row; failure 'hub down'.
      */
-    it.each(escapes)('lets %s escape as an unhandled rejection', async (_step, run) => {
-      const rejections = captureUnhandledRejections();
-      const failure = new Error('hub down');
+    it.each(escapes)(
+      'lets %s escape as an unhandled rejection',
+      async (_step, run) => {
+        const rejections = captureUnhandledRejections();
+        const failure = new Error('hub down');
 
-      const expected = await run(failure);
-      await flush();
+        const expected = await run(failure);
+        await flush();
 
-      expect(rejections).toEqual([expected]);
-    });
+        expect(rejections).toEqual([expected]);
+      },
+    );
   });
 
   describe('reconnect on auth renewal', () => {

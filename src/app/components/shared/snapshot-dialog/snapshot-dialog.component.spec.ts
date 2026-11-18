@@ -15,7 +15,12 @@ import {
 } from '../../../test-utils/dialog-refs';
 
 const SNAPSHOTS: VmSnapshot[] = [
-  { id: 'snapshot-1', name: 'Before Update', createTime: '2026-01-01T00:00:00Z', depth: 0 },
+  {
+    id: 'snapshot-1',
+    name: 'Before Update',
+    createTime: '2026-01-01T00:00:00Z',
+    depth: 0,
+  },
   {
     id: 'snapshot-2',
     name: 'After Update',
@@ -34,7 +39,10 @@ async function renderSnapshotDialog(confirmation: boolean | 'dismissed') {
       ? dismissedDialogRefStub<unknown, boolean>().dialogRef
       : dialogRefStub<unknown, boolean>(confirmation).dialogRef,
   );
-  const crucibleDialog = { confirm } satisfies Pick<CrucibleDialogService, 'confirm'>;
+  const crucibleDialog = { confirm } satisfies Pick<
+    CrucibleDialogService,
+    'confirm'
+  >;
   const rendered = await renderComponent(SnapshotDialogComponent, {
     inputs: { snapshots: SNAPSHOTS },
     providers: [

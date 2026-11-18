@@ -33,10 +33,15 @@ describe('FileUploadInfoDialogComponent', () => {
    */
   it('asks for the path and credentials by default', async () => {
     await renderInfoDialog();
-    expect(screen.getByRole('heading', { name: 'VM Send File Settings' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: 'VM Send File Settings' }),
+    ).toBeInTheDocument();
     expect(screen.getByLabelText('File Path')).toBeInTheDocument();
     expect(screen.getByLabelText('VM Username')).toBeInTheDocument();
-    expect(screen.getByLabelText('VM Password')).toHaveAttribute('type', 'password');
+    expect(screen.getByLabelText('VM Password')).toHaveAttribute(
+      'type',
+      'password',
+    );
   });
 
   /**

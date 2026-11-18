@@ -13,8 +13,7 @@ import {
 import { User } from './user.model';
 
 export interface UserState
-  extends EntityState<User, string>,
-    ActiveState<string> {}
+  extends EntityState<User, string>, ActiveState<string> {}
 
 @Injectable({ providedIn: 'root' })
 @StoreConfig({ name: 'user' })
