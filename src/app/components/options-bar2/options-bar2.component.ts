@@ -67,6 +67,19 @@ import { IsoFile, IsoResult } from '../../models/vm/iso-result';
 import { VsphereService } from '../../state/vsphere/vsphere.service';
 import { UserPermissionsService } from '../../services/user-permissions/user-permissions.service';
 import { formatConnectedUsers, inIframe } from '../../utils/console-helpers';
+import {
+  COPY_WRITE_BLOCKED_MESSAGE,
+  CTRL_ALT_DEL_TOOLTIP,
+  PASTE_READ_BLOCKED_MESSAGE,
+  PROXMOX_COPY_DISABLED_TOOLTIP,
+  PROXMOX_COPY_TOOLTIP,
+  PROXMOX_PASTE_DISABLED_TOOLTIP,
+  PROXMOX_PASTE_TOOLTIP,
+  PROXMOX_TOOLBAR_COPY_TOOLTIP,
+  PROXMOX_TOOLBAR_PASTE_TOOLTIP,
+  PROXMOX_TOOLBAR_PASTE_TYPES_TOOLTIP,
+  TEXT_TOOLTIP,
+} from '../../utils/console-tooltips';
 import { SignalRService } from '../../services/signalr/signalr.service';
 import { NotificationService } from '../../services/notification/notification.service';
 import { NotificationData } from '../../models/notification/notification-model';
@@ -77,14 +90,8 @@ type NetworkVirtualMachine = ProxmoxVirtualMachine | VsphereVirtualMachine;
 // Tooltip on the controls that only work while the QEMU guest agent answers in the guest.
 export const GUEST_AGENT_TOOLTIP = 'Requires the QEMU guest agent';
 
-// Tooltip on Copy and Paste *, in the toolbar and the Keyboard menu, where the Vm's vga config
-// lacks clipboard=vnc: QEMU then has no clipboard to exchange with the console, so Copy can't work
-// and Paste types text instead of filling the VM's clipboard.
-export const CLIPBOARD_SETUP_TOOLTIP =
-  "To copy and paste between your clipboard and the VM's, set clipboard=vnc on this VM's display and run spice-vdagent in the guest. Until then, Paste * types text into the VM.";
-
-// Shown after the toolbar Paste has put the local clipboard on the VM's: nothing appears in the VM
-// until the guest pastes it.
+// Shown after Paste has put the local clipboard on the VM's: nothing appears in the VM until the
+// guest pastes it.
 export const PASTED_TO_VM_CLIPBOARD_MESSAGE =
   "Sent to the VM's clipboard. Press Ctrl+V in the VM to paste it.";
 
@@ -297,12 +304,36 @@ export class OptionsBar2Component implements OnInit {
       });
   }
 
-  // Copy and Paste share one tooltip, shown only where the VNC clipboard is off.
-  public readonly clipboardTooltip = computed(() =>
-    this.vncClipboardEnabled() ? '' : CLIPBOARD_SETUP_TOOLTIP,
+  public readonly ctrlAltDelTooltip = CTRL_ALT_DEL_TOOLTIP;
+  public readonly textTooltip = TEXT_TOOLTIP;
+
+  // The Clipboard menu's Copy and Paste only move text between clipboards, so without clipboard=vnc
+  // both are disabled, and their tooltips say why.
+  public readonly menuCopyTooltip = computed(() =>
+    this.vncClipboardEnabled()
+      ? PROXMOX_COPY_TOOLTIP
+      : PROXMOX_COPY_DISABLED_TOOLTIP,
+  );
+  public readonly menuPasteTooltip = computed(() =>
+    this.vncClipboardEnabled()
+      ? PROXMOX_PASTE_TOOLTIP
+      : PROXMOX_PASTE_DISABLED_TOOLTIP,
   );
 
-  // Paste * marks a Paste that types text (through Send Text) rather than filling the VM's clipboard.
+  // The toolbar's Copy and Paste keep their fallbacks, which their tooltips describe.
+  public readonly toolbarCopyTooltip = computed(() =>
+    this.vncClipboardEnabled()
+      ? PROXMOX_TOOLBAR_COPY_TOOLTIP
+      : PROXMOX_COPY_DISABLED_TOOLTIP,
+  );
+  public readonly toolbarPasteTooltip = computed(() =>
+    this.vncClipboardEnabled()
+      ? PROXMOX_TOOLBAR_PASTE_TOOLTIP
+      : PROXMOX_TOOLBAR_PASTE_TYPES_TOOLTIP,
+  );
+
+  // Paste * marks the toolbar Paste that types text (through Send Text) rather than filling the VM's
+  // clipboard.
   public readonly pasteLabel = computed(() =>
     this.vncClipboardEnabled() ? 'Paste' : 'Paste *',
   );
@@ -680,7 +711,10 @@ export class OptionsBar2Component implements OnInit {
   // Hands the text the guest last copied to the local clipboard. noVNC is only told about guest
   // copies as they happen (and Proxmox only sends them with a VNC clipboard set up on the Vm), so
   // there is nothing to fetch on demand the way WMKS grab() does.
-  public async copyVmClipboard() {
+  // Puts the guest's last copied text on the local clipboard. `showTextIfBlocked` is the toolbar
+  // Copy's fallback: when the browser won't take the text, show it for a manual copy. The Clipboard
+  // menu's Copy has none, and reports the failure.
+  public async copyVmClipboard(showTextIfBlocked = true) {
     const text = this.proxmoxService.getGuestClipboard();
     if (!text) {
       this.snackBar.open(COPY_FROM_VM_FAILED_MESSAGE, 'Close', {
@@ -697,6 +731,10 @@ export class OptionsBar2Component implements OnInit {
         verticalPosition: 'top',
       });
     } catch {
+      if (!showTextIfBlocked) {
+        this.showMessage(COPY_WRITE_BLOCKED_MESSAGE, 10000);
+        return;
+      }
       this.crucibleDialogService.confirm({
         title: 'Select text and press Ctrl+C to copy to your local clipboard:',
         message: text,
@@ -723,18 +761,29 @@ export class OptionsBar2Component implements OnInit {
 
   // The toolbar Paste. With the VNC clipboard on, the local clipboard goes to the VM's clipboard for
   // the guest to paste. Without it (Paste *), or when the browser won't hand the clipboard over
-  // (permission refused, or no Clipboard API), it opens Send Text, which types instead. The Keyboard
-  // menu's Paste always opens Send Text.
+  // (permission refused, or no Clipboard API), it opens Send Text, which types instead. The
+  // Clipboard menu's Paste has no fallback; Keyboard > Text is Send Text.
   public async pasteFromToolbar() {
     if (!this.vncClipboardEnabled()) {
       this.sendInputString();
       return;
     }
+    await this.pasteToVmClipboard(true);
+  }
+
+  // Puts the local clipboard on the VM's clipboard. `typeIfUnreadable` is the toolbar Paste's
+  // fallback: when the browser won't hand the clipboard over, open Send Text instead. The Clipboard
+  // menu's Paste has none, and reports the failure.
+  public async pasteToVmClipboard(typeIfUnreadable = false) {
     let clip: string;
     try {
       clip = await navigator.clipboard.readText();
     } catch {
-      this.sendInputString();
+      if (typeIfUnreadable) {
+        this.sendInputString();
+      } else {
+        this.showMessage(PASTE_READ_BLOCKED_MESSAGE, 10000);
+      }
       return;
     }
     if (!clip) {

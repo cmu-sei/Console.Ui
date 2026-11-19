@@ -10,6 +10,7 @@ import {
   MatMenuItemHarness,
 } from '@angular/material/menu/testing';
 import { MatSlideToggleHarness } from '@angular/material/slide-toggle/testing';
+import { MatTooltipHarness } from '@angular/material/tooltip/testing';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
 import {
@@ -45,6 +46,18 @@ import {
 } from '../../test-utils/mock-permission-data.service';
 import { FakeWmksClient } from '../../test-utils/fake-wmks';
 import { stubClipboard } from '../../test-utils/clipboard';
+import {
+  COPY_WRITE_BLOCKED_MESSAGE,
+  CTRL_ALT_DEL_TOOLTIP,
+  TEXT_TOOLTIP,
+  VSPHERE_COPY_NO_TOOLS_TOOLTIP,
+  VSPHERE_COPY_TOOLS_STOPPED_TOOLTIP,
+  VSPHERE_COPY_TOOLTIP,
+  VSPHERE_PASTE_DISABLED_TOOLTIP,
+  VSPHERE_TOOLBAR_COPY_TOOLS_STOPPED_NOTE,
+  VSPHERE_TOOLBAR_COPY_TOOLTIP,
+  VSPHERE_TOOLBAR_PASTE_TOOLTIP,
+} from '../../utils/console-tooltips';
 import {
   dialogRefStub,
   dismissedDialogRefStub,
@@ -428,6 +441,7 @@ describe('OptionsBarComponent', () => {
         'Power',
         'Files',
         'Keyboard',
+        'Clipboard',
         'Network Cards',
       ]);
       expect(
@@ -604,31 +618,151 @@ describe('OptionsBarComponent', () => {
       expect(wmks.sendCAD).toHaveBeenCalledOnce();
     });
 
+    // The tooltips in one open submenu, or on the whole page, by text. A submenu's own, since the gear
+    // menu has a tooltip of its own on Resolution.
+    async function tooltipTexts(
+      fixture: ComponentFixture<OptionsBarComponent>,
+      submenu?: MatMenuHarness,
+    ) {
+      const texts: string[] = [];
+      for (const tooltip of submenu
+        ? await submenu.getAllHarnesses(MatTooltipHarness)
+        : await TestbedHarnessEnvironment.documentRootLoader(
+            fixture,
+          ).getAllHarnesses(MatTooltipHarness)) {
+        await tooltip.show();
+        texts.push(await tooltip.getTooltipText());
+        await tooltip.hide();
+      }
+      return texts;
+    }
+
     /**
-     * Verifies: the Keyboard menu holds the toolbar's three controls with the toolbar's labels, and the gear menu has no Clipboard submenu.
-     * Interacts with: the gear menu and Keyboard submenu (MatMenuHarness).
-     * Why: the Clipboard submenu only repeated the toolbar's Copy and Paste; the Proxmox bar has the same layout.
+     * Verifies: Keyboard holds Ctrl-Alt-Del and Text, and Clipboard holds Copy and Paste, as on the Proxmox console; each item's tooltip says what it does, and Paste, which vSphere can't do, says why it is disabled.
+     * Interacts with: the Keyboard and Clipboard submenus (MatMenuHarness); MatTooltipHarness in the menu panels.
+     * Data: VMware Tools running.
+     * Why: WMKS can type text into the VM but has no way to put text on its clipboard.
      */
-    it('offers Copy, Paste and Ctrl-Alt-Del in the Keyboard menu', async () => {
+    it('offers Keyboard and Clipboard menus', async () => {
       const { fixture } = await renderOptionsBar();
-      expect(await itemTexts(await openSubmenu(fixture, 'Keyboard'))).toEqual([
-        'Copy',
-        'Paste',
-        'Ctrl-Alt-Del',
+      const keyboard = await openSubmenu(fixture, 'Keyboard');
+      expect(await itemTexts(keyboard)).toEqual(['Ctrl-Alt-Del', 'Text']);
+      expect(await tooltipTexts(fixture, keyboard)).toEqual([
+        CTRL_ALT_DEL_TOOLTIP,
+        TEXT_TOOLTIP,
+      ]);
+      await (await openMainMenu(fixture)).close();
+
+      const clipboard = await openSubmenu(fixture, 'Clipboard');
+      expect(await itemTexts(clipboard)).toEqual(['Copy', 'Paste']);
+      const [copy, paste] = await clipboard.getItems();
+      expect(await copy.isDisabled()).toBe(false);
+      expect(await paste.isDisabled()).toBe(true);
+      expect(await tooltipTexts(fixture, clipboard)).toEqual([
+        VSPHERE_COPY_TOOLTIP,
+        VSPHERE_PASTE_DISABLED_TOOLTIP,
       ]);
     });
 
     /**
-     * Verifies: Keyboard > Copy asks WMKS for the guest clipboard, and Keyboard > Ctrl-Alt-Del sends the combination, like the toolbar buttons.
-     * Interacts with: the Keyboard submenu; the fake WMKS client's grab and sendCAD.
+     * Verifies: Clipboard > Copy is disabled while VMware Tools can't answer it, and its tooltip says which way.
+     * Interacts with: VsphereService.model.vmToolsStatus; the Clipboard submenu; MatTooltipHarness in the menu panel.
+     * Data: VMware Tools not installed, then not running.
      */
-    it('copies and sends Ctrl-Alt-Del from the Keyboard menu', async () => {
+    it.each<[string, VirtualMachineToolsStatus, string]>([
+      [
+        'not installed',
+        VirtualMachineToolsStatus.toolsNotInstalled,
+        VSPHERE_COPY_NO_TOOLS_TOOLTIP,
+      ],
+      [
+        'not running',
+        VirtualMachineToolsStatus.toolsNotRunning,
+        VSPHERE_COPY_TOOLS_STOPPED_TOOLTIP,
+      ],
+    ])(
+      'disables Clipboard > Copy while VMware Tools is %s',
+      async (_, vmToolsStatus, tooltip) => {
+        const { fixture } = await renderOptionsBar({
+          model: model({ vmToolsStatus }),
+        });
+        const clipboard = await openSubmenu(fixture, 'Clipboard');
+        const [copy] = await clipboard.getItems({ text: 'Copy' });
+        expect(await copy.isDisabled()).toBe(true);
+        expect((await tooltipTexts(fixture, clipboard))[0]).toBe(tooltip);
+      },
+    );
+
+    /**
+     * Verifies: Clipboard > Copy asks WMKS for the guest clipboard, and Keyboard > Ctrl-Alt-Del sends the combination, like the toolbar buttons.
+     * Interacts with: the Clipboard and Keyboard submenus; the fake WMKS client's grab and sendCAD.
+     */
+    it('copies and sends Ctrl-Alt-Del from the menus', async () => {
       const { fixture, wmks } = await renderOptionsBar();
-      await clickMenu(fixture, 'Keyboard', 'Copy');
+      await clickMenu(fixture, 'Clipboard', 'Copy');
       expect(wmks.grab).toHaveBeenCalled();
       await clickMenu(fixture, 'Keyboard', 'Ctrl-Alt-Del');
       expect(wmks.sendCAD).toHaveBeenCalledOnce();
     });
+
+    /**
+     * Verifies: Clipboard > Copy has no fallback: when the browser refuses the clipboard write it says so, and doesn't show the text for a manual copy.
+     * Interacts with: the Clipboard submenu; the fake WMKS grab answering through VsphereService.vmClipBoard; stubbed writeText rejecting; CrucibleDialogService.confirm; MatSnackBar.open.
+     * Data: the guest sends 'guest text'.
+     */
+    it('reports a refused clipboard write from Clipboard > Copy without falling back', async () => {
+      const { fixture, vsphere, snackBar, confirm, wmks } =
+        await renderOptionsBar();
+      stubClipboard().writeText.mockRejectedValue(new Error('denied'));
+      // As WMKS does: the grab brings the guest's clipboard back as a COPY event.
+      wmks.grab.mockImplementation(() =>
+        vsphere.vmClipBoard.next('guest text'),
+      );
+
+      await clickMenu(fixture, 'Clipboard', 'Copy');
+
+      await vi.waitFor(() =>
+        expect(snackBar.open).toHaveBeenCalledWith(
+          COPY_WRITE_BLOCKED_MESSAGE,
+          'Close',
+          expect.objectContaining({ duration: 10000 }),
+        ),
+      );
+      expect(confirm).not.toHaveBeenCalled();
+    });
+
+    /**
+     * Verifies: each toolbar button's tooltip says what it does, fallbacks included, and the Copy tooltip says when VMware Tools can't answer it; the buttons stay enabled, as before.
+     * Interacts with: the toolbar buttons; MatTooltipHarness.
+     * Data: VMware Tools running, then not running.
+     */
+    it.each<[string, VirtualMachineToolsStatus, string]>([
+      [
+        'running',
+        VirtualMachineToolsStatus.toolsOk,
+        VSPHERE_TOOLBAR_COPY_TOOLTIP,
+      ],
+      [
+        'not running',
+        VirtualMachineToolsStatus.toolsNotRunning,
+        VSPHERE_TOOLBAR_COPY_TOOLTIP + VSPHERE_TOOLBAR_COPY_TOOLS_STOPPED_NOTE,
+      ],
+    ])(
+      'explains the toolbar buttons with VMware Tools %s',
+      async (_, vmToolsStatus, copyTooltip) => {
+        const { fixture } = await renderOptionsBar({
+          model: model({ vmToolsStatus }),
+        });
+        expect(screen.getByRole('button', { name: /^Copy/ })).toBeEnabled();
+        expect((await tooltipTexts(fixture)).sort()).toEqual(
+          [
+            copyTooltip,
+            VSPHERE_TOOLBAR_PASTE_TOOLTIP,
+            CTRL_ALT_DEL_TOOLTIP,
+          ].sort(),
+        );
+      },
+    );
 
     /**
      * Verifies: the Dark Theme switch sets the user's theme both ways.
@@ -1333,7 +1467,7 @@ describe('OptionsBarComponent', () => {
       await openSubmenu(fixture, 'Keyboard');
       vi.useFakeTimers();
       try {
-        fireEvent.click(screen.getByRole('menuitem', { name: 'Paste' }));
+        fireEvent.click(screen.getByRole('menuitem', { name: 'Text' }));
         expect(wmks.sendInputString.mock.calls).toEqual([['one'], ['\n']]);
 
         await vi.advanceTimersByTimeAsync(0);
@@ -1361,7 +1495,7 @@ describe('OptionsBarComponent', () => {
       );
       vsphere.wmks = null;
 
-      await clickMenu(fixture, 'Keyboard', 'Paste');
+      await clickMenu(fixture, 'Keyboard', 'Text');
       await flush();
 
       // Current behavior; see agent-docs/ui-test-bugs/console.ui.md.

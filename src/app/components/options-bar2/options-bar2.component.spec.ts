@@ -44,12 +44,24 @@ import {
   OptionsBar2Component,
   RESIZE_READ_ONLY_TOOLTIP,
   RESIZE_UNSUPPORTED_TOOLTIP,
-  CLIPBOARD_SETUP_TOOLTIP,
   PASTED_TO_VM_CLIPBOARD_MESSAGE,
   fileNameOf,
   toDirectory,
 } from './options-bar2.component';
 import { formatConnectedUsers } from '../../utils/console-helpers';
+import {
+  COPY_WRITE_BLOCKED_MESSAGE,
+  CTRL_ALT_DEL_TOOLTIP,
+  PASTE_READ_BLOCKED_MESSAGE,
+  PROXMOX_COPY_DISABLED_TOOLTIP,
+  PROXMOX_COPY_TOOLTIP,
+  PROXMOX_PASTE_DISABLED_TOOLTIP,
+  PROXMOX_PASTE_TOOLTIP,
+  PROXMOX_TOOLBAR_COPY_TOOLTIP,
+  PROXMOX_TOOLBAR_PASTE_TOOLTIP,
+  PROXMOX_TOOLBAR_PASTE_TYPES_TOOLTIP,
+  TEXT_TOOLTIP,
+} from '../../utils/console-tooltips';
 import { FileUploadProgressDialogComponent } from '../shared/file-upload-progress-dialog/file-upload-progress-dialog.component';
 import { renderComponent } from '../../test-utils/render-component';
 import { ApiStub } from '../../test-utils/api-stub';
@@ -374,6 +386,7 @@ describe('OptionsBar2Component', () => {
         'Power',
         'Files',
         'Keyboard',
+        'Clipboard',
         'Network Cards',
       ]);
     });
@@ -394,6 +407,7 @@ describe('OptionsBar2Component', () => {
         'Resolution',
         'Power',
         'Keyboard',
+        'Clipboard',
       ]);
     });
   });
@@ -453,6 +467,7 @@ describe('OptionsBar2Component', () => {
         'Resolution',
         'Power',
         'Keyboard',
+        'Clipboard',
       ]);
     });
   });
@@ -913,8 +928,8 @@ describe('OptionsBar2Component', () => {
     const vncClipboardVm = () => of(networkVm({ vncClipboardEnabled: true }));
 
     /**
-     * Verifies: the Keyboard menu holds the toolbar's three controls with the toolbar's labels: Paste is Paste * without the VNC clipboard.
-     * Interacts with: the Keyboard submenu (MatMenuHarness); ProxmoxService.getVm (vncClipboardEnabled).
+     * Verifies: Keyboard holds Ctrl-Alt-Del and Text, and Clipboard holds Copy and Paste, whether or not the VM has the VNC clipboard; only the toolbar's Paste changes its label.
+     * Interacts with: the Keyboard and Clipboard submenus (MatMenuHarness); ProxmoxService.getVm (vncClipboardEnabled).
      * Data: vncClipboardEnabled absent, then true.
      */
     it.each<[string, Observable<ProxmoxVirtualMachine> | undefined, string]>([
@@ -925,20 +940,26 @@ describe('OptionsBar2Component', () => {
         'Paste',
       ],
     ])(
-      'offers Copy, Paste and Ctrl-Alt-Del in the Keyboard menu %s',
-      async (_, vm, paste) => {
+      'offers Keyboard and Clipboard menus %s',
+      async (_, vm, toolbarPaste) => {
         const { fixture } = await renderOptionsBar2(
           vm ? { networkVm: vm } : {},
         );
         expect(await itemTexts(await openSubmenu(fixture, 'Keyboard'))).toEqual(
-          ['Copy', paste, 'Ctrl-Alt-Del'],
+          ['Ctrl-Alt-Del', 'Text'],
         );
-        expect(screen.getByRole('button', { name: paste })).toBeEnabled();
+        await (await menu(fixture)).close();
+        expect(
+          await itemTexts(await openSubmenu(fixture, 'Clipboard')),
+        ).toEqual(['Copy', 'Paste']);
+        expect(
+          screen.getByRole('button', { name: toolbarPaste }),
+        ).toBeEnabled();
       },
     );
 
     /**
-     * Verifies: Keyboard > Paste opens Send Text, which types each line of the dialog's text into the guest, followed by Enter, as the vSphere bar does.
+     * Verifies: Keyboard > Text opens Send Text, which types each line of the dialog's text into the guest, followed by Enter, as the vSphere bar does.
      * Interacts with: the Keyboard submenu; DialogService.sendText; the app ProxmoxService.sendText.
      * Data: 'one\ntwo' at paste speed '0'.
      */
@@ -948,7 +969,7 @@ describe('OptionsBar2Component', () => {
         of({ textToSend: 'one\ntwo', timeout: '0' }),
       );
 
-      await clickMenu(fixture, 'Keyboard', 'Paste *');
+      await clickMenu(fixture, 'Keyboard', 'Text');
 
       expect(dialogs.sendText).toHaveBeenCalledWith('Enter Text to Send');
       await vi.waitFor(() =>
@@ -970,7 +991,7 @@ describe('OptionsBar2Component', () => {
       await openSubmenu(fixture, 'Keyboard');
       vi.useFakeTimers();
       try {
-        fireEvent.click(screen.getByRole('menuitem', { name: 'Paste *' }));
+        fireEvent.click(screen.getByRole('menuitem', { name: 'Text' }));
         expect(proxmox.sendText.mock.calls).toEqual([['one\n']]);
         await vi.advanceTimersByTimeAsync(199);
         expect(proxmox.sendText).toHaveBeenCalledOnce();
@@ -991,7 +1012,7 @@ describe('OptionsBar2Component', () => {
       async (result) => {
         const { fixture, dialogs, proxmox } = await renderOptionsBar2();
         dialogs.sendText.mockReturnValue(of(result));
-        await clickMenu(fixture, 'Keyboard', 'Paste *');
+        await clickMenu(fixture, 'Keyboard', 'Text');
         expect(proxmox.sendText).not.toHaveBeenCalled();
       },
     );
@@ -1008,7 +1029,7 @@ describe('OptionsBar2Component', () => {
       );
       proxmox.sendText.mockResolvedValue(false);
 
-      await clickMenu(fixture, 'Keyboard', 'Paste *');
+      await clickMenu(fixture, 'Keyboard', 'Text');
 
       await vi.waitFor(() =>
         expect(snackBar.open).toHaveBeenCalledWith(
@@ -1021,20 +1042,50 @@ describe('OptionsBar2Component', () => {
     });
 
     /**
-     * Verifies: Keyboard > Paste opens Send Text even where the VNC clipboard is on, and reads nothing from the local clipboard.
-     * Interacts with: the Keyboard submenu; DialogService.sendText; stubbed navigator.clipboard.readText; ProxmoxService.sendClipboardText.
-     * Data: vncClipboardEnabled true.
+     * Verifies: Clipboard > Paste puts the local clipboard on the VM's clipboard, types nothing, and says to paste it in the VM.
+     * Interacts with: the Clipboard submenu; stubbed navigator.clipboard.readText; ProxmoxService.sendClipboardText; MatSnackBar.open.
+     * Data: vncClipboardEnabled true; clipboard 'hello'.
      */
-    it('opens Send Text from Keyboard > Paste with the VNC clipboard on', async () => {
-      const { fixture, dialogs, proxmox } = await renderOptionsBar2({
+    it("sends the clipboard to the VM's clipboard from Clipboard > Paste", async () => {
+      const { fixture, proxmox, snackBar } = await renderOptionsBar2({
         networkVm: vncClipboardVm(),
       });
-      const { readText } = stubClipboard('hello');
+      stubClipboard('hello');
 
-      await clickMenu(fixture, 'Keyboard', 'Paste');
+      await clickMenu(fixture, 'Clipboard', 'Paste');
 
-      expect(dialogs.sendText).toHaveBeenCalledWith('Enter Text to Send');
-      expect(readText).not.toHaveBeenCalled();
+      await vi.waitFor(() =>
+        expect(proxmox.sendClipboardText).toHaveBeenCalledWith('hello'),
+      );
+      expect(proxmox.sendText).not.toHaveBeenCalled();
+      expect(snackBar.open).toHaveBeenCalledWith(
+        PASTED_TO_VM_CLIPBOARD_MESSAGE,
+        'Close',
+        expect.anything(),
+      );
+    });
+
+    /**
+     * Verifies: Clipboard > Paste has no fallback: when the browser won't hand the clipboard over it says so, and neither opens Send Text nor sends anything.
+     * Interacts with: the Clipboard submenu; stubbed navigator.clipboard.readText rejecting; DialogService.sendText; MatSnackBar.open.
+     * Data: vncClipboardEnabled true; clipboard permission denied.
+     */
+    it('reports a refused clipboard read from Clipboard > Paste without falling back', async () => {
+      const { fixture, dialogs, proxmox, snackBar } = await renderOptionsBar2({
+        networkVm: vncClipboardVm(),
+      });
+      stubClipboard().readText.mockRejectedValue(new Error('denied'));
+
+      await clickMenu(fixture, 'Clipboard', 'Paste');
+
+      await vi.waitFor(() =>
+        expect(snackBar.open).toHaveBeenCalledWith(
+          PASTE_READ_BLOCKED_MESSAGE,
+          'Close',
+          expect.objectContaining({ duration: 10000 }),
+        ),
+      );
+      expect(dialogs.sendText).not.toHaveBeenCalled();
       expect(proxmox.sendClipboardText).not.toHaveBeenCalled();
     });
 
@@ -1909,78 +1960,148 @@ describe('OptionsBar2Component', () => {
       expect(writeText).not.toHaveBeenCalled();
     });
 
+    // Every tooltip on the page, menus included, by its text.
+    async function tooltipTexts(fixture: Fixture) {
+      const texts: string[] = [];
+      for (const tooltip of await TestbedHarnessEnvironment.documentRootLoader(
+        fixture,
+      ).getAllHarnesses(MatTooltipHarness)) {
+        await tooltip.show();
+        texts.push(await tooltip.getTooltipText());
+        await tooltip.hide();
+      }
+      return texts.sort();
+    }
+
     /**
-     * Verifies: without clipboard=vnc on the Vm, Copy is disabled and Paste reads Paste *, in the toolbar and the Keyboard menu alike, and all four carry the same setup tooltip.
-     * Interacts with: ProxmoxService.getVm (vncClipboardEnabled); the toolbar Copy and Paste buttons; the Keyboard submenu; MatTooltipHarness.
+     * Verifies: without clipboard=vnc on the Vm, the toolbar Copy is disabled and Paste reads Paste *, and each toolbar button's tooltip says what it does and, for Copy, why it is disabled.
+     * Interacts with: ProxmoxService.getVm (vncClipboardEnabled); the toolbar buttons; MatTooltipHarness.
      * Data: vncClipboardEnabled false, then absent.
      */
     it.each([
       ['false', clipboardVm(false)],
       ['absent', of(networkVm())],
     ])(
-      'disables Copy and marks Paste * without the VNC clipboard (%s)',
+      'disables the toolbar Copy and marks Paste * without the VNC clipboard (%s)',
       async (_, vm) => {
         const { fixture } = await renderOptionsBar2({ networkVm: vm });
         expect(screen.getByRole('button', { name: /^Copy/ })).toBeDisabled();
         expect(screen.getByRole('button', { name: /^Paste \*/ })).toBeEnabled();
-
-        const keyboard = await openSubmenu(fixture, 'Keyboard');
-        const [copy] = await keyboard.getItems({ text: 'Copy' });
-        const [paste] = await keyboard.getItems({ text: 'Paste *' });
-        expect(await copy.isDisabled()).toBe(true);
-        expect(await paste.isDisabled()).toBe(false);
-
-        const tooltips =
-          await TestbedHarnessEnvironment.documentRootLoader(
-            fixture,
-          ).getAllHarnesses(MatTooltipHarness);
-        expect(tooltips.length).toBe(4);
-        for (const tooltip of tooltips) {
-          await tooltip.show();
-          expect(await tooltip.getTooltipText()).toBe(CLIPBOARD_SETUP_TOOLTIP);
-          await tooltip.hide();
-        }
+        expect(await tooltipTexts(fixture)).toEqual(
+          [
+            PROXMOX_COPY_DISABLED_TOOLTIP,
+            PROXMOX_TOOLBAR_PASTE_TYPES_TOOLTIP,
+            CTRL_ALT_DEL_TOOLTIP,
+          ].sort(),
+        );
       },
     );
 
     /**
-     * Verifies: with clipboard=vnc on the Vm, Copy and Paste are enabled in the toolbar and the Keyboard menu and carry no tooltip.
-     * Interacts with: ProxmoxService.getVm (vncClipboardEnabled); the toolbar buttons; the Keyboard submenu; MatTooltipHarness.
+     * Verifies: with clipboard=vnc on the Vm, the toolbar Copy and Paste are enabled, and their tooltips describe what they do, fallbacks included.
+     * Interacts with: ProxmoxService.getVm (vncClipboardEnabled); the toolbar buttons; MatTooltipHarness.
      * Data: vncClipboardEnabled true.
      */
-    it('enables Copy and Paste with the VNC clipboard', async () => {
+    it('enables the toolbar Copy and Paste with the VNC clipboard', async () => {
       const { fixture } = await renderOptionsBar2({ networkVm: clipboardVm() });
       expect(screen.getByRole('button', { name: /^Copy/ })).toBeEnabled();
       expect(screen.getByRole('button', { name: /^Paste$/ })).toBeEnabled();
-
-      const keyboard = await openSubmenu(fixture, 'Keyboard');
-      const [copy] = await keyboard.getItems({ text: 'Copy' });
-      expect(await copy.isDisabled()).toBe(false);
-
-      const tooltips =
-        await TestbedHarnessEnvironment.documentRootLoader(
-          fixture,
-        ).getAllHarnesses(MatTooltipHarness);
-      for (const tooltip of tooltips) {
-        await tooltip.show();
-        expect(await tooltip.isOpen()).toBe(false);
-      }
+      expect(await tooltipTexts(fixture)).toEqual(
+        [
+          PROXMOX_TOOLBAR_COPY_TOOLTIP,
+          PROXMOX_TOOLBAR_PASTE_TOOLTIP,
+          CTRL_ALT_DEL_TOOLTIP,
+        ].sort(),
+      );
     });
 
     /**
-     * Verifies: Keyboard > Copy copies the guest clipboard like the toolbar button.
-     * Interacts with: the Keyboard submenu; ProxmoxService.getGuestClipboard; stubbed navigator.clipboard.writeText.
+     * Verifies: Clipboard > Copy and Paste are disabled without clipboard=vnc and enabled with it, and every Keyboard and Clipboard item's tooltip says what it does and, when disabled, why.
+     * Interacts with: the Keyboard and Clipboard submenus; MatTooltipHarness (menu panels only).
+     * Data: vncClipboardEnabled absent, then true.
+     */
+    it.each<[string, Observable<ProxmoxVirtualMachine>, boolean, string[]]>([
+      [
+        'without the VNC clipboard',
+        of(networkVm()),
+        true,
+        [PROXMOX_COPY_DISABLED_TOOLTIP, PROXMOX_PASTE_DISABLED_TOOLTIP],
+      ],
+      [
+        'with the VNC clipboard',
+        clipboardVm(),
+        false,
+        [PROXMOX_COPY_TOOLTIP, PROXMOX_PASTE_TOOLTIP],
+      ],
+    ])(
+      'explains the Keyboard and Clipboard items %s',
+      async (_, vm, disabled, clipboardTooltips) => {
+        const { fixture } = await renderOptionsBar2({ networkVm: vm });
+        const loader = TestbedHarnessEnvironment.documentRootLoader(fixture);
+        const menuTooltips = async () => {
+          const texts: string[] = [];
+          for (const tooltip of await loader.getAllHarnesses(
+            MatTooltipHarness.with({ ancestor: '.mat-mdc-menu-panel' }),
+          )) {
+            await tooltip.show();
+            texts.push(await tooltip.getTooltipText());
+            await tooltip.hide();
+          }
+          return texts;
+        };
+
+        await openSubmenu(fixture, 'Keyboard');
+        expect(await menuTooltips()).toEqual([
+          CTRL_ALT_DEL_TOOLTIP,
+          TEXT_TOOLTIP,
+        ]);
+        await (await menu(fixture)).close();
+
+        const clipboard = await openSubmenu(fixture, 'Clipboard');
+        for (const item of await clipboard.getItems()) {
+          expect(await item.isDisabled()).toBe(disabled);
+        }
+        expect(await menuTooltips()).toEqual(clipboardTooltips);
+      },
+    );
+
+    /**
+     * Verifies: Clipboard > Copy copies the guest clipboard like the toolbar button.
+     * Interacts with: the Clipboard submenu; ProxmoxService.getGuestClipboard; stubbed navigator.clipboard.writeText.
      * Data: vncClipboardEnabled true; guest clipboard 'guest text'.
      */
-    it('copies the guest clipboard from the Keyboard menu', async () => {
+    it('copies the guest clipboard from the Clipboard menu', async () => {
       const { fixture } = await renderOptionsBar2({ networkVm: clipboardVm() });
       const { writeText } = stubClipboard();
 
-      await clickMenu(fixture, 'Keyboard', 'Copy');
+      await clickMenu(fixture, 'Clipboard', 'Copy');
 
       await vi.waitFor(() =>
         expect(writeText).toHaveBeenCalledWith('guest text'),
       );
+    });
+
+    /**
+     * Verifies: Clipboard > Copy has no fallback: when the browser refuses the clipboard write it says so, and doesn't show the text for a manual copy.
+     * Interacts with: the Clipboard submenu; stubbed writeText rejecting; CrucibleDialogService.confirm; MatSnackBar.open.
+     * Data: vncClipboardEnabled true; guest clipboard 'guest text'.
+     */
+    it('reports a refused clipboard write from Clipboard > Copy without falling back', async () => {
+      const { fixture, confirm, snackBar } = await renderOptionsBar2({
+        networkVm: clipboardVm(),
+      });
+      stubClipboard().writeText.mockRejectedValue(new Error('denied'));
+
+      await clickMenu(fixture, 'Clipboard', 'Copy');
+
+      await vi.waitFor(() =>
+        expect(snackBar.open).toHaveBeenCalledWith(
+          COPY_WRITE_BLOCKED_MESSAGE,
+          'Close',
+          expect.objectContaining({ duration: 10000 }),
+        ),
+      );
+      expect(confirm).not.toHaveBeenCalled();
     });
 
     /**
@@ -2003,16 +2124,6 @@ describe('OptionsBar2Component', () => {
           }),
         ),
       );
-    });
-
-    /**
-     * Verifies: the gear menu has no Clipboard submenu; Copy and Paste live in the toolbar and the Keyboard menu.
-     * Interacts with: the gear menu (MatMenuHarness).
-     * Why: review found the Clipboard submenu duplicated the toolbar and Send Text.
-     */
-    it('has no Clipboard submenu', async () => {
-      const { fixture } = await renderOptionsBar2();
-      expect(await menuTexts(fixture)).not.toContain('Clipboard');
     });
 
     /**
