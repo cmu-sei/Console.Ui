@@ -67,6 +67,7 @@ import { IsoFile, IsoResult } from '../../models/vm/iso-result';
 import { VsphereService } from '../../state/vsphere/vsphere.service';
 import { UserPermissionsService } from '../../services/user-permissions/user-permissions.service';
 import { formatConnectedUsers, inIframe } from '../../utils/console-helpers';
+import { InputResult } from '../../services/novnc/novnc.service';
 import {
   COPY_WRITE_BLOCKED_MESSAGE,
   CTRL_ALT_DEL_TOOLTIP,
@@ -89,6 +90,12 @@ type NetworkVirtualMachine = ProxmoxVirtualMachine | VsphereVirtualMachine;
 
 // Tooltip on the controls that only work while the QEMU guest agent answers in the guest.
 export const GUEST_AGENT_TOOLTIP = 'Requires the QEMU guest agent';
+
+// Why text sent to the guest didn't arrive, finishing "Send Text failed: " or "Paste failed: ".
+const INPUT_FAILURE_REASON: Record<Exclude<InputResult, 'sent'>, string> = {
+  'not-connected': 'the console is not connected',
+  'read-only': 'the console is read-only',
+};
 
 // Shown after Paste has put the local clipboard on the VM's: nothing appears in the VM until the
 // guest pastes it.
@@ -282,11 +289,9 @@ export class OptionsBar2Component implements OnInit {
    */
   public refreshGuestAgentState() {
     const vm = this.vmState();
-    if (
-      vm?.type !== VmType.Proxmox ||
-      !this.proxmoxVm() ||
-      this.guestAgentRunning()
-    ) {
+    // With no model yet, because the first lookup failed or hasn't answered, look it up again too, so
+    // a transient failure doesn't leave Files disabled until the page reloads.
+    if (vm?.type !== VmType.Proxmox || this.guestAgentRunning()) {
       return;
     }
 
@@ -790,8 +795,9 @@ export class OptionsBar2Component implements OnInit {
       this.showMessage('Nothing to paste: your clipboard is empty');
       return;
     }
-    if (!this.proxmoxService.sendClipboardText(clip)) {
-      this.showMessage('Paste failed: the console is not connected', 10000);
+    const result = this.proxmoxService.sendClipboardText(clip);
+    if (result !== 'sent') {
+      this.showMessage(`Paste failed: ${INPUT_FAILURE_REASON[result]}`, 10000);
       return;
     }
     this.showMessage(PASTED_TO_VM_CLIPBOARD_MESSAGE);
@@ -801,16 +807,17 @@ export class OptionsBar2Component implements OnInit {
   // `timeoutStr` ms (the Send Text dialog's paste speed) before the next line. sendText itself
   // paces the keys within a line to what QEMU can take.
   public async paste(text: string, timeoutStr = '50') {
-    const timeout = parseInt(timeoutStr);
-    for (const line of text.split('\n')) {
-      if (!(await this.proxmoxService.sendText(line + '\n'))) {
-        this.showMessage(
-          'Send Text failed: the console is not connected',
-          10000,
-        );
-        return;
-      }
-      await new Promise((r) => setTimeout(r, timeout));
+    // One operation, so the whole text goes to the session it was typed for: each line followed by
+    // Enter, and the paste speed after each.
+    const result = await this.proxmoxService.sendText(
+      text + '\n',
+      parseInt(timeoutStr),
+    );
+    if (result !== 'sent') {
+      this.showMessage(
+        `Send Text failed: ${INPUT_FAILURE_REASON[result]}`,
+        10000,
+      );
     }
   }
 

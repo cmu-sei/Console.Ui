@@ -121,7 +121,7 @@ describe('NoVNCService', () => {
    */
   it('forwards clipboard paste', () => {
     const { service, rfb } = connectedClient();
-    expect(service.sendClipboardText('hello')).toBe(true);
+    expect(service.sendClipboardText('hello')).toBe('sent');
     expect(rfb.clipboardPasteFrom).toHaveBeenCalledWith('hello');
   });
 
@@ -131,15 +131,46 @@ describe('NoVNCService', () => {
    * Data: 'hello' with no client, before 'connect', and after 'disconnect'.
    * Why: noVNC drops a ClientCutText while not connected, so the toolbar Paste would otherwise report text it never sent.
    */
+  /**
+   * Verifies: once text has been put on the VM's clipboard, Copy returns it.
+   * Interacts with: sendClipboardText; getGuestClipboard.
+   * Data: the guest last copied 'old'; the host pastes 'new'.
+   * Why: QEMU doesn't echo a client's own clipboard update back to it, so Copy kept returning 'old'.
+   */
+  it('remembers text put on the VM clipboard for Copy', () => {
+    const { service } = connectedClient();
+    (service as unknown as { guestClipboard: string }).guestClipboard = 'old';
+
+    expect(service.sendClipboardText('new')).toBe('sent');
+
+    expect(service.getGuestClipboard()).toBe('new');
+  });
+
+  /**
+   * Verifies: a read-only console puts nothing on the VM's clipboard, says why, and leaves what Copy returns alone.
+   * Interacts with: setViewOnly; sendClipboardText.
+   * Data: 'hello' after read-only is turned on.
+   * Why: noVNC drops a ClientCutText from a view-only client, so Paste would otherwise report text it never sent.
+   */
+  it('sends nothing to the clipboard of a read-only console', () => {
+    const { service, rfb } = connectedClient();
+    service.setViewOnly(true);
+
+    expect(service.sendClipboardText('hello')).toBe('read-only');
+
+    expect(rfb.clipboardPasteFrom).not.toHaveBeenCalled();
+    expect(service.getGuestClipboard()).toBeNull();
+  });
+
   it('sends nothing to the clipboard of a console that is not connected', () => {
-    expect(new NoVNCService().sendClipboardText('hello')).toBe(false);
+    expect(new NoVNCService().sendClipboardText('hello')).toBe('not-connected');
 
     const { service, rfb } = withClient();
     (service as unknown as { trackConnection(): void }).trackConnection();
-    expect(service.sendClipboardText('hello')).toBe(false);
+    expect(service.sendClipboardText('hello')).toBe('not-connected');
     fire(rfb, 'connect');
     fire(rfb, 'disconnect');
-    expect(service.sendClipboardText('hello')).toBe(false);
+    expect(service.sendClipboardText('hello')).toBe('not-connected');
     expect(rfb.clipboardPasteFrom).not.toHaveBeenCalled();
   });
 
@@ -184,7 +215,7 @@ describe('NoVNCService', () => {
      */
     it('types each character as a key press, holding Shift where the character needs it', async () => {
       const { service, rfb } = connectedClient();
-      await expect(service.sendText('Hi!\n')).resolves.toBe(true);
+      await expect(service.sendText('Hi!\n')).resolves.toBe('sent');
       expect(vi.mocked(rfb.sendKey).mock.calls).toEqual([
         [SHIFT, null, true],
         [0x48, null],
@@ -218,7 +249,9 @@ describe('NoVNCService', () => {
      * Data: 'hello'.
      */
     it('types nothing without a client', async () => {
-      await expect(new NoVNCService().sendText('hello')).resolves.toBe(false);
+      await expect(new NoVNCService().sendText('hello')).resolves.toBe(
+        'not-connected',
+      );
     });
 
     /**
@@ -234,7 +267,19 @@ describe('NoVNCService', () => {
       const { service, rfb } = withClient();
       (service as unknown as { trackConnection(): void }).trackConnection();
       events.forEach((event) => fire(rfb, event));
-      await expect(service.sendText('hello')).resolves.toBe(false);
+      await expect(service.sendText('hello')).resolves.toBe('not-connected');
+      expect(rfb.sendKey).not.toHaveBeenCalled();
+    });
+
+    /**
+     * Verifies: a read-only console types nothing and says so.
+     * Interacts with: setViewOnly; the seeded client's sendKey.
+     * Data: 'hello' on a read-only console.
+     */
+    it('types nothing on a read-only console', async () => {
+      const { service, rfb } = connectedClient();
+      service.setViewOnly(true);
+      await expect(service.sendText('hello')).resolves.toBe('read-only');
       expect(rfb.sendKey).not.toHaveBeenCalled();
     });
 
@@ -277,7 +322,7 @@ describe('NoVNCService', () => {
         await vi.advanceTimersByTimeAsync(39);
         expect(done).toBe(false);
         await vi.advanceTimersByTimeAsync(1);
-        await expect(typed).resolves.toBe(true);
+        await expect(typed).resolves.toBe('sent');
       });
 
       /**
@@ -296,7 +341,7 @@ describe('NoVNCService', () => {
         fire(rfb, 'disconnect');
         await vi.advanceTimersByTimeAsync(100);
 
-        await expect(typed).resolves.toBe(false);
+        await expect(typed).resolves.toBe('not-connected');
         expect(keysyms(rfb)).toEqual([0x61, 0x62]);
       });
 
@@ -317,8 +362,76 @@ describe('NoVNCService', () => {
         (service as unknown as { rfb: RfbStub }).rfb = next;
         await vi.advanceTimersByTimeAsync(100);
 
-        await expect(typed).resolves.toBe(false);
+        await expect(typed).resolves.toBe('not-connected');
         expect(next.sendKey).not.toHaveBeenCalled();
+      });
+
+      /**
+       * Verifies: text queued behind another goes to the client it was submitted for, so a reconnect while it waits gets none of it.
+       * Interacts with: sendText's queue; the private rfb field a reconnect replaces; noVNC's public 'connect' event.
+       * Data: 'abcd' then 'xy', in batches of 4 events; a new, connected client after 'a' and 'b'.
+       * Why: the queue used to read the client when it reached the text, so the queued text went to the reconnected session.
+       */
+      it('keeps queued text off a client that replaced the one it was sent to', async () => {
+        useFakeTimers();
+        const { service } = connectedClient();
+        service.keyEventMs = 10;
+        service.keyBatchEvents = 4;
+        const first = service.sendText('abcd');
+        const second = service.sendText('xy');
+        await vi.advanceTimersByTimeAsync(0);
+
+        const next = rfbStub();
+        (service as unknown as { rfb: RfbStub }).rfb = next;
+        (service as unknown as { trackConnection(): void }).trackConnection();
+        fire(next, 'connect');
+        await vi.advanceTimersByTimeAsync(200);
+
+        await expect(first).resolves.toBe('not-connected');
+        await expect(second).resolves.toBe('not-connected');
+        expect(next.sendKey).not.toHaveBeenCalled();
+      });
+
+      /**
+       * Verifies: the line delay pauses after each Enter, before the next line.
+       * Interacts with: sendText's lineDelayMs; fake timers.
+       * Data: 'a\nb' with a 100 ms line delay and no per-key wait.
+       */
+      it('pauses after each line by the line delay', async () => {
+        useFakeTimers();
+        const { service, rfb } = connectedClient();
+        const typed = service.sendText('a\nb', 100);
+
+        await vi.advanceTimersByTimeAsync(0);
+        expect(keysyms(rfb)).toEqual([0x61, ENTER]);
+        await vi.advanceTimersByTimeAsync(99);
+        expect(keysyms(rfb)).toEqual([0x61, ENTER]);
+        await vi.advanceTimersByTimeAsync(1);
+        expect(keysyms(rfb)).toEqual([0x61, ENTER, 0x62]);
+        // The waits after the last batch.
+        await vi.runAllTimersAsync();
+        await expect(typed).resolves.toBe('sent');
+      });
+
+      /**
+       * Verifies: a console that turns read-only partway through stops typing and says why.
+       * Interacts with: setViewOnly; keyBatchEvents.
+       * Data: 'abcd' in batches of 4 events; read-only turned on after 'a' and 'b'.
+       * Why: noVNC drops keys from a view-only client, so the rest of the text used to vanish while reporting success.
+       */
+      it('stops when the console turns read-only partway through', async () => {
+        useFakeTimers();
+        const { service, rfb } = connectedClient();
+        service.keyEventMs = 10;
+        service.keyBatchEvents = 4;
+        const typed = service.sendText('abcd');
+        await vi.advanceTimersByTimeAsync(0);
+
+        service.setViewOnly(true);
+        await vi.advanceTimersByTimeAsync(100);
+
+        await expect(typed).resolves.toBe('read-only');
+        expect(keysyms(rfb)).toEqual([0x61, 0x62]);
       });
 
       /**
@@ -336,8 +449,8 @@ describe('NoVNCService', () => {
         await vi.advanceTimersByTimeAsync(100);
 
         await expect(Promise.all([first, second])).resolves.toEqual([
-          true,
-          true,
+          'sent',
+          'sent',
         ]);
         expect(keysyms(rfb)).toEqual([0x61, 0x62, 0x63, 0x64]);
       });
@@ -664,7 +777,7 @@ describe('NoVNCService', () => {
     service.setResolutionMode('match');
     service.setViewOnly(true);
     service.setViewOnly(false);
-    await expect(service.sendText('Hi')).resolves.toBe(true);
+    await expect(service.sendText('Hi')).resolves.toBe('sent');
     service.disconnect();
 
     expect(stub.disconnect).toHaveBeenCalledOnce();

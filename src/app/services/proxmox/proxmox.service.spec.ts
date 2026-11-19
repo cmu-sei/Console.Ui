@@ -10,7 +10,7 @@ import {
   ProxmoxService as ApiProxmoxService,
   ProxmoxVirtualMachine,
 } from '../../generated/vm-api';
-import { NoVNCService } from '../novnc/novnc.service';
+import { InputResult, NoVNCService } from '../novnc/novnc.service';
 import {
   filesOverUploadLimit,
   ProxmoxService,
@@ -40,8 +40,8 @@ function setup() {
   } satisfies ApiStub<ApiProxmoxService>;
   const novnc = {
     sendCtrlAltDel: vi.fn(),
-    sendClipboardText: vi.fn(),
-    sendText: vi.fn(() => Promise.resolve(true)),
+    sendClipboardText: vi.fn(() => 'sent' as const),
+    sendText: vi.fn(() => Promise.resolve<InputResult>('sent')),
     enterFullscreen: vi.fn(() => true),
     requestReconnect: vi.fn(),
     getGuestClipboard: vi.fn(() => 'copied'),
@@ -174,16 +174,17 @@ describe('ProxmoxService', () => {
   );
 
   /**
-   * Verifies: typed text goes to the noVNC client, and its connected/not-connected answer is passed back.
+   * Verifies: typed text and its line delay go to the noVNC client, and its result is passed back.
    * Interacts with: NoVNCService stub.
    * Data: text 'hello'; the client answering true, then false.
    */
   it('types text through noVNC', async () => {
     const { service, novnc } = setup();
-    await expect(service.sendText('hello')).resolves.toBe(true);
-    expect(novnc.sendText).toHaveBeenCalledWith('hello');
-    novnc.sendText.mockResolvedValue(false);
-    await expect(service.sendText('hello')).resolves.toBe(false);
+    await expect(service.sendText('hello', 50)).resolves.toBe('sent');
+    expect(novnc.sendText).toHaveBeenCalledWith('hello', 50);
+    novnc.sendText.mockResolvedValue('not-connected');
+    await expect(service.sendText('hello')).resolves.toBe('not-connected');
+    expect(novnc.sendText).toHaveBeenLastCalledWith('hello', 0);
   });
 
   describe('snapshots', () => {

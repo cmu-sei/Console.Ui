@@ -36,6 +36,7 @@ import {
 } from '../../generated/vm-api';
 import { DialogService } from '../../services/dialog/dialog.service';
 import { ProxmoxService } from '../../services/proxmox/proxmox.service';
+import { InputResult } from '../../services/novnc/novnc.service';
 import { IsoResult } from '../../models/vm/iso-result';
 import { PowerAction, VmService } from '../../state/vm/vm.service';
 import { VsphereService } from '../../state/vsphere/vsphere.service';
@@ -144,8 +145,8 @@ async function renderOptionsBar2(
     getIsos: vi.fn<ProxmoxService['getIsos']>(() => of([] as IsoResult[])),
     mountIso: vi.fn<ProxmoxService['mountIso']>(() => of(networkVm())),
     sendCtrlAltDel: vi.fn<ProxmoxService['sendCtrlAltDel']>(),
-    sendClipboardText: vi.fn<ProxmoxService['sendClipboardText']>(() => true),
-    sendText: vi.fn<ProxmoxService['sendText']>(() => Promise.resolve(true)),
+    sendClipboardText: vi.fn<ProxmoxService['sendClipboardText']>(() => 'sent'),
+    sendText: vi.fn<ProxmoxService['sendText']>(() => Promise.resolve('sent')),
     getSnapshots: vi.fn<ProxmoxService['getSnapshots']>(() =>
       of([
         { id: 'clean', name: 'clean', isCurrent: true, depth: 0 },
@@ -960,9 +961,10 @@ describe('OptionsBar2Component', () => {
     );
 
     /**
-     * Verifies: Keyboard > Text opens Send Text, which types each line of the dialog's text into the guest, followed by Enter, as the vSphere bar does.
+     * Verifies: Keyboard > Text opens Send Text, which types the dialog's text into the guest as one operation, each line followed by Enter, as the vSphere bar does.
      * Interacts with: the Keyboard submenu; DialogService.sendText; the app ProxmoxService.sendText.
      * Data: 'one\ntwo' at paste speed '0'.
+     * Why: one operation is tied to one console session, so a reconnect partway through can't send the later lines to a session that never saw the first.
      */
     it('types Send Text line by line', async () => {
       const { fixture, dialogs, proxmox } = await renderOptionsBar2();
@@ -974,33 +976,26 @@ describe('OptionsBar2Component', () => {
 
       expect(dialogs.sendText).toHaveBeenCalledWith('Enter Text to Send');
       await vi.waitFor(() =>
-        expect(proxmox.sendText.mock.calls).toEqual([['one\n'], ['two\n']]),
+        expect(proxmox.sendText.mock.calls).toEqual([['one\ntwo\n', 0]]),
       );
     });
 
     /**
-     * Verifies: lines are paced by the paste speed chosen in the dialog.
+     * Verifies: the paste speed chosen in the dialog goes to the console as the pause after each line.
      * Interacts with: the Keyboard submenu; DialogService.sendText; ProxmoxService.sendText.
      * Data: 'one\ntwo' at paste speed '200'.
-     * Why: fake timers, installed after the menu opens, show the second line waits for the delay.
      */
-    it('waits the paste speed between lines', async () => {
+    it('passes the paste speed on as the pause between lines', async () => {
       const { fixture, dialogs, proxmox } = await renderOptionsBar2();
       dialogs.sendText.mockReturnValue(
         of({ textToSend: 'one\ntwo', timeout: '200' }),
       );
-      await openSubmenu(fixture, 'Keyboard');
-      vi.useFakeTimers();
-      try {
-        fireEvent.click(screen.getByRole('menuitem', { name: 'Text' }));
-        expect(proxmox.sendText.mock.calls).toEqual([['one\n']]);
-        await vi.advanceTimersByTimeAsync(199);
-        expect(proxmox.sendText).toHaveBeenCalledOnce();
-        await vi.advanceTimersByTimeAsync(1);
-        expect(proxmox.sendText.mock.calls).toEqual([['one\n'], ['two\n']]);
-      } finally {
-        vi.useRealTimers();
-      }
+
+      await clickMenu(fixture, 'Keyboard', 'Text');
+
+      await vi.waitFor(() =>
+        expect(proxmox.sendText).toHaveBeenCalledWith('one\ntwo\n', 200),
+      );
     });
 
     /**
@@ -1019,22 +1014,25 @@ describe('OptionsBar2Component', () => {
     );
 
     /**
-     * Verifies: with no connected console the first line is refused, the rest are skipped, and the user is told.
-     * Interacts with: the Keyboard submenu; ProxmoxService.sendText returning false; MatSnackBar.open.
+     * Verifies: text the console didn't send is reported with the reason: not connected, or read-only.
+     * Interacts with: the Keyboard submenu; ProxmoxService.sendText resolving 'not-connected' or 'read-only'; MatSnackBar.open.
      * Data: 'one\ntwo'.
      */
-    it('reports a console that is not connected', async () => {
+    it.each<[Exclude<InputResult, 'sent'>, string]>([
+      ['not-connected', 'Send Text failed: the console is not connected'],
+      ['read-only', 'Send Text failed: the console is read-only'],
+    ])('reports Send Text that went unsent (%s)', async (result, message) => {
       const { fixture, dialogs, proxmox, snackBar } = await renderOptionsBar2();
       dialogs.sendText.mockReturnValue(
         of({ textToSend: 'one\ntwo', timeout: '0' }),
       );
-      proxmox.sendText.mockResolvedValue(false);
+      proxmox.sendText.mockResolvedValue(result);
 
       await clickMenu(fixture, 'Keyboard', 'Text');
 
       await vi.waitFor(() =>
         expect(snackBar.open).toHaveBeenCalledWith(
-          'Send Text failed: the console is not connected',
+          message,
           'Close',
           expect.objectContaining({ duration: 10000 }),
         ),
@@ -1154,27 +1152,28 @@ describe('OptionsBar2Component', () => {
     });
 
     /**
-     * Verifies: the toolbar Paste says so when the console is not connected, or the local clipboard is empty, and sends nothing for an empty one.
-     * Interacts with: user-event click on Paste; ProxmoxService.sendClipboardText returning false; MatSnackBar.open.
-     * Data: vncClipboardEnabled true; clipboard 'x' with the console down, then an empty clipboard.
+     * Verifies: the toolbar Paste says so when the console is not connected or read-only, or the local clipboard is empty, and sends nothing for an empty one.
+     * Interacts with: user-event click on Paste; ProxmoxService.sendClipboardText returning 'not-connected' or 'read-only'; MatSnackBar.open.
+     * Data: vncClipboardEnabled true; clipboard 'x' with the console down, then read-only, then an empty clipboard.
      */
-    it.each<[string, string, boolean, string]>([
+    it.each<[string, string, InputResult, string]>([
       [
         'not connected',
         'x',
-        false,
+        'not-connected',
         'Paste failed: the console is not connected',
       ],
-      ['empty', '', true, 'Nothing to paste: your clipboard is empty'],
+      ['read-only', 'x', 'read-only', 'Paste failed: the console is read-only'],
+      ['empty', '', 'sent', 'Nothing to paste: your clipboard is empty'],
     ])(
       'reports a toolbar Paste that sends nothing (%s)',
-      async (_, clip, connected, message) => {
+      async (_, clip, result, message) => {
         const user = userEvent.setup();
         const { proxmox, snackBar } = await renderOptionsBar2({
           networkVm: vncClipboardVm(),
         });
         stubClipboard(clip);
-        proxmox.sendClipboardText.mockReturnValue(connected);
+        proxmox.sendClipboardText.mockReturnValue(result);
 
         await user.click(screen.getByRole('button', { name: /^Paste$/ }));
 
@@ -1527,6 +1526,27 @@ describe('OptionsBar2Component', () => {
       const { fixture, proxmox } = await renderOptionsBar2({
         grants: canTransfer,
         networkVm: agentVm(false),
+      });
+      proxmox.getVm.mockReturnValue(agentVm(true));
+
+      const files = await openSubmenu(fixture, 'Files');
+      fixture.detectChanges();
+      const [send] = await files.getItems({ text: 'Send File To VM' });
+
+      expect(proxmox.getVm).toHaveBeenCalledTimes(2);
+      expect(await send.isDisabled()).toBe(false);
+    });
+
+    /**
+     * Verifies: when the first lookup of the Vm failed, opening Files looks it up again, and the transfer items enable once it answers.
+     * Interacts with: ProxmoxService.getVm (failing at load, then answering with the agent running); the Files submenu.
+     * Data: transfer grants.
+     * Why: without the retry, a transient failure left Files disabled until the page was reloaded.
+     */
+    it('looks the Vm up again when Files opens after a failed lookup', async () => {
+      const { fixture, proxmox } = await renderOptionsBar2({
+        grants: canTransfer,
+        networkVm: throwError(() => new Error('nope')),
       });
       proxmox.getVm.mockReturnValue(agentVm(true));
 

@@ -36,6 +36,12 @@ export const KEY_BATCH_EVENTS = 64;
  */
 export type ResolutionMode = 'scale' | 'match';
 
+/**
+ * What became of text sent to the guest: all of it sent, or none or only part of it because the
+ * console wasn't connected (or was replaced by a reconnect), or was read-only.
+ */
+export type InputResult = 'sent' | 'not-connected' | 'read-only';
+
 @Injectable({
   providedIn: 'root',
 })
@@ -272,23 +278,29 @@ export class NoVNCService {
    * reaches the guest where QEMU's VNC clipboard is on (clipboard=vnc) and spice-vdagent runs in the
    * guest. False, sending nothing, when the console is not connected.
    */
-  public sendClipboardText(text: string): boolean {
-    if (!this.canType(this.rfb)) {
-      return false;
+  public sendClipboardText(text: string): InputResult {
+    const blocked = this.inputBlocked(this.rfb);
+    if (blocked) {
+      return blocked;
     }
     this.rfb.clipboardPasteFrom(text);
-    return true;
+    // QEMU doesn't echo a client's own clipboard update back to it, so without this a Copy straight
+    // after would return what the guest last copied, not what is now on its clipboard.
+    this.guestClipboard = text;
+    return 'sent';
   }
 
   /**
    * Types text into the guest as key presses, one keysym per character. A line break (\n, \r\n
-   * or \r) is sent as Enter and a tab as Tab; other control characters are dropped. Resolves false
-   * when the console is not connected - no client, one still connecting, or one that has dropped -
-   * or when it stops being connected partway through, in which case the rest is not sent.
+   * or \r) is sent as Enter and a tab as Tab; other control characters are dropped. Resolves 'sent'
+   * once all of it has been typed. It resolves 'not-connected' or 'read-only', with the rest unsent,
+   * when the console isn't connected or is read-only, or stops being so partway through. The text is
+   * tied to the client present when it is submitted: if that client drops or a reconnect replaces it,
+   * the rest is dropped too, rather than typed into a session that never saw the start of it.
    *
    * Keys are sent in batches of {@link keyBatchEvents} events, each followed by a wait long enough
-   * for QEMU to type them ({@link KEY_EVENT_MS} per event), and resolves once the last batch has had
-   * that wait. A second call waits for the first to finish.
+   * for QEMU to type them ({@link KEY_EVENT_MS} per event). `lineDelayMs` adds a pause after each
+   * Enter, the Send Text dialog's paste speed. A second call waits for the first to finish.
    *
    * The guest maps keysyms through its own keyboard layout, so characters its layout cannot
    * produce are lost there, the same caveat as WMKS sendInputString.
@@ -301,30 +313,45 @@ export class NoVNCService {
    * '1' and '"' as an apostrophe. Capitals survive without Shift only through QEMU's caps-lock sync,
    * which toggles the guest's Caps Lock to match.
    */
-  public sendText(text: string): Promise<boolean> {
-    const typed = this.typing.then(() => this.typeText(text));
+  public sendText(text: string, lineDelayMs = 0): Promise<InputResult> {
+    // The client at submission, not when the queue reaches this text: queued text belongs to the
+    // session it was typed for, and must not go to a reconnect's or another Vm's.
+    const rfb = this.rfb;
+    const typed = this.typing.then(() => this.typeText(rfb, text, lineDelayMs));
     this.typing = typed.catch(() => undefined);
     return typed;
   }
 
-  private async typeText(text: string): Promise<boolean> {
-    const rfb = this.rfb;
-    if (!this.canType(rfb)) {
-      return false;
+  private async typeText(
+    rfb: RFB | null,
+    text: string,
+    lineDelayMs: number,
+  ): Promise<InputResult> {
+    const before = this.inputBlocked(rfb);
+    if (before) {
+      return before;
     }
 
     let batch = 0;
+    // Waits for QEMU to type what has been sent, plus `extraMs`, and says whether the text can go on:
+    // the session may have dropped, been replaced by a reconnect, or turned read-only meanwhile.
+    const drain = async (extraMs = 0): Promise<InputResult | null> => {
+      await this.waitForKeys(batch);
+      batch = 0;
+      if (extraMs > 0) {
+        await new Promise((resolve) => setTimeout(resolve, extraMs));
+      }
+      return this.inputBlocked(rfb);
+    };
+
     for (const { keysym, shift } of NoVNCService.keyPressesFor(text)) {
       // A press and release, and Shift's around them; kept in one batch so Shift is never left held
       // across a wait.
       const events = shift ? 4 : 2;
       if (batch > 0 && batch + events > this.keyBatchEvents) {
-        await this.waitForKeys(batch);
-        batch = 0;
-        // Dropped, or replaced by a reconnect, while waiting: the rest would go nowhere, or to a
-        // session that never saw the start of the text.
-        if (this.rfb !== rfb || !this.canType(rfb)) {
-          return false;
+        const blocked = await drain();
+        if (blocked) {
+          return blocked;
         }
       }
 
@@ -336,25 +363,38 @@ export class NoVNCService {
         rfb.sendKey(XK_SHIFT_L, null, false);
       }
       batch += events;
+
+      // The Send Text dialog's paste speed: a pause after each line, for a guest that needs time to
+      // act on one before the next arrives.
+      if (keysym === XK_RETURN && lineDelayMs > 0) {
+        const blocked = await drain(lineDelayMs);
+        if (blocked) {
+          return blocked;
+        }
+      }
     }
 
-    // The last batch too, so text sent straight after this, such as a paste's next line, does not
-    // pile onto keys QEMU is still typing.
+    // The last batch too, so text sent straight after this does not pile onto keys QEMU is still
+    // typing.
     if (batch > 0) {
       await this.waitForKeys(batch);
     }
-    return true;
+    return 'sent';
   }
 
-  // Whether keys sent to this client reach the guest: it is the current client, and its 'connect'
-  // event has fired with no 'disconnect' since.
-  private canType(rfb: RFB | null): boolean {
-    return (
-      !!rfb &&
-      rfb === this.rfb &&
-      this.clientConnected &&
-      !this.clientDisconnected
-    );
+  // Why keys and clipboard text sent to this client wouldn't reach the guest, or null when they
+  // would: it must be the current client, its 'connect' event must have fired with no 'disconnect'
+  // since, and the console must not be read-only, since noVNC drops input from a view-only client.
+  private inputBlocked(rfb: RFB | null): Exclude<InputResult, 'sent'> | null {
+    if (
+      !rfb ||
+      rfb !== this.rfb ||
+      !this.clientConnected ||
+      this.clientDisconnected
+    ) {
+      return 'not-connected';
+    }
+    return this.viewOnlySignal() ? 'read-only' : null;
   }
 
   private waitForKeys(events: number): Promise<void> {

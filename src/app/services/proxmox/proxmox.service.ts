@@ -16,7 +16,11 @@ import {
   VmSnapshot,
 } from '../../generated/vm-api';
 import { IsoResult } from '../../models/vm/iso-result';
-import { NoVNCService, ResolutionMode } from '../novnc/novnc.service';
+import {
+  InputResult,
+  NoVNCService,
+  ResolutionMode,
+} from '../novnc/novnc.service';
 
 /**
  * The files `uploadFiles` would send that are over `limitBytes`, the largest file vm.api accepts for
@@ -174,14 +178,15 @@ export class ProxmoxService {
     this.novncService.sendCtrlAltDel();
   }
 
-  // Puts the text on the guest's clipboard. False when the console is not connected.
-  public sendClipboardText(text: string): boolean {
+  // Puts the text on the guest's clipboard; see NoVNCService.sendClipboardText.
+  public sendClipboardText(text: string): InputResult {
     return this.novncService.sendClipboardText(text);
   }
 
-  // Types the text into the guest as key presses. False when the console is not connected.
-  public sendText(text: string): Promise<boolean> {
-    return this.novncService.sendText(text);
+  // Types the text into the guest as key presses, pausing `lineDelayMs` after each line; see
+  // NoVNCService.sendText.
+  public sendText(text: string, lineDelayMs = 0): Promise<InputResult> {
+    return this.novncService.sendText(text, lineDelayMs);
   }
 }
 
