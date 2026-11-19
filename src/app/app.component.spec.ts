@@ -52,7 +52,10 @@ async function renderApp(
 ) {
   const theme$ = new BehaviorSubject<Theme>(overrides.theme ?? Theme.LIGHT);
   const themeParam$ = new Subject<string | null>();
-  const auth = { setUserTheme: vi.fn() } satisfies Pick<ComnAuthService, 'setUserTheme'>;
+  const auth = { setUserTheme: vi.fn() } satisfies Pick<
+    ComnAuthService,
+    'setUserTheme'
+  >;
   const navigate = vi.fn(() => Promise.resolve(true));
   // renderComponent installs MatIconTestingModule's fake registry; this spec
   // provides the real MatIconRegistry instead and records what it registers.
@@ -60,11 +63,14 @@ async function renderApp(
   const addSvgIcon = vi.spyOn(MatIconRegistry.prototype, 'addSvgIcon');
   const applyTheme = vi.spyOn(CrucibleThemeService.prototype, 'applyTheme');
   const routerQuery: Pick<RouterQuery, 'selectQueryParams'> = {
-    selectQueryParams: (() => themeParam$.asObservable()) as RouterQuery['selectQueryParams'],
+    selectQueryParams: (() =>
+      themeParam$.asObservable()) as RouterQuery['selectQueryParams'],
   };
 
   const rendered = await renderComponent(AppComponent, {
-    childStubs: [{ replace: ComnHeaderBarModule, with: HeaderBarStubComponent }],
+    childStubs: [
+      { replace: ComnHeaderBarModule, with: HeaderBarStubComponent },
+    ],
     providers: [
       // CrucibleFaviconService loads the favicon SVG through HttpBackend.
       provideHttpClient(),
@@ -73,7 +79,10 @@ async function renderApp(
       MatIconRegistry,
       {
         provide: ComnAuthQuery,
-        useValue: { userTheme$: theme$ } satisfies Pick<ComnAuthQuery, 'userTheme$'>,
+        useValue: { userTheme$: theme$ } satisfies Pick<
+          ComnAuthQuery,
+          'userTheme$'
+        >,
       },
       { provide: ComnAuthService, useValue: auth },
       { provide: RouterQuery, useValue: routerQuery },
@@ -92,7 +101,16 @@ async function renderApp(
 
   const registered = new Set(addSvgIcon.mock.calls.map(([name]) => name));
 
-  return { ...rendered, theme$, themeParam$, auth, navigate, registered, applyTheme, http };
+  return {
+    ...rendered,
+    theme$,
+    themeParam$,
+    auth,
+    navigate,
+    registered,
+    applyTheme,
+    http,
+  };
 }
 
 describe('AppComponent', () => {
@@ -162,7 +180,9 @@ describe('AppComponent', () => {
     expect(bodyStyle('--crucible-topbar-text')).toBe('#FFFFFF');
     expect(bodyStyle('--mat-sys-primary')).toBe('#3B62A5');
     expect(
-      document.documentElement.style.getPropertyValue('--crucible-topbar-background').toUpperCase(),
+      document.documentElement.style
+        .getPropertyValue('--crucible-topbar-background')
+        .toUpperCase(),
     ).toBe('#3B62A5');
   });
 

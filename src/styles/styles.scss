@@ -15,19 +15,29 @@
 /* END VENDER INCLUDES */
 
 html {
-  @include mat.theme((color: theme.$primary-palette,
+  @include mat.theme(
+    (
+      color: theme.$primary-palette,
       typography: '"Open Sans", sans-serif',
-    ));
-  @include mat.icon-button-overrides((icon-color: var(--mat-sys-primary),
-    ));
+    )
+  );
+  @include mat.icon-button-overrides(
+    (
+      icon-color: var(--mat-sys-primary),
+    )
+  );
 }
 
 .darkMode {
-  @include mat.theme((color: (primary: dark-theme.$dark-primary-palette,
+  @include mat.theme(
+    (
+      color: (
+        primary: dark-theme.$dark-primary-palette,
         typography: '"Open Sans", sans-serif',
         theme-type: dark,
       ),
-    ));
+    )
+  );
 }
 
 html,
@@ -38,7 +48,7 @@ body {
 }
 
 body {
-  font-family: "Open Sans", sans-serif;
+  font-family: 'Open Sans', sans-serif;
 }
 
 .full-height {
@@ -63,7 +73,8 @@ app-root {
 }
 
 // default all icons to the primary theme color
-mat-icon, .mat-icon {
+mat-icon,
+.mat-icon {
   --mat-icon-color: var(--mat-sys-primary);
 }
 

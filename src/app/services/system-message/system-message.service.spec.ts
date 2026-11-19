@@ -16,7 +16,10 @@ describe('SystemMessageService', () => {
   it('opens the message sheet with the title and message', () => {
     const sheet = { open: vi.fn() } satisfies Pick<MatBottomSheet, 'open'>;
     TestBed.configureTestingModule({
-      providers: [SystemMessageService, { provide: MatBottomSheet, useValue: sheet }],
+      providers: [
+        SystemMessageService,
+        { provide: MatBottomSheet, useValue: sheet },
+      ],
     });
     const service = TestBed.inject(SystemMessageService);
 

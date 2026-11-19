@@ -55,7 +55,10 @@ async function renderNovnc(
       { provide: NoVNCService, useValue: novnc },
       {
         provide: ComnAuthQuery,
-        useValue: { userTheme$: theme$ } satisfies Pick<ComnAuthQuery, 'userTheme$'>,
+        useValue: { userTheme$: theme$ } satisfies Pick<
+          ComnAuthQuery,
+          'userTheme$'
+        >,
       },
     ],
   });
@@ -74,7 +77,11 @@ describe('NovncComponent', () => {
    * Data: url 'wss://pve/ws', ticket 't-1', readOnly true.
    */
   it('starts the client once the screen exists', async () => {
-    const { novnc } = await renderNovnc({ url: 'wss://pve/ws', ticket: 't-1', readOnly: true });
+    const { novnc } = await renderNovnc({
+      url: 'wss://pve/ws',
+      ticket: 't-1',
+      readOnly: true,
+    });
 
     expect(novnc.startClient).toHaveBeenCalledWith(
       'wss://pve/ws',
@@ -123,11 +130,17 @@ describe('NovncComponent', () => {
    * Data: ticket 't-1' then 't-2'.
    */
   it('restarts the client when the ticket changes', async () => {
-    const { novnc, rerender } = await renderNovnc({ url: 'wss://pve/ws', ticket: 't-1' });
+    const { novnc, rerender } = await renderNovnc({
+      url: 'wss://pve/ws',
+      ticket: 't-1',
+    });
 
     await rerender({ inputs: { ticket: 't-2' }, partialUpdate: true });
 
-    expect(vi.mocked(novnc.startClient).mock.calls.map((c) => c[1])).toEqual(['t-1', 't-2']);
+    expect(vi.mocked(novnc.startClient).mock.calls.map((c) => c[1])).toEqual([
+      't-1',
+      't-2',
+    ]);
   });
 
   /**
@@ -136,13 +149,20 @@ describe('NovncComponent', () => {
    * Data: one connect event.
    */
   it('shows Connecting... until connected', async () => {
-    const { fixture, listener } = await renderNovnc({ url: 'wss://pve/ws', ticket: 't-1' });
-    expect(screen.getByRole('heading', { name: 'Connecting...' })).toBeInTheDocument();
+    const { fixture, listener } = await renderNovnc({
+      url: 'wss://pve/ws',
+      ticket: 't-1',
+    });
+    expect(
+      screen.getByRole('heading', { name: 'Connecting...' }),
+    ).toBeInTheDocument();
 
     listener('setConnectListener')({});
     fixture.detectChanges();
 
-    expect(screen.queryByRole('heading', { name: 'Connecting...' })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('heading', { name: 'Connecting...' }),
+    ).not.toBeInTheDocument();
   });
 
   /**
@@ -152,7 +172,10 @@ describe('NovncComponent', () => {
    */
   it('asks the parent to reconnect with the failure count', async () => {
     vi.spyOn(console, 'log').mockImplementation(() => undefined);
-    const { listener, reconnect } = await renderNovnc({ url: 'wss://pve/ws', ticket: 't-1' });
+    const { listener, reconnect } = await renderNovnc({
+      url: 'wss://pve/ws',
+      ticket: 't-1',
+    });
     const disconnected = listener('setDisconnectListener');
     const connected = listener('setConnectListener');
 
@@ -189,7 +212,10 @@ describe('NovncComponent', () => {
    * Data: theme switched to dark.
    */
   it('updates the noVNC background when the theme changes', async () => {
-    const { novnc, theme$ } = await renderNovnc({ url: 'wss://pve/ws', ticket: 't-1' });
+    const { novnc, theme$ } = await renderNovnc({
+      url: 'wss://pve/ws',
+      ticket: 't-1',
+    });
     vi.mocked(novnc.updateBackground).mockClear();
 
     theme$.next(Theme.DARK);
@@ -205,7 +231,10 @@ describe('NovncComponent', () => {
   it('copies guest clipboard text locally', async () => {
     vi.spyOn(console, 'log').mockImplementation(() => undefined);
     const { writeText } = stubClipboard();
-    const { listener } = await renderNovnc({ url: 'wss://pve/ws', ticket: 't-1' });
+    const { listener } = await renderNovnc({
+      url: 'wss://pve/ws',
+      ticket: 't-1',
+    });
 
     await listener('setClipboardListener')({ detail: { text: 'secret' } });
 
@@ -222,7 +251,10 @@ describe('NovncComponent', () => {
     const { writeText } = stubClipboard();
     const denied = new Error('denied');
     writeText.mockRejectedValue(denied);
-    const { listener } = await renderNovnc({ url: 'wss://pve/ws', ticket: 't-1' });
+    const { listener } = await renderNovnc({
+      url: 'wss://pve/ws',
+      ticket: 't-1',
+    });
     const rejections = captureUnhandledRejections();
 
     void listener('setClipboardListener')({ detail: { text: 'secret' } });
@@ -238,10 +270,11 @@ describe('NovncComponent', () => {
      * Data: a connected client; one earlier failure, which the user reconnect resets.
      */
     it('disconnects and reconnects at once', async () => {
-      const { novnc, reconnect, listener, reconnectRequests } = await renderNovnc({
-        url: 'wss://pve/ws',
-        ticket: 't-1',
-      });
+      const { novnc, reconnect, listener, reconnectRequests } =
+        await renderNovnc({
+          url: 'wss://pve/ws',
+          ticket: 't-1',
+        });
       listener('setDisconnectListener')({ detail: { clean: false } });
       expect(reconnect).toHaveBeenLastCalledWith(1);
 

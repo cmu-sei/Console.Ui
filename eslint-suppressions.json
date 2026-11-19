@@ -1,0 +1,561 @@
+{
+  "e2e/app.e2e-spec.ts": {
+    "@typescript-eslint/no-floating-promises": {
+      "count": 1
+    }
+  },
+  "e2e/app.po.ts": {
+    "@typescript-eslint/no-unsafe-call": {
+      "count": 4
+    },
+    "@typescript-eslint/no-unsafe-member-access": {
+      "count": 3
+    },
+    "@typescript-eslint/no-unsafe-return": {
+      "count": 2
+    }
+  },
+  "src/app/app-routing/app-routing.module.spec.ts": {
+    "@typescript-eslint/array-type": {
+      "count": 1
+    }
+  },
+  "src/app/app.component.spec.ts": {
+    "@angular-eslint/component-selector": {
+      "count": 1
+    }
+  },
+  "src/app/app.component.ts": {
+    "@typescript-eslint/no-floating-promises": {
+      "count": 1
+    },
+    "@typescript-eslint/no-unsafe-argument": {
+      "count": 1
+    },
+    "@typescript-eslint/no-unused-vars": {
+      "count": 1
+    }
+  },
+  "src/app/app.config.spec.ts": {
+    "@typescript-eslint/consistent-type-definitions": {
+      "count": 1
+    },
+    "@typescript-eslint/no-unnecessary-type-assertion": {
+      "count": 1
+    },
+    "@typescript-eslint/no-unsafe-assignment": {
+      "count": 2
+    }
+  },
+  "src/app/app.config.ts": {
+    "@typescript-eslint/no-deprecated": {
+      "count": 1
+    },
+    "@typescript-eslint/no-unsafe-assignment": {
+      "count": 1
+    },
+    "@typescript-eslint/no-unsafe-member-access": {
+      "count": 1
+    }
+  },
+  "src/app/components/console-page/console-page.component.spec.ts": {
+    "@typescript-eslint/no-unsafe-call": {
+      "count": 2
+    },
+    "@typescript-eslint/no-unsafe-member-access": {
+      "count": 2
+    }
+  },
+  "src/app/components/console-page/console-page.component.ts": {
+    "@typescript-eslint/no-floating-promises": {
+      "count": 1
+    },
+    "@typescript-eslint/no-unsafe-member-access": {
+      "count": 2
+    },
+    "@typescript-eslint/no-unused-vars": {
+      "count": 3
+    }
+  },
+  "src/app/components/console/console.component.html": {
+    "@angular-eslint/template/eqeqeq": {
+      "count": 3
+    }
+  },
+  "src/app/components/console/console.component.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 1
+    },
+    "@typescript-eslint/adjacent-overload-signatures": {
+      "count": 1
+    }
+  },
+  "src/app/components/novnc/novnc.component.spec.ts": {
+    "@typescript-eslint/no-unnecessary-type-assertion": {
+      "count": 1
+    }
+  },
+  "src/app/components/novnc/novnc.component.ts": {
+    "@typescript-eslint/dot-notation": {
+      "count": 3
+    },
+    "@typescript-eslint/no-unsafe-argument": {
+      "count": 7
+    },
+    "@typescript-eslint/no-unsafe-member-access": {
+      "count": 2
+    },
+    "@typescript-eslint/no-unused-vars": {
+      "count": 1
+    }
+  },
+  "src/app/components/options-bar/options-bar.component.html": {
+    "@angular-eslint/template/interactive-supports-focus": {
+      "count": 1
+    }
+  },
+  "src/app/components/options-bar/options-bar.component.spec.ts": {
+    "@typescript-eslint/no-unnecessary-type-assertion": {
+      "count": 4
+    },
+    "@typescript-eslint/no-unsafe-member-access": {
+      "count": 1
+    }
+  },
+  "src/app/components/options-bar/options-bar.component.ts": {
+    "@typescript-eslint/array-type": {
+      "count": 1
+    },
+    "@typescript-eslint/consistent-type-assertions": {
+      "count": 1
+    },
+    "@typescript-eslint/no-deprecated": {
+      "count": 3
+    },
+    "@typescript-eslint/no-explicit-any": {
+      "count": 3
+    },
+    "@typescript-eslint/no-floating-promises": {
+      "count": 4
+    },
+    "@typescript-eslint/no-inferrable-types": {
+      "count": 1
+    },
+    "@typescript-eslint/no-unnecessary-type-assertion": {
+      "count": 5
+    },
+    "@typescript-eslint/no-unsafe-argument": {
+      "count": 3
+    },
+    "@typescript-eslint/no-unsafe-assignment": {
+      "count": 1
+    },
+    "@typescript-eslint/no-unsafe-call": {
+      "count": 13
+    },
+    "@typescript-eslint/no-unsafe-enum-comparison": {
+      "count": 2
+    },
+    "@typescript-eslint/no-unsafe-member-access": {
+      "count": 26
+    },
+    "@typescript-eslint/no-unused-vars": {
+      "count": 4
+    },
+    "no-var": {
+      "count": 1
+    }
+  },
+  "src/app/components/options-bar2/options-bar2.component.html": {
+    "@angular-eslint/template/interactive-supports-focus": {
+      "count": 1
+    }
+  },
+  "src/app/components/options-bar2/options-bar2.component.spec.ts": {
+    "@typescript-eslint/array-type": {
+      "count": 1
+    },
+    "@typescript-eslint/no-unnecessary-type-assertion": {
+      "count": 1
+    },
+    "@typescript-eslint/no-unsafe-assignment": {
+      "count": 1
+    },
+    "@typescript-eslint/no-unsafe-return": {
+      "count": 1
+    }
+  },
+  "src/app/components/options-bar2/options-bar2.component.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 1
+    },
+    "@typescript-eslint/no-floating-promises": {
+      "count": 1
+    },
+    "@typescript-eslint/no-unsafe-member-access": {
+      "count": 3
+    }
+  },
+  "src/app/components/page-not-found/page-not-found.component.ts": {
+    "@angular-eslint/no-empty-lifecycle-method": {
+      "count": 1
+    },
+    "@typescript-eslint/no-empty-function": {
+      "count": 2
+    }
+  },
+  "src/app/components/proxmox/proxmox-console/proxmox-console.component.spec.ts": {
+    "@typescript-eslint/no-unnecessary-type-assertion": {
+      "count": 2
+    }
+  },
+  "src/app/components/proxmox/proxmox-console/proxmox-console.component.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 1
+    },
+    "@typescript-eslint/no-inferrable-types": {
+      "count": 1
+    }
+  },
+  "src/app/components/shared/file-upload-info-dialog/file-upload-info-dialog.component.ts": {
+    "@angular-eslint/component-selector": {
+      "count": 1
+    },
+    "@typescript-eslint/no-unsafe-argument": {
+      "count": 1
+    },
+    "@typescript-eslint/no-unsafe-call": {
+      "count": 1
+    },
+    "@typescript-eslint/no-unsafe-member-access": {
+      "count": 1
+    }
+  },
+  "src/app/components/shared/file-upload-progress-dialog/file-upload-progress-dialog.component.ts": {
+    "@angular-eslint/component-selector": {
+      "count": 1
+    }
+  },
+  "src/app/components/shared/mount-iso-dialog/mount-iso-dialog.component.ts": {
+    "@angular-eslint/component-selector": {
+      "count": 1
+    },
+    "@angular-eslint/prefer-signals": {
+      "count": 1
+    }
+  },
+  "src/app/components/shared/send-text-dialog/send-text-dialog.component.ts": {
+    "@angular-eslint/component-selector": {
+      "count": 1
+    },
+    "@typescript-eslint/no-unsafe-assignment": {
+      "count": 3
+    },
+    "@typescript-eslint/no-unsafe-call": {
+      "count": 2
+    },
+    "@typescript-eslint/no-unsafe-member-access": {
+      "count": 2
+    }
+  },
+  "src/app/components/shared/snapshot-dialog/snapshot-dialog.component.ts": {
+    "@angular-eslint/component-selector": {
+      "count": 1
+    },
+    "@angular-eslint/prefer-signals": {
+      "count": 1
+    }
+  },
+  "src/app/components/shared/system-message/system-message.component.ts": {
+    "@angular-eslint/no-empty-lifecycle-method": {
+      "count": 1
+    },
+    "@typescript-eslint/no-empty-function": {
+      "count": 1
+    },
+    "@typescript-eslint/no-unsafe-assignment": {
+      "count": 4
+    },
+    "@typescript-eslint/no-unsafe-member-access": {
+      "count": 2
+    }
+  },
+  "src/app/components/user-follow-page/user-follow-page.component.html": {
+    "@angular-eslint/template/no-negated-async": {
+      "count": 1
+    }
+  },
+  "src/app/components/user-follow-page/user-follow-page.component.ts": {
+    "@typescript-eslint/no-floating-promises": {
+      "count": 3
+    },
+    "@typescript-eslint/no-unsafe-argument": {
+      "count": 6
+    },
+    "@typescript-eslint/no-unsafe-assignment": {
+      "count": 5
+    }
+  },
+  "src/app/components/wmks/wmks.component.spec.ts": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 1
+    }
+  },
+  "src/app/components/wmks/wmks.component.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 3
+    },
+    "@typescript-eslint/no-deprecated": {
+      "count": 1
+    },
+    "@typescript-eslint/no-explicit-any": {
+      "count": 1
+    },
+    "@typescript-eslint/no-floating-promises": {
+      "count": 2
+    },
+    "@typescript-eslint/no-unnecessary-type-assertion": {
+      "count": 1
+    },
+    "@typescript-eslint/no-unsafe-assignment": {
+      "count": 4
+    },
+    "@typescript-eslint/no-unsafe-call": {
+      "count": 3
+    },
+    "@typescript-eslint/no-unsafe-member-access": {
+      "count": 7
+    },
+    "@typescript-eslint/no-unused-vars": {
+      "count": 1
+    },
+    "no-var": {
+      "count": 1
+    },
+    "rxjs-x/no-unsafe-takeuntil": {
+      "count": 1
+    }
+  },
+  "src/app/models/vm/vm-model.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 1
+    }
+  },
+  "src/app/services/error/error.service.ts": {
+    "@typescript-eslint/no-explicit-any": {
+      "count": 2
+    },
+    "@typescript-eslint/no-unsafe-argument": {
+      "count": 3
+    },
+    "@typescript-eslint/no-unsafe-assignment": {
+      "count": 1
+    },
+    "@typescript-eslint/no-unsafe-call": {
+      "count": 1
+    },
+    "@typescript-eslint/no-unsafe-member-access": {
+      "count": 11
+    }
+  },
+  "src/app/services/notification/notification.service.spec.ts": {
+    "@typescript-eslint/array-type": {
+      "count": 1
+    },
+    "@typescript-eslint/no-unnecessary-type-assertion": {
+      "count": 1
+    },
+    "@typescript-eslint/require-await": {
+      "count": 1
+    }
+  },
+  "src/app/services/notification/notification.service.ts": {
+    "@typescript-eslint/array-type": {
+      "count": 1
+    },
+    "@typescript-eslint/no-floating-promises": {
+      "count": 3
+    },
+    "@typescript-eslint/no-misused-promises": {
+      "count": 1
+    }
+  },
+  "src/app/services/novnc/novnc.service.spec.ts": {
+    "@typescript-eslint/no-unsafe-call": {
+      "count": 1
+    },
+    "@typescript-eslint/no-unsafe-member-access": {
+      "count": 1
+    },
+    "@typescript-eslint/no-unsafe-return": {
+      "count": 1
+    }
+  },
+  "src/app/services/novnc/novnc.service.ts": {
+    "@typescript-eslint/no-empty-function": {
+      "count": 1
+    },
+    "@typescript-eslint/no-unsafe-assignment": {
+      "count": 1
+    },
+    "@typescript-eslint/no-unsafe-call": {
+      "count": 8
+    },
+    "@typescript-eslint/no-unsafe-function-type": {
+      "count": 4
+    },
+    "@typescript-eslint/no-unsafe-member-access": {
+      "count": 12
+    }
+  },
+  "src/app/services/signalr/signalr.service.spec.ts": {
+    "@typescript-eslint/no-unnecessary-type-assertion": {
+      "count": 2
+    },
+    "@typescript-eslint/require-await": {
+      "count": 1
+    }
+  },
+  "src/app/services/signalr/signalr.service.ts": {
+    "@typescript-eslint/no-floating-promises": {
+      "count": 14
+    },
+    "@typescript-eslint/no-misused-promises": {
+      "count": 1
+    },
+    "@typescript-eslint/no-unused-vars": {
+      "count": 1
+    }
+  },
+  "src/app/services/user-permissions/user-permissions.service.spec.ts": {
+    "@typescript-eslint/array-type": {
+      "count": 3
+    }
+  },
+  "src/app/shims/vmware-wmks.shim.spec.ts": {
+    "@typescript-eslint/no-unnecessary-type-assertion": {
+      "count": 1
+    }
+  },
+  "src/app/shims/vmware-wmks.shim.ts": {
+    "@typescript-eslint/prefer-includes": {
+      "count": 2
+    }
+  },
+  "src/app/state/user/user.model.ts": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 1
+    }
+  },
+  "src/app/state/user/user.service.ts": {
+    "@typescript-eslint/no-unsafe-argument": {
+      "count": 1
+    }
+  },
+  "src/app/state/vm/vm.service.spec.ts": {
+    "@typescript-eslint/array-type": {
+      "count": 3
+    }
+  },
+  "src/app/state/vm/vm.service.ts": {
+    "@typescript-eslint/no-floating-promises": {
+      "count": 1
+    },
+    "@typescript-eslint/no-unsafe-argument": {
+      "count": 1
+    }
+  },
+  "src/app/state/vm/vm.store.ts": {
+    "@typescript-eslint/no-empty-object-type": {
+      "count": 1
+    }
+  },
+  "src/app/state/vsphere/vsphere.service.spec.ts": {
+    "@typescript-eslint/array-type": {
+      "count": 1
+    }
+  },
+  "src/app/state/vsphere/vsphere.service.ts": {
+    "@typescript-eslint/no-deprecated": {
+      "count": 5
+    },
+    "@typescript-eslint/no-explicit-any": {
+      "count": 6
+    },
+    "@typescript-eslint/no-unnecessary-type-assertion": {
+      "count": 2
+    },
+    "@typescript-eslint/no-unsafe-argument": {
+      "count": 5
+    },
+    "@typescript-eslint/no-unsafe-assignment": {
+      "count": 12
+    },
+    "@typescript-eslint/no-unsafe-call": {
+      "count": 9
+    },
+    "@typescript-eslint/no-unsafe-enum-comparison": {
+      "count": 1
+    },
+    "@typescript-eslint/no-unsafe-member-access": {
+      "count": 30
+    },
+    "@typescript-eslint/no-unsafe-return": {
+      "count": 2
+    },
+    "@typescript-eslint/prefer-for-of": {
+      "count": 1
+    },
+    "@typescript-eslint/require-await": {
+      "count": 1
+    },
+    "no-empty": {
+      "count": 1
+    },
+    "no-var": {
+      "count": 1
+    }
+  },
+  "src/app/test-utils/clipboard.ts": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 1
+    }
+  },
+  "src/app/test-utils/fake-hub-connection.ts": {
+    "@typescript-eslint/array-type": {
+      "count": 5
+    },
+    "@typescript-eslint/no-unsafe-call": {
+      "count": 1
+    },
+    "@typescript-eslint/prefer-promise-reject-errors": {
+      "count": 1
+    }
+  },
+  "src/app/test-utils/fake-wmks.ts": {
+    "@typescript-eslint/no-unused-vars": {
+      "count": 2
+    }
+  },
+  "src/app/test-utils/render-component.ts": {
+    "@typescript-eslint/no-deprecated": {
+      "count": 1
+    }
+  },
+  "src/app/test-utils/unstubbed.ts": {
+    "@typescript-eslint/no-unnecessary-type-assertion": {
+      "count": 1
+    },
+    "@typescript-eslint/no-unsafe-return": {
+      "count": 1
+    }
+  },
+  "src/typings.d.ts": {
+    "@typescript-eslint/no-deprecated": {
+      "count": 1
+    },
+    "no-var": {
+      "count": 1
+    }
+  }
+}

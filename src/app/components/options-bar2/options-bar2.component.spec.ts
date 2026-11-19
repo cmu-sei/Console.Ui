@@ -57,7 +57,10 @@ import {
   PermissionGrants,
   permissionDataProviders,
 } from '../../test-utils/mock-permission-data.service';
-import { dialogRefStub, dismissedDialogRefStub } from '../../test-utils/dialog-refs';
+import {
+  dialogRefStub,
+  dismissedDialogRefStub,
+} from '../../test-utils/dialog-refs';
 import { stubClipboard } from '../../test-utils/clipboard';
 import { fileList } from '../../test-utils/file-list';
 import { MatTooltipHarness } from '@angular/material/tooltip/testing';
@@ -112,9 +115,18 @@ async function renderOptionsBar2(
     powerOnVsphereVirtualMachine: vi.fn(() => of('submitted')),
   } satisfies ApiStub<ApiVsphereService>;
   const proxmox = {
-    getVm: vi.fn<ProxmoxService['getVm']>(() => overrides.networkVm ?? of(networkVm())),
+    getVm: vi.fn<ProxmoxService['getVm']>(
+      () => overrides.networkVm ?? of(networkVm()),
+    ),
     changeNic: vi.fn<ProxmoxService['changeNic']>(() =>
-      of(networkVm({ networkCards: { ...networkVm().networkCards, currentNetworks: { net0: 'vmbr1' } } })),
+      of(
+        networkVm({
+          networkCards: {
+            ...networkVm().networkCards,
+            currentNetworks: { net0: 'vmbr1' },
+          },
+        }),
+      ),
     ),
     getIsos: vi.fn<ProxmoxService['getIsos']>(() => of([])),
     mountIso: vi.fn<ProxmoxService['mountIso']>(() => of(networkVm())),
@@ -127,14 +139,22 @@ async function renderOptionsBar2(
         { id: 'later', name: 'later', isCurrent: false, depth: 1 },
       ]),
     ),
-    revertToCurrentSnapshot: vi.fn<ProxmoxService['revertToCurrentSnapshot']>(() => of('ok')),
+    revertToCurrentSnapshot: vi.fn<ProxmoxService['revertToCurrentSnapshot']>(
+      () => of('ok'),
+    ),
     revertToSnapshot: vi.fn<ProxmoxService['revertToSnapshot']>(() => of('ok')),
     uploadFiles: vi.fn<ProxmoxService['uploadFiles']>(() => of('uploaded')),
-    downloadFile: vi.fn<ProxmoxService['downloadFile']>(() => of(new Blob(['127.0.0.1 localhost']))),
+    downloadFile: vi.fn<ProxmoxService['downloadFile']>(() =>
+      of(new Blob(['127.0.0.1 localhost'])),
+    ),
     fullscreen: vi.fn<ProxmoxService['fullscreen']>(() => true),
     reconnect: vi.fn<ProxmoxService['reconnect']>(),
-    getGuestClipboard: vi.fn<ProxmoxService['getGuestClipboard']>(() => 'guest text'),
-    activeResolution: signal<ResolutionMode>(overrides.activeResolution ?? 'scale'),
+    getGuestClipboard: vi.fn<ProxmoxService['getGuestClipboard']>(
+      () => 'guest text',
+    ),
+    activeResolution: signal<ResolutionMode>(
+      overrides.activeResolution ?? 'scale',
+    ),
     resizeSupported: signal(overrides.resizeSupported ?? true),
     setResolutionMode: vi.fn<ProxmoxService['setResolutionMode']>(),
     setResizeSupported: vi.fn<ProxmoxService['setResizeSupported']>(),
@@ -161,7 +181,9 @@ async function renderOptionsBar2(
     | 'setResizeSupported'
   >;
   const vsphere = {
-    getVm: vi.fn<VsphereService['getVm']>(() => of(networkVm() as VsphereVirtualMachine)),
+    getVm: vi.fn<VsphereService['getVm']>(() =>
+      of(networkVm() as VsphereVirtualMachine),
+    ),
     changeNic: vi.fn(() => of({})),
   } satisfies Pick<VsphereService, 'getVm' | 'changeNic'>;
   const progress = dialogRefStub<FileUploadProgressDialogComponent, void>();
@@ -169,28 +191,48 @@ async function renderOptionsBar2(
     mountIso: vi.fn<DialogService['mountIso']>(() => of(undefined)),
     sendText: vi.fn<DialogService['sendText']>(() => of(undefined)),
     selectSnapshot: vi.fn<DialogService['selectSnapshot']>(() => of(undefined)),
-    getFileUploadInfo: vi.fn<DialogService['getFileUploadInfo']>(() => of(undefined)),
-    uploadProgress: vi.fn<DialogService['uploadProgress']>(() => progress.dialogRef),
+    getFileUploadInfo: vi.fn<DialogService['getFileUploadInfo']>(() =>
+      of(undefined),
+    ),
+    uploadProgress: vi.fn<DialogService['uploadProgress']>(
+      () => progress.dialogRef,
+    ),
   } satisfies Pick<
     DialogService,
-    'mountIso' | 'sendText' | 'selectSnapshot' | 'getFileUploadInfo' | 'uploadProgress'
+    | 'mountIso'
+    | 'sendText'
+    | 'selectSnapshot'
+    | 'getFileUploadInfo'
+    | 'uploadProgress'
   >;
   const confirm = vi.fn<CrucibleDialogService['confirm']>(() =>
     overrides.confirmation === 'dismissed'
       ? dismissedDialogRefStub<unknown, boolean>().dialogRef
       : dialogRefStub<unknown, boolean>(overrides.confirmation).dialogRef,
   );
-  const crucibleDialog = { confirm } satisfies Pick<CrucibleDialogService, 'confirm'>;
-  const auth = { setUserTheme: vi.fn() } satisfies Pick<ComnAuthService, 'setUserTheme'>;
+  const crucibleDialog = { confirm } satisfies Pick<
+    CrucibleDialogService,
+    'confirm'
+  >;
+  const auth = { setUserTheme: vi.fn() } satisfies Pick<
+    ComnAuthService,
+    'setUserTheme'
+  >;
   const snackBar = { open: vi.fn() } satisfies Pick<MatSnackBar, 'open'>;
   const currentVmUsers$ = new BehaviorSubject<string[]>([]);
-  const signalr = { currentVmUsers$ } satisfies Pick<SignalRService, 'currentVmUsers$'>;
+  const signalr = { currentVmUsers$ } satisfies Pick<
+    SignalRService,
+    'currentVmUsers$'
+  >;
   const tasksInProgress = new BehaviorSubject<NotificationData[]>([]);
   const notifications = {
     tasksInProgress,
     // The hub connection is not under test; a never-settling promise keeps it inert.
     connectToProgressHub: vi.fn(() => new Promise<void>(() => undefined)),
-  } satisfies Pick<NotificationService, 'tasksInProgress' | 'connectToProgressHub'>;
+  } satisfies Pick<
+    NotificationService,
+    'tasksInProgress' | 'connectToProgressHub'
+  >;
 
   const rendered = await renderComponent(OptionsBar2Component, {
     inputs: {
@@ -209,7 +251,10 @@ async function renderOptionsBar2(
       { provide: ComnAuthService, useValue: auth },
       {
         provide: ComnAuthQuery,
-        useValue: { userTheme$: of(Theme.LIGHT) } satisfies Pick<ComnAuthQuery, 'userTheme$'>,
+        useValue: { userTheme$: of(Theme.LIGHT) } satisfies Pick<
+          ComnAuthQuery,
+          'userTheme$'
+        >,
       },
       { provide: MatSnackBar, useValue: snackBar },
       { provide: SignalRService, useValue: signalr },
@@ -247,9 +292,8 @@ type ProxmoxPowerMethod =
 type MenuText = string | RegExp;
 
 async function menu(fixture: Fixture) {
-  const harness = await TestbedHarnessEnvironment.loader(fixture).getHarness(
-    MatMenuHarness,
-  );
+  const harness =
+    await TestbedHarnessEnvironment.loader(fixture).getHarness(MatMenuHarness);
   await harness.open();
   return harness;
 }
@@ -264,7 +308,11 @@ async function menuTexts(fixture: Fixture) {
 }
 
 /** Opens the gear menu and clicks through submenu labels to the item, as a user does. */
-async function clickMenu(fixture: Fixture, first: MenuText, ...rest: MenuText[]) {
+async function clickMenu(
+  fixture: Fixture,
+  first: MenuText,
+  ...rest: MenuText[]
+) {
   const harness = await menu(fixture);
   await harness.clickItem({ text: first }, ...rest.map((text) => ({ text })));
 }
@@ -283,7 +331,9 @@ async function openSubmenu(fixture: Fixture, ...path: MenuText[]) {
 /** The menu item at the end of `path` (submenu labels, then the item). */
 async function findMenuItem(fixture: Fixture, ...path: MenuText[]) {
   const label = path.pop()!;
-  const [item] = await (await openSubmenu(fixture, ...path)).getItems({ text: label });
+  const [item] = await (
+    await openSubmenu(fixture, ...path)
+  ).getItems({ text: label });
   return item;
 }
 
@@ -299,7 +349,12 @@ describe('OptionsBar2Component', () => {
         readOnly: true,
         networkVm: of(networkVm({ canMountIso: true })),
       });
-      expect(await menuTexts(fixture)).toEqual(['Fullscreen', 'Reconnect', 'Dark Theme', 'Resolution']);
+      expect(await menuTexts(fixture)).toEqual([
+        'Fullscreen',
+        'Reconnect',
+        'Dark Theme',
+        'Resolution',
+      ]);
     });
 
     /**
@@ -417,7 +472,10 @@ describe('OptionsBar2Component', () => {
       const [current] = await adapter.getItems({ text: /Lab/ });
       expect(await current.isDisabled()).toBe(true);
 
-      await user.type(screen.getByRole('searchbox', { name: 'Search networks' }), 'inter');
+      await user.type(
+        screen.getByRole('searchbox', { name: 'Search networks' }),
+        'inter',
+      );
       expect(await itemTexts(adapter)).toEqual(['Internet']);
 
       await adapter.close();
@@ -522,12 +580,17 @@ describe('OptionsBar2Component', () => {
       await clickMenu(fixture, 'Files', 'Mount ISO');
 
       expect(proxmox.getIsos).toHaveBeenCalledWith('vm-1');
-      expect(proxmox.mountIso).toHaveBeenCalledWith('vm-1', 'local:iso/tools.iso');
+      expect(proxmox.mountIso).toHaveBeenCalledWith(
+        'vm-1',
+        'local:iso/tools.iso',
+      );
       expect(snackBar.open).toHaveBeenCalledWith('Mounted tools.iso', 'Close', {
         duration: 5000,
         verticalPosition: 'top',
       });
-      expect(await (await findMenuItem(fixture, 'Files', 'Mount ISO')).isDisabled()).toBe(false);
+      expect(
+        await (await findMenuItem(fixture, 'Files', 'Mount ISO')).isDisabled(),
+      ).toBe(false);
     });
 
     /**
@@ -536,7 +599,9 @@ describe('OptionsBar2Component', () => {
      * Data: one click while the listing is in flight.
      */
     it('disables Mount ISO while ISOs load', async () => {
-      const { fixture, proxmox } = await renderOptionsBar2({ networkVm: isoVm() });
+      const { fixture, proxmox } = await renderOptionsBar2({
+        networkVm: isoVm(),
+      });
       // NEVER keeps the first listing in flight.
       proxmox.getIsos.mockReturnValue(NEVER);
 
@@ -556,7 +621,9 @@ describe('OptionsBar2Component', () => {
       const { fixture, proxmox, snackBar } = await renderOptionsBar2({
         networkVm: isoVm(),
       });
-      proxmox.getIsos.mockReturnValueOnce(throwError(() => new Error('denied')));
+      proxmox.getIsos.mockReturnValueOnce(
+        throwError(() => new Error('denied')),
+      );
 
       await clickMenu(fixture, 'Files', 'Mount ISO');
 
@@ -565,7 +632,9 @@ describe('OptionsBar2Component', () => {
         'Close',
         expect.objectContaining({ duration: 10000 }),
       );
-      expect(await (await findMenuItem(fixture, 'Files', 'Mount ISO')).isDisabled()).toBe(false);
+      expect(
+        await (await findMenuItem(fixture, 'Files', 'Mount ISO')).isDisabled(),
+      ).toBe(false);
     });
 
     /**
@@ -577,7 +646,9 @@ describe('OptionsBar2Component', () => {
       const { fixture, proxmox, dialogs, snackBar } = await renderOptionsBar2({
         networkVm: isoVm(),
       });
-      dialogs.mountIso.mockReturnValue(of({ filename: 'a.iso', mountValue: 'local:iso/a.iso' }));
+      dialogs.mountIso.mockReturnValue(
+        of({ filename: 'a.iso', mountValue: 'local:iso/a.iso' }),
+      );
       proxmox.mountIso.mockReturnValue(throwError(() => new Error('busy')));
 
       await clickMenu(fixture, 'Files', 'Mount ISO');
@@ -595,7 +666,9 @@ describe('OptionsBar2Component', () => {
      * Data: picker dismissed.
      */
     it('mounts nothing when the picker is dismissed', async () => {
-      const { fixture, proxmox } = await renderOptionsBar2({ networkVm: isoVm() });
+      const { fixture, proxmox } = await renderOptionsBar2({
+        networkVm: isoVm(),
+      });
       await clickMenu(fixture, 'Files', 'Mount ISO');
       expect(proxmox.mountIso).not.toHaveBeenCalled();
     });
@@ -608,11 +681,18 @@ describe('OptionsBar2Component', () => {
      * Data: Proxmox Vm 'vm-1'.
      */
     it('powers on without confirmation', async () => {
-      const { fixture, apiProxmox, snackBar, confirm } = await renderOptionsBar2();
+      const { fixture, apiProxmox, snackBar, confirm } =
+        await renderOptionsBar2();
       await clickMenu(fixture, 'Power', 'Power On');
       expect(confirm).not.toHaveBeenCalled();
-      expect(apiProxmox.powerOnProxmoxVirtualMachine).toHaveBeenCalledWith('vm-1');
-      expect(snackBar.open).toHaveBeenCalledWith('Power On submitted', 'Close', expect.anything());
+      expect(apiProxmox.powerOnProxmoxVirtualMachine).toHaveBeenCalledWith(
+        'vm-1',
+      );
+      expect(snackBar.open).toHaveBeenCalledWith(
+        'Power On submitted',
+        'Close',
+        expect.anything(),
+      );
     });
 
     /**
@@ -625,35 +705,56 @@ describe('OptionsBar2Component', () => {
         vm: { id: 'vm-2', name: 'Bravo', type: VmType.Vsphere },
       });
       await clickMenu(fixture, 'Power', 'Power On');
-      expect(apiVsphere.powerOnVsphereVirtualMachine).toHaveBeenCalledWith('vm-2');
+      expect(apiVsphere.powerOnVsphereVirtualMachine).toHaveBeenCalledWith(
+        'vm-2',
+      );
       expect(apiProxmox.powerOnProxmoxVirtualMachine).not.toHaveBeenCalled();
     });
 
-    const confirmed: Array<[PowerAction, ProxmoxPowerMethod, string, string]> = [
-      [PowerAction.PowerOff, 'powerOffProxmoxVirtualMachine', 'Power off "Alpha"? The guest OS will not be shut down cleanly.', 'Power Off'],
-      [PowerAction.Reboot, 'rebootProxmoxVirtualMachine', 'Reboot "Alpha"?', 'Reboot'],
-      [PowerAction.Shutdown, 'shutdownProxmoxVirtualMachine', 'Shut down the guest OS on "Alpha"?', 'Shutdown OS'],
-    ];
+    const confirmed: Array<[PowerAction, ProxmoxPowerMethod, string, string]> =
+      [
+        [
+          PowerAction.PowerOff,
+          'powerOffProxmoxVirtualMachine',
+          'Power off "Alpha"? The guest OS will not be shut down cleanly.',
+          'Power Off',
+        ],
+        [
+          PowerAction.Reboot,
+          'rebootProxmoxVirtualMachine',
+          'Reboot "Alpha"?',
+          'Reboot',
+        ],
+        [
+          PowerAction.Shutdown,
+          'shutdownProxmoxVirtualMachine',
+          'Shut down the guest OS on "Alpha"?',
+          'Shutdown OS',
+        ],
+      ];
 
     /**
      * Verifies: disruptive power actions ask first, and run only once confirmed.
      * Interacts with: the Power submenu item for the action; CrucibleDialogService.confirm stub; real VmService over the generated ProxmoxService.
      * Data: the action under test, confirmed.
      */
-    it.each(confirmed)('confirms %s before sending it', async (action, endpoint, message, label) => {
-      const ctx = await renderOptionsBar2({
-        confirmation: true,
-        networkVm: of(networkVm({ guestAgentRunning: true })),
-      });
-      await clickMenu(ctx.fixture, 'Power', label);
-      expect(ctx.confirm).toHaveBeenCalledWith({
-        title: `Confirm ${action}`,
-        message,
-        confirmText: 'Confirm',
-        cancelText: 'Cancel',
-      });
-      expect(ctx.apiProxmox[endpoint]).toHaveBeenCalledWith('vm-1');
-    });
+    it.each(confirmed)(
+      'confirms %s before sending it',
+      async (action, endpoint, message, label) => {
+        const ctx = await renderOptionsBar2({
+          confirmation: true,
+          networkVm: of(networkVm({ guestAgentRunning: true })),
+        });
+        await clickMenu(ctx.fixture, 'Power', label);
+        expect(ctx.confirm).toHaveBeenCalledWith({
+          title: `Confirm ${action}`,
+          message,
+          confirmText: 'Confirm',
+          cancelText: 'Cancel',
+        });
+        expect(ctx.apiProxmox[endpoint]).toHaveBeenCalledWith('vm-1');
+      },
+    );
 
     /**
      * Verifies: a cancelled or dismissed confirmation sends nothing.
@@ -663,7 +764,9 @@ describe('OptionsBar2Component', () => {
     it.each([false, 'dismissed'] as const)(
       'sends nothing when the confirmation is %s',
       async (confirmation) => {
-        const { fixture, apiProxmox } = await renderOptionsBar2({ confirmation });
+        const { fixture, apiProxmox } = await renderOptionsBar2({
+          confirmation,
+        });
         await clickMenu(fixture, 'Power', 'Reboot');
         expect(apiProxmox.rebootProxmoxVirtualMachine).not.toHaveBeenCalled();
       },
@@ -693,7 +796,9 @@ describe('OptionsBar2Component', () => {
      * Data: a 400 whose title is Proxmox's reboot timeout with the Power Off hint.
      */
     it('reports a failed power action with the API reason', async () => {
-      const { fixture, apiProxmox, snackBar } = await renderOptionsBar2({ confirmation: true });
+      const { fixture, apiProxmox, snackBar } = await renderOptionsBar2({
+        confirmation: true,
+      });
       const title =
         'Reboot failed: VM quit/powerdown failed - got timeout. The guest did not respond to the request; use Power Off instead.';
       apiProxmox.rebootProxmoxVirtualMachine.mockReturnValue(
@@ -721,13 +826,19 @@ describe('OptionsBar2Component', () => {
      * Data: a 403 whose title is a permission message.
      */
     it('prefixes a power failure reason that does not name the operation', async () => {
-      const { fixture, apiProxmox, snackBar } = await renderOptionsBar2({ confirmation: true });
+      const { fixture, apiProxmox, snackBar } = await renderOptionsBar2({
+        confirmation: true,
+      });
       apiProxmox.powerOffProxmoxVirtualMachine.mockReturnValue(
         throwError(
           () =>
             new HttpErrorResponse({
               status: 403,
-              error: { title: 'You do not have permission to manage this virtual machine.', status: 403 },
+              error: {
+                title:
+                  'You do not have permission to manage this virtual machine.',
+                status: 403,
+              },
             }),
         ),
       );
@@ -779,9 +890,9 @@ describe('OptionsBar2Component', () => {
     it('switches to the dark theme', async () => {
       const { fixture, auth } = await renderOptionsBar2();
       await menu(fixture);
-      const toggle = await TestbedHarnessEnvironment.documentRootLoader(fixture).getHarness(
-        MatSlideToggleHarness.with({ label: 'Dark Theme' }),
-      );
+      const toggle = await TestbedHarnessEnvironment.documentRootLoader(
+        fixture,
+      ).getHarness(MatSlideToggleHarness.with({ label: 'Dark Theme' }));
       await toggle.toggle();
       expect(auth.setUserTheme).toHaveBeenCalledWith(Theme.DARK);
     });
@@ -808,16 +919,23 @@ describe('OptionsBar2Component', () => {
      */
     it.each<[string, Observable<ProxmoxVirtualMachine> | undefined, string]>([
       ['without the VNC clipboard', undefined, 'Paste *'],
-      ['with the VNC clipboard', of(networkVm({ vncClipboardEnabled: true })), 'Paste'],
-    ])('offers Copy, Paste and Ctrl-Alt-Del in the Keyboard menu %s', async (_, vm, paste) => {
-      const { fixture } = await renderOptionsBar2(vm ? { networkVm: vm } : {});
-      expect(await itemTexts(await openSubmenu(fixture, 'Keyboard'))).toEqual([
-        'Copy',
-        paste,
-        'Ctrl-Alt-Del',
-      ]);
-      expect(screen.getByRole('button', { name: paste })).toBeEnabled();
-    });
+      [
+        'with the VNC clipboard',
+        of(networkVm({ vncClipboardEnabled: true })),
+        'Paste',
+      ],
+    ])(
+      'offers Copy, Paste and Ctrl-Alt-Del in the Keyboard menu %s',
+      async (_, vm, paste) => {
+        const { fixture } = await renderOptionsBar2(
+          vm ? { networkVm: vm } : {},
+        );
+        expect(await itemTexts(await openSubmenu(fixture, 'Keyboard'))).toEqual(
+          ['Copy', paste, 'Ctrl-Alt-Del'],
+        );
+        expect(screen.getByRole('button', { name: paste })).toBeEnabled();
+      },
+    );
 
     /**
      * Verifies: Keyboard > Paste opens Send Text, which types each line of the dialog's text into the guest, followed by Enter, as the vSphere bar does.
@@ -826,7 +944,9 @@ describe('OptionsBar2Component', () => {
      */
     it('types Send Text line by line', async () => {
       const { fixture, dialogs, proxmox } = await renderOptionsBar2();
-      dialogs.sendText.mockReturnValue(of({ textToSend: 'one\ntwo', timeout: '0' }));
+      dialogs.sendText.mockReturnValue(
+        of({ textToSend: 'one\ntwo', timeout: '0' }),
+      );
 
       await clickMenu(fixture, 'Keyboard', 'Paste *');
 
@@ -844,7 +964,9 @@ describe('OptionsBar2Component', () => {
      */
     it('waits the paste speed between lines', async () => {
       const { fixture, dialogs, proxmox } = await renderOptionsBar2();
-      dialogs.sendText.mockReturnValue(of({ textToSend: 'one\ntwo', timeout: '200' }));
+      dialogs.sendText.mockReturnValue(
+        of({ textToSend: 'one\ntwo', timeout: '200' }),
+      );
       await openSubmenu(fixture, 'Keyboard');
       vi.useFakeTimers();
       try {
@@ -881,7 +1003,9 @@ describe('OptionsBar2Component', () => {
      */
     it('reports a console that is not connected', async () => {
       const { fixture, dialogs, proxmox, snackBar } = await renderOptionsBar2();
-      dialogs.sendText.mockReturnValue(of({ textToSend: 'one\ntwo', timeout: '0' }));
+      dialogs.sendText.mockReturnValue(
+        of({ textToSend: 'one\ntwo', timeout: '0' }),
+      );
       proxmox.sendText.mockResolvedValue(false);
 
       await clickMenu(fixture, 'Keyboard', 'Paste *');
@@ -902,7 +1026,9 @@ describe('OptionsBar2Component', () => {
      * Data: vncClipboardEnabled true.
      */
     it('opens Send Text from Keyboard > Paste with the VNC clipboard on', async () => {
-      const { fixture, dialogs, proxmox } = await renderOptionsBar2({ networkVm: vncClipboardVm() });
+      const { fixture, dialogs, proxmox } = await renderOptionsBar2({
+        networkVm: vncClipboardVm(),
+      });
       const { readText } = stubClipboard('hello');
 
       await clickMenu(fixture, 'Keyboard', 'Paste');
@@ -936,14 +1062,22 @@ describe('OptionsBar2Component', () => {
      */
     it("sends the clipboard to the VM's clipboard from the toolbar Paste", async () => {
       const user = userEvent.setup();
-      const { proxmox, snackBar } = await renderOptionsBar2({ networkVm: vncClipboardVm() });
+      const { proxmox, snackBar } = await renderOptionsBar2({
+        networkVm: vncClipboardVm(),
+      });
       stubClipboard('ls -la');
 
       await user.click(screen.getByRole('button', { name: /^Paste$/ }));
 
-      await vi.waitFor(() => expect(proxmox.sendClipboardText).toHaveBeenCalledWith('ls -la'));
+      await vi.waitFor(() =>
+        expect(proxmox.sendClipboardText).toHaveBeenCalledWith('ls -la'),
+      );
       expect(proxmox.sendText).not.toHaveBeenCalled();
-      expect(snackBar.open).toHaveBeenCalledWith(PASTED_TO_VM_CLIPBOARD_MESSAGE, 'Close', expect.anything());
+      expect(snackBar.open).toHaveBeenCalledWith(
+        PASTED_TO_VM_CLIPBOARD_MESSAGE,
+        'Close',
+        expect.anything(),
+      );
     });
 
     /**
@@ -953,13 +1087,17 @@ describe('OptionsBar2Component', () => {
      */
     it('falls back to the Send Text dialog when the clipboard is unavailable', async () => {
       const user = userEvent.setup();
-      const { dialogs, proxmox } = await renderOptionsBar2({ networkVm: vncClipboardVm() });
+      const { dialogs, proxmox } = await renderOptionsBar2({
+        networkVm: vncClipboardVm(),
+      });
       const { readText } = stubClipboard();
       readText.mockRejectedValue(new Error('denied'));
 
       await user.click(screen.getByRole('button', { name: /^Paste$/ }));
 
-      await vi.waitFor(() => expect(dialogs.sendText).toHaveBeenCalledWith('Enter Text to Send'));
+      await vi.waitFor(() =>
+        expect(dialogs.sendText).toHaveBeenCalledWith('Enter Text to Send'),
+      );
       expect(proxmox.sendClipboardText).not.toHaveBeenCalled();
     });
 
@@ -969,21 +1107,39 @@ describe('OptionsBar2Component', () => {
      * Data: vncClipboardEnabled true; clipboard 'x' with the console down, then an empty clipboard.
      */
     it.each<[string, string, boolean, string]>([
-      ['not connected', 'x', false, 'Paste failed: the console is not connected'],
+      [
+        'not connected',
+        'x',
+        false,
+        'Paste failed: the console is not connected',
+      ],
       ['empty', '', true, 'Nothing to paste: your clipboard is empty'],
-    ])('reports a toolbar Paste that sends nothing (%s)', async (_, clip, connected, message) => {
-      const user = userEvent.setup();
-      const { proxmox, snackBar } = await renderOptionsBar2({ networkVm: vncClipboardVm() });
-      stubClipboard(clip);
-      proxmox.sendClipboardText.mockReturnValue(connected);
+    ])(
+      'reports a toolbar Paste that sends nothing (%s)',
+      async (_, clip, connected, message) => {
+        const user = userEvent.setup();
+        const { proxmox, snackBar } = await renderOptionsBar2({
+          networkVm: vncClipboardVm(),
+        });
+        stubClipboard(clip);
+        proxmox.sendClipboardText.mockReturnValue(connected);
 
-      await user.click(screen.getByRole('button', { name: /^Paste$/ }));
+        await user.click(screen.getByRole('button', { name: /^Paste$/ }));
 
-      await vi.waitFor(() =>
-        expect(snackBar.open).toHaveBeenCalledWith(message, 'Close', expect.anything()),
-      );
-      expect(snackBar.open).not.toHaveBeenCalledWith(PASTED_TO_VM_CLIPBOARD_MESSAGE, 'Close', expect.anything());
-    });
+        await vi.waitFor(() =>
+          expect(snackBar.open).toHaveBeenCalledWith(
+            message,
+            'Close',
+            expect.anything(),
+          ),
+        );
+        expect(snackBar.open).not.toHaveBeenCalledWith(
+          PASTED_TO_VM_CLIPBOARD_MESSAGE,
+          'Close',
+          expect.anything(),
+        );
+      },
+    );
 
     /**
      * Verifies: a read-only console has no toolbar Paste button.
@@ -992,7 +1148,9 @@ describe('OptionsBar2Component', () => {
      */
     it('hides the toolbar when read-only', async () => {
       await renderOptionsBar2({ readOnly: true });
-      expect(screen.queryByRole('button', { name: /^Paste/ })).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole('button', { name: /^Paste/ }),
+      ).not.toBeInTheDocument();
     });
   });
 
@@ -1022,13 +1180,18 @@ describe('OptionsBar2Component', () => {
      * Interacts with: ProxmoxService.getVm (hasSnapshot); the gear menu.
      * Data: RevertVms; hasSnapshot false, then true.
      */
-    it.each([false, true])('is enabled only with a snapshot (hasSnapshot %s)', async (hasSnapshot) => {
-      const { fixture } = await renderOptionsBar2({
-        grants: canRevert,
-        networkVm: of(networkVm({ hasSnapshot })),
-      });
-      expect(await (await findMenuItem(fixture, 'Snapshots')).isDisabled()).toBe(!hasSnapshot);
-    });
+    it.each([false, true])(
+      'is enabled only with a snapshot (hasSnapshot %s)',
+      async (hasSnapshot) => {
+        const { fixture } = await renderOptionsBar2({
+          grants: canRevert,
+          networkVm: of(networkVm({ hasSnapshot })),
+        });
+        expect(
+          await (await findMenuItem(fixture, 'Snapshots')).isDisabled(),
+        ).toBe(!hasSnapshot);
+      },
+    );
 
     /**
      * Verifies: a disabled Snapshots item still explains itself: the tooltip sits on an element that is not disabled, as Files and Match Window Size do.
@@ -1042,7 +1205,9 @@ describe('OptionsBar2Component', () => {
         networkVm: of(networkVm({ hasSnapshot: false })),
       });
       await menu(fixture);
-      const tooltips = await TestbedHarnessEnvironment.documentRootLoader(fixture).getAllHarnesses(
+      const tooltips = await TestbedHarnessEnvironment.documentRootLoader(
+        fixture,
+      ).getAllHarnesses(
         MatTooltipHarness.with({ ancestor: '.mat-mdc-menu-panel' }),
       );
 
@@ -1068,16 +1233,24 @@ describe('OptionsBar2Component', () => {
     it('reverts to the current snapshot', async () => {
       const { fixture, proxmox, dialogs, snackBar } = await renderOptionsBar2({
         grants: canRevert,
-        networkVm: of(networkVm({ hasSnapshot: true, currentSnapshot: 'clean' })),
+        networkVm: of(
+          networkVm({ hasSnapshot: true, currentSnapshot: 'clean' }),
+        ),
       });
-      dialogs.selectSnapshot.mockImplementation((snapshots) => of(snapshots[0]));
+      dialogs.selectSnapshot.mockImplementation((snapshots) =>
+        of(snapshots[0]),
+      );
 
       await clickMenu(fixture, 'Snapshots');
 
       expect(proxmox.getSnapshots).toHaveBeenCalledWith('vm-1', 'clean');
       expect(proxmox.revertToCurrentSnapshot).toHaveBeenCalledWith('vm-1');
       expect(proxmox.revertToSnapshot).not.toHaveBeenCalled();
-      expect(snackBar.open).toHaveBeenCalledWith('Revert Successful', 'Close', expect.anything());
+      expect(snackBar.open).toHaveBeenCalledWith(
+        'Revert Successful',
+        'Close',
+        expect.anything(),
+      );
     });
 
     /**
@@ -1090,7 +1263,9 @@ describe('OptionsBar2Component', () => {
         grants: canRevert,
         networkVm: of(networkVm({ hasSnapshot: true })),
       });
-      dialogs.selectSnapshot.mockImplementation((snapshots) => of(snapshots[1]));
+      dialogs.selectSnapshot.mockImplementation((snapshots) =>
+        of(snapshots[1]),
+      );
 
       await clickMenu(fixture, 'Snapshots');
 
@@ -1124,10 +1299,16 @@ describe('OptionsBar2Component', () => {
         grants: canRevert,
         networkVm: of(networkVm({ hasSnapshot: true })),
       });
-      dialogs.selectSnapshot.mockImplementation((snapshots) => of(snapshots[0]));
+      dialogs.selectSnapshot.mockImplementation((snapshots) =>
+        of(snapshots[0]),
+      );
       proxmox.revertToCurrentSnapshot.mockReturnValue(
         throwError(
-          () => new HttpErrorResponse({ status: 400, error: { title: 'Vm is locked' } }),
+          () =>
+            new HttpErrorResponse({
+              status: 400,
+              error: { title: 'Vm is locked' },
+            }),
         ),
       );
 
@@ -1150,10 +1331,15 @@ describe('OptionsBar2Component', () => {
         grants: canRevert,
         networkVm: of(networkVm({ hasSnapshot: true })),
       });
-      dialogs.selectSnapshot.mockImplementation((snapshots) => of(snapshots[0]));
-      const title = "Revert to Snapshot failed: snapshot 'nosuchsnap' does not exist";
+      dialogs.selectSnapshot.mockImplementation((snapshots) =>
+        of(snapshots[0]),
+      );
+      const title =
+        "Revert to Snapshot failed: snapshot 'nosuchsnap' does not exist";
       proxmox.revertToCurrentSnapshot.mockReturnValue(
-        throwError(() => new HttpErrorResponse({ status: 400, error: { title } })),
+        throwError(
+          () => new HttpErrorResponse({ status: 400, error: { title } }),
+        ),
       );
 
       await clickMenu(fixture, 'Snapshots');
@@ -1168,7 +1354,10 @@ describe('OptionsBar2Component', () => {
 
   describe('files', () => {
     const canTransfer: PermissionGrants = {
-      view: [AppViewPermission.UploadVmFiles, AppViewPermission.DownloadVmFiles],
+      view: [
+        AppViewPermission.UploadVmFiles,
+        AppViewPermission.DownloadVmFiles,
+      ],
     };
     const agentVm = (guestAgentRunning = true) =>
       of(networkVm({ guestAgentRunning, canMountIso: true }));
@@ -1179,7 +1368,10 @@ describe('OptionsBar2Component', () => {
 
     function pickFiles(fixture: Fixture, ...files: File[]) {
       const input = fileInput(fixture);
-      Object.defineProperty(input, 'files', { value: fileList(...files), configurable: true });
+      Object.defineProperty(input, 'files', {
+        value: fileList(...files),
+        configurable: true,
+      });
       fireEvent.change(input);
     }
 
@@ -1191,15 +1383,35 @@ describe('OptionsBar2Component', () => {
     it.each<[string, PermissionGrants, boolean, string[] | null]>([
       ['no grants, no ISO storage', {}, false, null],
       ['ISO storage only', {}, true, ['Mount ISO']],
-      ['upload only', { view: [AppViewPermission.UploadVmFiles] }, false, ['Send File To VM']],
-      ['download only', { view: [AppViewPermission.DownloadVmFiles] }, false, ['Download File From VM']],
+      [
+        'upload only',
+        { view: [AppViewPermission.UploadVmFiles] },
+        false,
+        ['Send File To VM'],
+      ],
+      [
+        'download only',
+        { view: [AppViewPermission.DownloadVmFiles] },
+        false,
+        ['Download File From VM'],
+      ],
       [
         'system upload and download',
-        { system: [AppSystemPermission.UploadVmFiles, AppSystemPermission.DownloadVmFiles] },
+        {
+          system: [
+            AppSystemPermission.UploadVmFiles,
+            AppSystemPermission.DownloadVmFiles,
+          ],
+        },
         false,
         ['Send File To VM', 'Download File From VM'],
       ],
-      ['everything', canTransfer, true, ['Send File To VM', 'Download File From VM', 'Mount ISO']],
+      [
+        'everything',
+        canTransfer,
+        true,
+        ['Send File To VM', 'Download File From VM', 'Mount ISO'],
+      ],
     ])('with %s lists %j', async (_case, grants, canMountIso, items) => {
       const { fixture } = await renderOptionsBar2({
         grants,
@@ -1208,7 +1420,9 @@ describe('OptionsBar2Component', () => {
       if (items === null) {
         expect(await menuTexts(fixture)).not.toContain('Files');
       } else {
-        expect(await itemTexts(await openSubmenu(fixture, 'Files'))).toEqual(items);
+        expect(await itemTexts(await openSubmenu(fixture, 'Files'))).toEqual(
+          items,
+        );
       }
     });
 
@@ -1217,27 +1431,37 @@ describe('OptionsBar2Component', () => {
      * Interacts with: ProxmoxService.getVm (guestAgentRunning); the Files submenu; MatTooltipHarness.
      * Data: transfer grants; guestAgentRunning false, then true.
      */
-    it.each([false, true])('gates transfers on the guest agent (running %s)', async (running) => {
-      const { fixture } = await renderOptionsBar2({ grants: canTransfer, networkVm: agentVm(running) });
-      const files = await openSubmenu(fixture, 'Files');
-      const [send] = await files.getItems({ text: 'Send File To VM' });
-      const [download] = await files.getItems({ text: 'Download File From VM' });
-      const [iso] = await files.getItems({ text: 'Mount ISO' });
-      expect(await send.isDisabled()).toBe(!running);
-      expect(await download.isDisabled()).toBe(!running);
-      expect(await iso.isDisabled()).toBe(false);
+    it.each([false, true])(
+      'gates transfers on the guest agent (running %s)',
+      async (running) => {
+        const { fixture } = await renderOptionsBar2({
+          grants: canTransfer,
+          networkVm: agentVm(running),
+        });
+        const files = await openSubmenu(fixture, 'Files');
+        const [send] = await files.getItems({ text: 'Send File To VM' });
+        const [download] = await files.getItems({
+          text: 'Download File From VM',
+        });
+        const [iso] = await files.getItems({ text: 'Mount ISO' });
+        expect(await send.isDisabled()).toBe(!running);
+        expect(await download.isDisabled()).toBe(!running);
+        expect(await iso.isDisabled()).toBe(false);
 
-      // Scoped to the open menu: the toolbar's Copy button carries a tooltip of its own.
-      const tooltips = await TestbedHarnessEnvironment.documentRootLoader(fixture).getAllHarnesses(
-        MatTooltipHarness.with({ ancestor: '.mat-mdc-menu-panel' }),
-      );
-      await tooltips[0].show();
-      if (running) {
-        expect(await tooltips[0].isOpen()).toBe(false);
-      } else {
-        expect(await tooltips[0].getTooltipText()).toBe(GUEST_AGENT_TOOLTIP);
-      }
-    });
+        // Scoped to the open menu: the toolbar's Copy button carries a tooltip of its own.
+        const tooltips = await TestbedHarnessEnvironment.documentRootLoader(
+          fixture,
+        ).getAllHarnesses(
+          MatTooltipHarness.with({ ancestor: '.mat-mdc-menu-panel' }),
+        );
+        await tooltips[0].show();
+        if (running) {
+          expect(await tooltips[0].isOpen()).toBe(false);
+        } else {
+          expect(await tooltips[0].getTooltipText()).toBe(GUEST_AGENT_TOOLTIP);
+        }
+      },
+    );
 
     /**
      * Verifies: opening Files while the agent was not running asks vm.api again, and the transfer items enable once it answers that the agent is up.
@@ -1246,7 +1470,10 @@ describe('OptionsBar2Component', () => {
      * Why: the agent state is otherwise read only when the Vm changes, so a console opened during boot kept the items disabled after the agent started.
      */
     it('re-checks the guest agent when Files opens while it was not running', async () => {
-      const { fixture, proxmox } = await renderOptionsBar2({ grants: canTransfer, networkVm: agentVm(false) });
+      const { fixture, proxmox } = await renderOptionsBar2({
+        grants: canTransfer,
+        networkVm: agentVm(false),
+      });
       proxmox.getVm.mockReturnValue(agentVm(true));
 
       const files = await openSubmenu(fixture, 'Files');
@@ -1263,7 +1490,10 @@ describe('OptionsBar2Component', () => {
      * Data: transfer grants; agent running.
      */
     it('does not re-check a guest agent that is already running', async () => {
-      const { fixture, proxmox } = await renderOptionsBar2({ grants: canTransfer, networkVm: agentVm(true) });
+      const { fixture, proxmox } = await renderOptionsBar2({
+        grants: canTransfer,
+        networkVm: agentVm(true),
+      });
 
       await openSubmenu(fixture, 'Files');
 
@@ -1276,8 +1506,13 @@ describe('OptionsBar2Component', () => {
      * Data: transfer grants; agent running.
      */
     it('opens the file picker from Send File To VM', async () => {
-      const { fixture } = await renderOptionsBar2({ grants: canTransfer, networkVm: agentVm() });
-      const click = vi.spyOn(fileInput(fixture), 'click').mockImplementation(() => undefined);
+      const { fixture } = await renderOptionsBar2({
+        grants: canTransfer,
+        networkVm: agentVm(),
+      });
+      const click = vi
+        .spyOn(fileInput(fixture), 'click')
+        .mockImplementation(() => undefined);
       await clickMenu(fixture, 'Files', 'Send File To VM');
       expect(click).toHaveBeenCalledOnce();
     });
@@ -1288,10 +1523,11 @@ describe('OptionsBar2Component', () => {
      * Data: 'notes.txt' into '/home/user'.
      */
     it('uploads the picked files into the named directory', async () => {
-      const { fixture, dialogs, proxmox, progress, snackBar } = await renderOptionsBar2({
-        grants: canTransfer,
-        networkVm: agentVm(),
-      });
+      const { fixture, dialogs, proxmox, progress, snackBar } =
+        await renderOptionsBar2({
+          grants: canTransfer,
+          networkVm: agentVm(),
+        });
       dialogs.getFileUploadInfo.mockReturnValue(
         of({ filepath: '/home/user', username: '', password: '' }),
       );
@@ -1299,13 +1535,24 @@ describe('OptionsBar2Component', () => {
 
       pickFiles(fixture, file);
 
-      expect(dialogs.getFileUploadInfo).toHaveBeenCalledWith('VM Send File Settings', {
-        showCredentials: false,
-      });
-      expect(proxmox.uploadFiles).toHaveBeenCalledWith('vm-1', '/home/user/', expect.anything());
+      expect(dialogs.getFileUploadInfo).toHaveBeenCalledWith(
+        'VM Send File Settings',
+        {
+          showCredentials: false,
+        },
+      );
+      expect(proxmox.uploadFiles).toHaveBeenCalledWith(
+        'vm-1',
+        '/home/user/',
+        expect.anything(),
+      );
       expect(Array.from(proxmox.uploadFiles.mock.calls[0][2])).toEqual([file]);
       expect(progress.close).toHaveBeenCalledOnce();
-      expect(snackBar.open).toHaveBeenCalledWith('File Uploaded Successfully', 'Close', expect.anything());
+      expect(snackBar.open).toHaveBeenCalledWith(
+        'File Uploaded Successfully',
+        'Close',
+        expect.anything(),
+      );
     });
 
     /**
@@ -1319,8 +1566,12 @@ describe('OptionsBar2Component', () => {
         networkVm: agentVm(),
       });
       dialogs.getFileUploadInfo
-        .mockReturnValueOnce(of({ filepath: 'notes', username: '', password: '' }))
-        .mockReturnValueOnce(of({ filepath: 'C:\\Users\\me', username: '', password: '' }));
+        .mockReturnValueOnce(
+          of({ filepath: 'notes', username: '', password: '' }),
+        )
+        .mockReturnValueOnce(
+          of({ filepath: 'C:\\Users\\me', username: '', password: '' }),
+        );
 
       pickFiles(fixture, new File(['hi'], 'notes.txt'));
 
@@ -1328,7 +1579,11 @@ describe('OptionsBar2Component', () => {
         'The file path must be an absolute path.',
         { showCredentials: false },
       );
-      expect(proxmox.uploadFiles).toHaveBeenCalledWith('vm-1', 'C:\\Users\\me\\', expect.anything());
+      expect(proxmox.uploadFiles).toHaveBeenCalledWith(
+        'vm-1',
+        'C:\\Users\\me\\',
+        expect.anything(),
+      );
     });
 
     /**
@@ -1349,7 +1604,13 @@ describe('OptionsBar2Component', () => {
     // A Vm whose API reports `fileUploadMaxBytes`, here 2 KB: a deployment that configured a lower limit
     // than PVE's 45 KB, which a limit built into the console would have missed.
     const limitedVm = (fileUploadMaxBytes?: number) =>
-      of(networkVm({ guestAgentRunning: true, canMountIso: true, fileUploadMaxBytes }));
+      of(
+        networkVm({
+          guestAgentRunning: true,
+          canMountIso: true,
+          fileUploadMaxBytes,
+        }),
+      );
 
     /**
      * Verifies: a file over the limit the API reports is refused before anything is asked or sent, with the reason the API would give.
@@ -1363,7 +1624,11 @@ describe('OptionsBar2Component', () => {
         networkVm: limitedVm(2048),
       });
 
-      pickFiles(fixture, new File(['hi'], 'notes.txt'), new File([new Uint8Array(2049)], 'big.bin'));
+      pickFiles(
+        fixture,
+        new File(['hi'], 'notes.txt'),
+        new File([new Uint8Array(2049)], 'big.bin'),
+      );
 
       expect(dialogs.getFileUploadInfo).not.toHaveBeenCalled();
       expect(proxmox.uploadFiles).not.toHaveBeenCalled();
@@ -1384,7 +1649,9 @@ describe('OptionsBar2Component', () => {
         grants: canTransfer,
         networkVm: limitedVm(2048),
       });
-      dialogs.getFileUploadInfo.mockReturnValue(of({ filepath: '/tmp', username: '', password: '' }));
+      dialogs.getFileUploadInfo.mockReturnValue(
+        of({ filepath: '/tmp', username: '', password: '' }),
+      );
 
       pickFiles(fixture, new File([new Uint8Array(2048)], 'max.bin'));
 
@@ -1401,7 +1668,9 @@ describe('OptionsBar2Component', () => {
         grants: canTransfer,
         networkVm: limitedVm(undefined),
       });
-      dialogs.getFileUploadInfo.mockReturnValue(of({ filepath: '/tmp', username: '', password: '' }));
+      dialogs.getFileUploadInfo.mockReturnValue(
+        of({ filepath: '/tmp', username: '', password: '' }),
+      );
 
       pickFiles(fixture, new File([new Uint8Array(100000)], 'big.bin'));
 
@@ -1414,14 +1683,21 @@ describe('OptionsBar2Component', () => {
      * Data: 400 titled with the size cap message.
      */
     it("shows the API's reason for a refused upload", async () => {
-      const { fixture, dialogs, proxmox, progress, snackBar } = await renderOptionsBar2({
-        grants: canTransfer,
-        networkVm: agentVm(),
-      });
-      dialogs.getFileUploadInfo.mockReturnValue(of({ filepath: '/tmp/', username: '', password: '' }));
+      const { fixture, dialogs, proxmox, progress, snackBar } =
+        await renderOptionsBar2({
+          grants: canTransfer,
+          networkVm: agentVm(),
+        });
+      dialogs.getFileUploadInfo.mockReturnValue(
+        of({ filepath: '/tmp/', username: '', password: '' }),
+      );
       proxmox.uploadFiles.mockReturnValue(
         throwError(
-          () => new HttpErrorResponse({ status: 400, error: { title: 'File exceeds 61440-byte limit' } }),
+          () =>
+            new HttpErrorResponse({
+              status: 400,
+              error: { title: 'File exceeds 61440-byte limit' },
+            }),
         ),
       );
 
@@ -1445,10 +1721,15 @@ describe('OptionsBar2Component', () => {
         grants: canTransfer,
         networkVm: agentVm(),
       });
-      dialogs.getFileUploadInfo.mockReturnValue(of({ filepath: '/etc/hosts', username: '', password: '' }));
+      dialogs.getFileUploadInfo.mockReturnValue(
+        of({ filepath: '/etc/hosts', username: '', password: '' }),
+      );
       const createObjectURL = vi.fn(() => 'blob:hosts');
       const revokeObjectURL = vi.fn();
-      vi.stubGlobal('URL', Object.assign(URL, { createObjectURL, revokeObjectURL }));
+      vi.stubGlobal(
+        'URL',
+        Object.assign(URL, { createObjectURL, revokeObjectURL }),
+      );
       const saved: HTMLAnchorElement[] = [];
       const click = vi
         .spyOn(HTMLAnchorElement.prototype, 'click')
@@ -1458,12 +1739,19 @@ describe('OptionsBar2Component', () => {
       try {
         await clickMenu(fixture, 'Files', 'Download File From VM');
 
-        expect(dialogs.getFileUploadInfo).toHaveBeenCalledWith('Download File Settings', {
-          showCredentials: false,
-        });
+        expect(dialogs.getFileUploadInfo).toHaveBeenCalledWith(
+          'Download File Settings',
+          {
+            showCredentials: false,
+          },
+        );
         expect(proxmox.downloadFile).toHaveBeenCalledWith('vm-1', '/etc/hosts');
-        expect(saved.map((a) => [a.href, a.download])).toEqual([['blob:hosts', 'hosts']]);
-        await vi.waitFor(() => expect(revokeObjectURL).toHaveBeenCalledWith('blob:hosts'));
+        expect(saved.map((a) => [a.href, a.download])).toEqual([
+          ['blob:hosts', 'hosts'],
+        ]);
+        await vi.waitFor(() =>
+          expect(revokeObjectURL).toHaveBeenCalledWith('blob:hosts'),
+        );
       } finally {
         click.mockRestore();
         vi.unstubAllGlobals();
@@ -1480,9 +1768,17 @@ describe('OptionsBar2Component', () => {
         grants: canTransfer,
         networkVm: agentVm(),
       });
-      dialogs.getFileUploadInfo.mockReturnValue(of({ filepath: '/nope', username: '', password: '' }));
+      dialogs.getFileUploadInfo.mockReturnValue(
+        of({ filepath: '/nope', username: '', password: '' }),
+      );
       proxmox.downloadFile.mockReturnValue(
-        throwError(() => new HttpErrorResponse({ status: 400, error: { title: 'No such file' } })),
+        throwError(
+          () =>
+            new HttpErrorResponse({
+              status: 400,
+              error: { title: 'No such file' },
+            }),
+        ),
       );
 
       await clickMenu(fixture, 'Files', 'Download File From VM');
@@ -1512,7 +1808,8 @@ describe('OptionsBar2Component', () => {
 
   describe('console controls', () => {
     // A Vm whose vga config sets clipboard=vnc, so Copy is offered.
-    const clipboardVm = (vncClipboardEnabled = true) => of(networkVm({ vncClipboardEnabled }));
+    const clipboardVm = (vncClipboardEnabled = true) =>
+      of(networkVm({ vncClipboardEnabled }));
 
     /**
      * Verifies: Fullscreen asks noVNC for fullscreen, and says so when the browser can't.
@@ -1527,7 +1824,11 @@ describe('OptionsBar2Component', () => {
 
       proxmox.fullscreen.mockReturnValue(false);
       await clickMenu(fixture, 'Fullscreen');
-      expect(snackBar.open).toHaveBeenCalledWith('Fullscreen is not available', 'Close', expect.anything());
+      expect(snackBar.open).toHaveBeenCalledWith(
+        'Fullscreen is not available',
+        'Close',
+        expect.anything(),
+      );
     });
 
     /**
@@ -1566,12 +1867,20 @@ describe('OptionsBar2Component', () => {
      */
     it('copies the guest clipboard', async () => {
       const user = userEvent.setup();
-      const { snackBar } = await renderOptionsBar2({ networkVm: clipboardVm() });
+      const { snackBar } = await renderOptionsBar2({
+        networkVm: clipboardVm(),
+      });
       const { writeText } = stubClipboard();
 
       await user.click(screen.getByRole('button', { name: /^Copy/ }));
-      await vi.waitFor(() => expect(writeText).toHaveBeenCalledWith('guest text'));
-      expect(snackBar.open).toHaveBeenCalledWith('Copied Virtual Machine Clipboard', 'Ok', expect.anything());
+      await vi.waitFor(() =>
+        expect(writeText).toHaveBeenCalledWith('guest text'),
+      );
+      expect(snackBar.open).toHaveBeenCalledWith(
+        'Copied Virtual Machine Clipboard',
+        'Ok',
+        expect.anything(),
+      );
     });
 
     /**
@@ -1581,7 +1890,9 @@ describe('OptionsBar2Component', () => {
      */
     it('reports a guest that sent no clipboard', async () => {
       const user = userEvent.setup();
-      const { proxmox, snackBar } = await renderOptionsBar2({ networkVm: clipboardVm() });
+      const { proxmox, snackBar } = await renderOptionsBar2({
+        networkVm: clipboardVm(),
+      });
       const { writeText } = stubClipboard();
       proxmox.getGuestClipboard.mockReturnValue(null);
 
@@ -1606,27 +1917,31 @@ describe('OptionsBar2Component', () => {
     it.each([
       ['false', clipboardVm(false)],
       ['absent', of(networkVm())],
-    ])('disables Copy and marks Paste * without the VNC clipboard (%s)', async (_, vm) => {
-      const { fixture } = await renderOptionsBar2({ networkVm: vm });
-      expect(screen.getByRole('button', { name: /^Copy/ })).toBeDisabled();
-      expect(screen.getByRole('button', { name: /^Paste \*/ })).toBeEnabled();
+    ])(
+      'disables Copy and marks Paste * without the VNC clipboard (%s)',
+      async (_, vm) => {
+        const { fixture } = await renderOptionsBar2({ networkVm: vm });
+        expect(screen.getByRole('button', { name: /^Copy/ })).toBeDisabled();
+        expect(screen.getByRole('button', { name: /^Paste \*/ })).toBeEnabled();
 
-      const keyboard = await openSubmenu(fixture, 'Keyboard');
-      const [copy] = await keyboard.getItems({ text: 'Copy' });
-      const [paste] = await keyboard.getItems({ text: 'Paste *' });
-      expect(await copy.isDisabled()).toBe(true);
-      expect(await paste.isDisabled()).toBe(false);
+        const keyboard = await openSubmenu(fixture, 'Keyboard');
+        const [copy] = await keyboard.getItems({ text: 'Copy' });
+        const [paste] = await keyboard.getItems({ text: 'Paste *' });
+        expect(await copy.isDisabled()).toBe(true);
+        expect(await paste.isDisabled()).toBe(false);
 
-      const tooltips = await TestbedHarnessEnvironment.documentRootLoader(fixture).getAllHarnesses(
-        MatTooltipHarness,
-      );
-      expect(tooltips.length).toBe(4);
-      for (const tooltip of tooltips) {
-        await tooltip.show();
-        expect(await tooltip.getTooltipText()).toBe(CLIPBOARD_SETUP_TOOLTIP);
-        await tooltip.hide();
-      }
-    });
+        const tooltips =
+          await TestbedHarnessEnvironment.documentRootLoader(
+            fixture,
+          ).getAllHarnesses(MatTooltipHarness);
+        expect(tooltips.length).toBe(4);
+        for (const tooltip of tooltips) {
+          await tooltip.show();
+          expect(await tooltip.getTooltipText()).toBe(CLIPBOARD_SETUP_TOOLTIP);
+          await tooltip.hide();
+        }
+      },
+    );
 
     /**
      * Verifies: with clipboard=vnc on the Vm, Copy and Paste are enabled in the toolbar and the Keyboard menu and carry no tooltip.
@@ -1642,9 +1957,10 @@ describe('OptionsBar2Component', () => {
       const [copy] = await keyboard.getItems({ text: 'Copy' });
       expect(await copy.isDisabled()).toBe(false);
 
-      const tooltips = await TestbedHarnessEnvironment.documentRootLoader(fixture).getAllHarnesses(
-        MatTooltipHarness,
-      );
+      const tooltips =
+        await TestbedHarnessEnvironment.documentRootLoader(
+          fixture,
+        ).getAllHarnesses(MatTooltipHarness);
       for (const tooltip of tooltips) {
         await tooltip.show();
         expect(await tooltip.isOpen()).toBe(false);
@@ -1662,7 +1978,9 @@ describe('OptionsBar2Component', () => {
 
       await clickMenu(fixture, 'Keyboard', 'Copy');
 
-      await vi.waitFor(() => expect(writeText).toHaveBeenCalledWith('guest text'));
+      await vi.waitFor(() =>
+        expect(writeText).toHaveBeenCalledWith('guest text'),
+      );
     });
 
     /**
@@ -1679,7 +1997,8 @@ describe('OptionsBar2Component', () => {
       await vi.waitFor(() =>
         expect(confirm).toHaveBeenCalledWith(
           expect.objectContaining({
-            title: 'Select text and press Ctrl+C to copy to your local clipboard:',
+            title:
+              'Select text and press Ctrl+C to copy to your local clipboard:',
             message: 'guest text',
           }),
         ),
@@ -1728,7 +2047,9 @@ describe('OptionsBar2Component', () => {
       const texts = await menuTexts(fixture);
       expect(texts[texts.indexOf('Resolution') + 1]).toBe('Power');
       await (await menu(fixture)).close();
-      expect(await itemTexts(await openSubmenu(fixture, 'Resolution'))).toEqual(expected);
+      expect(await itemTexts(await openSubmenu(fixture, 'Resolution'))).toEqual(
+        expected,
+      );
     });
 
     /**
@@ -1751,7 +2072,11 @@ describe('OptionsBar2Component', () => {
      */
     it('enables Match Window Size when the display can resize', async () => {
       const { fixture } = await renderOptionsBar2();
-      const match = await findMenuItem(fixture, 'Resolution', 'Match Window Size');
+      const match = await findMenuItem(
+        fixture,
+        'Resolution',
+        'Match Window Size',
+      );
       expect(await match.isDisabled()).toBe(false);
       const tooltip = await resolutionTooltip(fixture);
       await tooltip.show();
@@ -1768,17 +2093,25 @@ describe('OptionsBar2Component', () => {
       ['unsupported', false, false, RESIZE_UNSUPPORTED_TOOLTIP],
       ['unsupported and read-only', false, true, RESIZE_UNSUPPORTED_TOOLTIP],
       ['read-only', true, true, RESIZE_READ_ONLY_TOOLTIP],
-    ])('disables Match Window Size when %s', async (_, resizeSupported, readOnly, text) => {
-      const { fixture } = await renderOptionsBar2({ resizeSupported, readOnly });
-      const resolution = await openSubmenu(fixture, 'Resolution');
-      const [scale] = await resolution.getItems({ text: /Scale to Fit/ });
-      const [match] = await resolution.getItems({ text: 'Match Window Size' });
-      expect(await scale.isDisabled()).toBe(false);
-      expect(await match.isDisabled()).toBe(true);
-      const tooltip = await resolutionTooltip(fixture);
-      await tooltip.show();
-      expect(await tooltip.getTooltipText()).toBe(text);
-    });
+    ])(
+      'disables Match Window Size when %s',
+      async (_, resizeSupported, readOnly, text) => {
+        const { fixture } = await renderOptionsBar2({
+          resizeSupported,
+          readOnly,
+        });
+        const resolution = await openSubmenu(fixture, 'Resolution');
+        const [scale] = await resolution.getItems({ text: /Scale to Fit/ });
+        const [match] = await resolution.getItems({
+          text: 'Match Window Size',
+        });
+        expect(await scale.isDisabled()).toBe(false);
+        expect(await match.isDisabled()).toBe(true);
+        const tooltip = await resolutionTooltip(fixture);
+        await tooltip.show();
+        expect(await tooltip.getTooltipText()).toBe(text);
+      },
+    );
 
     /**
      * Verifies: whether the Vm's display can resize is taken from the Vm's canResizeDisplay and handed to the console, false until the Vm has loaded and where the API doesn't say.
@@ -1790,14 +2123,17 @@ describe('OptionsBar2Component', () => {
       ['true', true, true],
       ['false', false, false],
       ['absent', undefined, false],
-    ])('passes canResizeDisplay %s to the console', async (_, canResizeDisplay, expected) => {
-      const { proxmox } = await renderOptionsBar2({
-        networkVm: of(networkVm({ canResizeDisplay })),
-      });
-      await vi.waitFor(() =>
-        expect(proxmox.setResizeSupported).toHaveBeenLastCalledWith(expected),
-      );
-    });
+    ])(
+      'passes canResizeDisplay %s to the console',
+      async (_, canResizeDisplay, expected) => {
+        const { proxmox } = await renderOptionsBar2({
+          networkVm: of(networkVm({ canResizeDisplay })),
+        });
+        await vi.waitFor(() =>
+          expect(proxmox.setResizeSupported).toHaveBeenLastCalledWith(expected),
+        );
+      },
+    );
   });
 
   describe('read-only', () => {
@@ -1806,10 +2142,18 @@ describe('OptionsBar2Component', () => {
      * Interacts with: the allowReadOnlyToggle input; the gear menu.
      * Data: allowReadOnlyToggle false, then true.
      */
-    it.each([false, true])('offers Read Only when allowReadOnlyToggle is %s', async (allowReadOnlyToggle) => {
-      const { fixture } = await renderOptionsBar2({ allowReadOnlyToggle, readOnly: true });
-      expect((await menuTexts(fixture)).includes('Read Only')).toBe(allowReadOnlyToggle);
-    });
+    it.each([false, true])(
+      'offers Read Only when allowReadOnlyToggle is %s',
+      async (allowReadOnlyToggle) => {
+        const { fixture } = await renderOptionsBar2({
+          allowReadOnlyToggle,
+          readOnly: true,
+        });
+        expect((await menuTexts(fixture)).includes('Read Only')).toBe(
+          allowReadOnlyToggle,
+        );
+      },
+    );
 
     /**
      * Verifies: the switch shows the current state and flipping it navigates to readOnly=false, which the page turns into the readOnly input (and noVNC viewOnly).
@@ -1817,17 +2161,22 @@ describe('OptionsBar2Component', () => {
      * Data: allowReadOnlyToggle true; readOnly true, switched off.
      */
     it('flips read-only through VmService.setReadOnly', async () => {
-      const { fixture } = await renderOptionsBar2({ allowReadOnlyToggle: true, readOnly: true });
+      const { fixture } = await renderOptionsBar2({
+        allowReadOnlyToggle: true,
+        readOnly: true,
+      });
       await menu(fixture);
-      const toggle = await TestbedHarnessEnvironment.documentRootLoader(fixture).getHarness(
-        MatSlideToggleHarness.with({ label: 'Read Only' }),
-      );
+      const toggle = await TestbedHarnessEnvironment.documentRootLoader(
+        fixture,
+      ).getHarness(MatSlideToggleHarness.with({ label: 'Read Only' }));
       expect(await toggle.isChecked()).toBe(true);
 
       await toggle.toggle();
       await fixture.whenStable();
 
-      expect(fixture.debugElement.injector.get(Router).url).toBe('/?readOnly=false');
+      expect(fixture.debugElement.injector.get(Router).url).toBe(
+        '/?readOnly=false',
+      );
     });
 
     /**
@@ -1857,9 +2206,9 @@ describe('OptionsBar2Component', () => {
 
       expect(screen.getByText('Connected: alice, bob')).toBeInTheDocument();
       const keepNewlines = getDefaultNormalizer({ collapseWhitespace: false });
-      expect(screen.getByTitle('alice\nbob', { normalizer: keepNewlines })).toHaveTextContent(
-        'Connected: alice, bob',
-      );
+      expect(
+        screen.getByTitle('alice\nbob', { normalizer: keepNewlines }),
+      ).toHaveTextContent('Connected: alice, bob');
     });
 
     /**
@@ -1871,7 +2220,9 @@ describe('OptionsBar2Component', () => {
       ['nobody connected', [], false],
       ['a read-only console', ['alice'], true],
     ])('shows no label for %s', async (_case, users, readOnly) => {
-      const { fixture, currentVmUsers$ } = await renderOptionsBar2({ readOnly });
+      const { fixture, currentVmUsers$ } = await renderOptionsBar2({
+        readOnly,
+      });
       currentVmUsers$.next(users);
       fixture.detectChanges();
       expect(screen.queryByText(/Connected:/)).not.toBeInTheDocument();
@@ -1908,7 +2259,8 @@ describe('OptionsBar2Component', () => {
      * Data: one running task at 40%, then the same task succeeded.
      */
     it('lists in-progress tasks from the progress hub', async () => {
-      const { fixture, notifications, tasksInProgress } = await renderOptionsBar2();
+      const { fixture, notifications, tasksInProgress } =
+        await renderOptionsBar2();
       expect(notifications.connectToProgressHub).toHaveBeenCalledWith('vm-1');
 
       tasksInProgress.next([running]);
@@ -1951,14 +2303,19 @@ describe('OptionsBar2Component', () => {
      */
     it('lists only unfinished tasks and omits an empty percentage', async () => {
       const { fixture, tasksInProgress } = await renderOptionsBar2();
-      tasksInProgress.next([proxmoxTask('OK'), proxmoxTask('start failed: QEMU exited with code 1')]);
+      tasksInProgress.next([
+        proxmoxTask('OK'),
+        proxmoxTask('start failed: QEMU exited with code 1'),
+      ]);
       fixture.detectChanges();
       expect(screen.queryByText(/VM 100 Rollback/)).not.toBeInTheDocument();
 
       tasksInProgress.next([proxmoxTask('running')]);
       fixture.detectChanges();
       const heading = screen.getByRole('heading', { name: /VM 100 Rollback/ });
-      expect(heading.textContent?.replace(/\s+/g, ' ').trim()).toBe('VM 100 Rollback (in progress)');
+      expect(heading.textContent?.replace(/\s+/g, ' ').trim()).toBe(
+        'VM 100 Rollback (in progress)',
+      );
     });
   });
 
@@ -1977,7 +2334,10 @@ describe('OptionsBar2Component', () => {
         const power = await openSubmenu(fixture, 'Power');
         const items = await power.getItems();
         const states = await Promise.all(
-          items.map(async (item) => [await item.getText(), await item.isDisabled()]),
+          items.map(async (item) => [
+            await item.getText(),
+            await item.isDisabled(),
+          ]),
         );
         expect(states).toEqual([
           ['Power On', false],

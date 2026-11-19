@@ -14,7 +14,11 @@ describe('PageNotFoundComponent', () => {
    */
   it('explains that the Vm was not found', async () => {
     await renderComponent(PageNotFoundComponent);
-    expect(screen.getByRole('heading', { name: 'VM Not Found' })).toBeInTheDocument();
-    expect(screen.getByText(/no longer exists or you do not have permission/)).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: 'VM Not Found' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/no longer exists or you do not have permission/),
+    ).toBeInTheDocument();
   });
 });

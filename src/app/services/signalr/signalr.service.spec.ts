@@ -234,10 +234,12 @@ describe('SignalRService', () => {
       (act: (service: SignalRService) => void): Arm =>
       async (failure) => {
         const ctx = setup({
-          onBuild: (connection) => connection.start.mockRejectedValueOnce(failure),
+          onBuild: (connection) =>
+            connection.start.mockRejectedValueOnce(failure),
         });
         act(ctx.service);
-        return () => ctx.connection().invoke.mock.calls.map(([method]) => method);
+        return () =>
+          ctx.connection().invoke.mock.calls.map(([method]) => method);
       };
 
     /**
@@ -249,7 +251,12 @@ describe('SignalRService', () => {
       ['startConnection()', [], failedStart],
       ['reconnect()', [], failedRestart],
       ['joinGroups() followed-user rejoin', ['JoinUser'], failedRejoin],
-      ['leaveUser() start', [], failedOuterStart((s) => s.leaveUser('u1', 'view-1')), 2],
+      [
+        'leaveUser() start',
+        [],
+        failedOuterStart((s) => s.leaveUser('u1', 'view-1')),
+        2,
+      ],
       ['leaveVm() start', [], failedOuterStart((s) => s.leaveVm('vm-1')), 2],
       [
         'setActiveVirtualMachine() start',
@@ -257,8 +264,17 @@ describe('SignalRService', () => {
         failedOuterStart((s) => s.setActiveVirtualMachine('vm-1')),
         2,
       ],
-      ['unsetActiveVirtualMachine() start', [], failedOuterStart((s) => s.unsetActiveVirtualMachine()), 2],
-      ['leaveUser()', ['LeaveUser'], failedInvoke((s) => s.leaveUser('u1', 'view-1'))],
+      [
+        'unsetActiveVirtualMachine() start',
+        [],
+        failedOuterStart((s) => s.unsetActiveVirtualMachine()),
+        2,
+      ],
+      [
+        'leaveUser()',
+        ['LeaveUser'],
+        failedInvoke((s) => s.leaveUser('u1', 'view-1')),
+      ],
       ['joinVm()', ['JoinVm'], failedInvoke((s) => s.joinVm('vm-2'))],
       ['leaveVm()', ['LeaveVm'], failedInvoke((s) => s.leaveVm('vm-1'))],
       [
@@ -271,16 +287,21 @@ describe('SignalRService', () => {
         ['UnsetActiveVirtualMachine'],
         failedInvoke((s) => s.unsetActiveVirtualMachine()),
       ],
-    ])('lets a failed hub promise in %s escape unhandled', async (_method, invokes, arm, escapes = 1) => {
-      const rejections = captureUnhandledRejections();
-      const failure = new Error('hub down');
+    ])(
+      'lets a failed hub promise in %s escape unhandled',
+      async (_method, invokes, arm, escapes = 1) => {
+        const rejections = captureUnhandledRejections();
+        const failure = new Error('hub down');
 
-      const invoked = await arm(failure);
-      await flush();
+        const invoked = await arm(failure);
+        await flush();
 
-      expect(invoked()).toEqual(invokes);
-      expect(rejections).toEqual(escapes === 2 ? [failure, failure] : [failure]);
-    });
+        expect(invoked()).toEqual(invokes);
+        expect(rejections).toEqual(
+          escapes === 2 ? [failure, failure] : [failure],
+        );
+      },
+    );
   });
 
   describe('joinUser()', () => {
@@ -317,7 +338,11 @@ describe('SignalRService', () => {
 
       service.leaveUser('u1', 'view-1');
       await flush();
-      expect(connection().invoke).toHaveBeenCalledWith('LeaveUser', 'u1', 'view-1');
+      expect(connection().invoke).toHaveBeenCalledWith(
+        'LeaveUser',
+        'u1',
+        'view-1',
+      );
 
       connection().invoke.mockClear();
       connection().reconnectedCallbacks.forEach((cb) => cb());
@@ -353,7 +378,10 @@ describe('SignalRService', () => {
      */
     it('publishes the users on the joined Vm', async () => {
       const { service, connection } = await connected();
-      connection.trigger('CurrentVirtualMachineUsers', 'vm-1', ['alice', 'bob']);
+      connection.trigger('CurrentVirtualMachineUsers', 'vm-1', [
+        'alice',
+        'bob',
+      ]);
       expect(service.currentVmUsers$.getValue()).toEqual(['alice', 'bob']);
     });
 
@@ -376,12 +404,35 @@ describe('SignalRService', () => {
     it('merges scoped presence groups without duplicates', async () => {
       const { service, connection } = await connected();
 
-      connection.trigger('CurrentVirtualMachineUsers', 'vm-1', ['alice', 'bob'], 'team-a');
-      connection.trigger('CurrentVirtualMachineUsers', 'vm-1', ['bob', 'carol'], 'team-b');
-      expect(service.currentVmUsers$.getValue()).toEqual(['alice', 'bob', 'carol']);
+      connection.trigger(
+        'CurrentVirtualMachineUsers',
+        'vm-1',
+        ['alice', 'bob'],
+        'team-a',
+      );
+      connection.trigger(
+        'CurrentVirtualMachineUsers',
+        'vm-1',
+        ['bob', 'carol'],
+        'team-b',
+      );
+      expect(service.currentVmUsers$.getValue()).toEqual([
+        'alice',
+        'bob',
+        'carol',
+      ]);
 
-      connection.trigger('CurrentVirtualMachineUsers', 'vm-1', ['dave'], 'team-a');
-      expect(service.currentVmUsers$.getValue()).toEqual(['dave', 'bob', 'carol']);
+      connection.trigger(
+        'CurrentVirtualMachineUsers',
+        'vm-1',
+        ['dave'],
+        'team-a',
+      );
+      expect(service.currentVmUsers$.getValue()).toEqual([
+        'dave',
+        'bob',
+        'carol',
+      ]);
     });
 
     /**
@@ -392,7 +443,12 @@ describe('SignalRService', () => {
     it('resets groups on an ungrouped list and treats null as empty', async () => {
       const { service, connection } = await connected();
 
-      connection.trigger('CurrentVirtualMachineUsers', 'vm-1', ['alice'], 'team-a');
+      connection.trigger(
+        'CurrentVirtualMachineUsers',
+        'vm-1',
+        ['alice'],
+        'team-a',
+      );
       connection.trigger('CurrentVirtualMachineUsers', 'vm-1', ['zed']);
       expect(service.currentVmUsers$.getValue()).toEqual(['zed']);
 
@@ -448,8 +504,13 @@ describe('SignalRService', () => {
       service.unsetActiveVirtualMachine();
       await flush();
 
-      expect(connection.invoke).toHaveBeenCalledWith('SetActiveVirtualMachine', 'vm-1');
-      expect(connection.invoke).toHaveBeenCalledWith('UnsetActiveVirtualMachine');
+      expect(connection.invoke).toHaveBeenCalledWith(
+        'SetActiveVirtualMachine',
+        'vm-1',
+      );
+      expect(connection.invoke).toHaveBeenCalledWith(
+        'UnsetActiveVirtualMachine',
+      );
     });
   });
 
@@ -485,9 +546,17 @@ describe('SignalRService', () => {
       connection().reconnectedCallbacks.forEach((cb) => cb());
       await flush();
 
-      expect(connection().invoke).toHaveBeenCalledWith('JoinUser', 'u1', 'view-1', 'team-1');
+      expect(connection().invoke).toHaveBeenCalledWith(
+        'JoinUser',
+        'u1',
+        'view-1',
+        'team-1',
+      );
       expect(connection().invoke).toHaveBeenCalledWith('JoinVm', 'vm-1');
-      expect(connection().invoke).toHaveBeenCalledWith('SetActiveVirtualMachine', 'vm-1');
+      expect(connection().invoke).toHaveBeenCalledWith(
+        'SetActiveVirtualMachine',
+        'vm-1',
+      );
     });
 
     /**

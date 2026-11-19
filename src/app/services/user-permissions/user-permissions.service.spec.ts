@@ -29,7 +29,10 @@ function permissions(
 }
 
 /** Every value of a generated permission enum except one: the near miss for a denied case. */
-function allExcept<T extends string>(values: Record<string, T>, excluded: T): T[] {
+function allExcept<T extends string>(
+  values: Record<string, T>,
+  excluded: T,
+): T[] {
   return Object.values(values).filter((p) => p !== excluded);
 }
 
@@ -175,15 +178,30 @@ describe('UserPermissionsService', () => {
     const denied: Array<[string, Partial<VmPermissionResult>]> = [
       [
         'every system permission but ControlVms',
-        { systemPermissions: allExcept(AppSystemPermission, AppSystemPermission.ControlVms) },
+        {
+          systemPermissions: allExcept(
+            AppSystemPermission,
+            AppSystemPermission.ControlVms,
+          ),
+        },
       ],
       [
         'every team permission but ControlTeamVms',
-        { teamPermissions: allExcept(AppTeamPermission, AppTeamPermission.ControlTeamVms) },
+        {
+          teamPermissions: allExcept(
+            AppTeamPermission,
+            AppTeamPermission.ControlTeamVms,
+          ),
+        },
       ],
       [
         'every view permission but ControlViewVms',
-        { viewPermissions: allExcept(AppViewPermission, AppViewPermission.ControlViewVms) },
+        {
+          viewPermissions: allExcept(
+            AppViewPermission,
+            AppViewPermission.ControlViewVms,
+          ),
+        },
       ],
       [
         'the view and manage permissions of every tier',

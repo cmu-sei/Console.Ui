@@ -56,3 +56,6 @@ tsconfig.local-npm.json
 
 # Local development server config
 serve.json
+
+# Downloaded by npm run swagger:gen
+/swagger.json

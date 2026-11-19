@@ -153,9 +153,9 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
     AppSystemPermission.RevertVms,
   );
 
-  private refreshNetworks = signal(0); // remove after refactoring to signals everywhere
+  private readonly refreshNetworks = signal(0); // remove after refactoring to signals everywhere
 
-  availableNetworksSorted = computed(() => {
+  readonly availableNetworksSorted = computed(() => {
     this.refreshNetworks();
 
     const all = this.vsphereService.model.networkCards.availableNetworks;

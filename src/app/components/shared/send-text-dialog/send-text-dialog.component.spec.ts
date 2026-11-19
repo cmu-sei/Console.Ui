@@ -43,12 +43,20 @@ describe('SendTextDialogComponent', () => {
    */
   it('sends the typed text with a null timeout when no speed was picked', async () => {
     const { user, close } = await renderSendText();
-    expect(screen.getByRole('heading', { name: 'Enter Text to Send' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: 'Enter Text to Send' }),
+    ).toBeInTheDocument();
 
-    await user.type(screen.getByRole('textbox', { name: 'Text to send' }), 'ls -la');
+    await user.type(
+      screen.getByRole('textbox', { name: 'Text to send' }),
+      'ls -la',
+    );
     await user.click(screen.getByRole('button', { name: 'Send' }));
 
-    expect(close).toHaveBeenCalledExactlyOnceWith({ textToSend: 'ls -la', timeout: null });
+    expect(close).toHaveBeenCalledExactlyOnceWith({
+      textToSend: 'ls -la',
+      timeout: null,
+    });
   });
 
   /**
@@ -58,13 +66,22 @@ describe('SendTextDialogComponent', () => {
    */
   it('returns the chosen paste speed', async () => {
     const { fixture, user, close } = await renderSendText();
-    const menu = await TestbedHarnessEnvironment.loader(fixture).getHarness(MatMenuHarness);
+    const menu =
+      await TestbedHarnessEnvironment.loader(fixture).getHarness(
+        MatMenuHarness,
+      );
     await menu.open();
     await menu.clickItem({ text: /Paste Speed/ }, { text: 'Slow' });
 
-    await user.type(screen.getByRole('textbox', { name: 'Text to send' }), 'echo hi');
+    await user.type(
+      screen.getByRole('textbox', { name: 'Text to send' }),
+      'echo hi',
+    );
     await user.click(screen.getByRole('button', { name: 'Send' }));
 
-    expect(close).toHaveBeenCalledExactlyOnceWith({ textToSend: 'echo hi', timeout: '100' });
+    expect(close).toHaveBeenCalledExactlyOnceWith({
+      textToSend: 'echo hi',
+      timeout: '100',
+    });
   });
 });

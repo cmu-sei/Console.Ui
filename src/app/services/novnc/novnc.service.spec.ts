@@ -166,12 +166,9 @@ describe('NoVNCService', () => {
     service.setDisconnectListener(handler);
     service.setSecurityFailureListener(handler);
     service.setClipboardListener(handler);
-    expect(vi.mocked(rfb.addEventListener).mock.calls.map(([event]) => event)).toEqual([
-      'connect',
-      'disconnect',
-      'securityfailure',
-      'clipboard',
-    ]);
+    expect(
+      vi.mocked(rfb.addEventListener).mock.calls.map(([event]) => event),
+    ).toEqual(['connect', 'disconnect', 'securityfailure', 'clipboard']);
   });
 
   describe('typing text', () => {
@@ -206,7 +203,9 @@ describe('NoVNCService', () => {
      * Data: every printable ASCII character plus a Latin-1 capital.
      */
     it('flags the characters a US layout types with Shift', () => {
-      const shifted = NoVNCService.keyPressesFor('aZ1!2@3#4$5%6^7&8*9(0)-_=+[{]}\\|;:\'",<.>/?`~ \tÉ')
+      const shifted = NoVNCService.keyPressesFor(
+        'aZ1!2@3#4$5%6^7&8*9(0)-_=+[{]}\\|;:\'",<.>/?`~ \tÉ',
+      )
         .filter((press) => press.shift)
         .map((press) => String.fromCodePoint(press.keysym))
         .join('');
@@ -336,7 +335,10 @@ describe('NoVNCService', () => {
 
         await vi.advanceTimersByTimeAsync(100);
 
-        await expect(Promise.all([first, second])).resolves.toEqual([true, true]);
+        await expect(Promise.all([first, second])).resolves.toEqual([
+          true,
+          true,
+        ]);
         expect(keysyms(rfb)).toEqual([0x61, 0x62, 0x63, 0x64]);
       });
     });
@@ -354,7 +356,11 @@ describe('NoVNCService', () => {
       ['Greek (Unicode keysym)', 'α', [0x0100_0000 | 0x3b1]],
       ['Euro sign (Unicode keysym)', '€', [0x0100_0000 | 0x20ac]],
       ['astral plane (Unicode keysym)', '😀', [0x0100_0000 + 0x1f600]],
-      ['LF, CRLF and CR', 'a\nb\r\nc\rd', [0x61, ENTER, 0x62, ENTER, 0x63, ENTER, 0x64]],
+      [
+        'LF, CRLF and CR',
+        'a\nb\r\nc\rd',
+        [0x61, ENTER, 0x62, ENTER, 0x63, ENTER, 0x64],
+      ],
       ['tab', '\t', [TAB]],
       ['other controls dropped', '\u0000\u001b\u007f\u0085x', [0x78]],
     ])('maps %s', (_case, text, expected) => {
@@ -476,8 +482,11 @@ describe('NoVNCService', () => {
     it('keeps the last guest clipboard text until disconnect', () => {
       const { service, rfb } = withClient();
       expect(service.getGuestClipboard()).toBeNull();
-      (service as unknown as { trackGuestClipboard(): void }).trackGuestClipboard();
-      const [[event, onClipboard]] = vi.mocked(rfb.addEventListener).mock.calls as unknown as [
+      (
+        service as unknown as { trackGuestClipboard(): void }
+      ).trackGuestClipboard();
+      const [[event, onClipboard]] = vi.mocked(rfb.addEventListener).mock
+        .calls as unknown as [
         [string, (e: { detail: { text: string } }) => void],
       ];
       expect(event).toBe('clipboard');

@@ -94,10 +94,13 @@ describe('ProxmoxService', () => {
   it('changes a network adapter', () => {
     const { service, api } = setup();
     service.changeNic('vm-1', 'net0', 'vmbr1');
-    expect(api.changeProxmoxVirtualMachineNetwork).toHaveBeenCalledWith('vm-1', {
-      adapter: 'net0',
-      network: 'vmbr1',
-    });
+    expect(api.changeProxmoxVirtualMachineNetwork).toHaveBeenCalledWith(
+      'vm-1',
+      {
+        adapter: 'net0',
+        network: 'vmbr1',
+      },
+    );
   });
 
   /**
@@ -145,7 +148,10 @@ describe('ProxmoxService', () => {
     const over = new File([new Uint8Array(46081)], 'over.bin');
     const big = new File([new Uint8Array(100000)], 'big.iso');
 
-    expect(filesOverUploadLimit([atLimit, over, big], 46080)).toEqual([over, big]);
+    expect(filesOverUploadLimit([atLimit, over, big], 46080)).toEqual([
+      over,
+      big,
+    ]);
     expect(uploadLimitMessage([over], 46080)).toBe(
       'over.bin is 45.01 KB, which exceeds the 45 KB limit for uploading a file to a Proxmox virtual machine.',
     );
@@ -159,10 +165,13 @@ describe('ProxmoxService', () => {
    * Interacts with: filesOverUploadLimit.
    * Data: a 100000-byte file with the limit undefined, null and 0.
    */
-  it.each([undefined, null, 0])('refuses nothing with a limit of %s', (limit) => {
-    const big = new File([new Uint8Array(100000)], 'big.iso');
-    expect(filesOverUploadLimit([big], limit)).toEqual([]);
-  });
+  it.each([undefined, null, 0])(
+    'refuses nothing with a limit of %s',
+    (limit) => {
+      const big = new File([new Uint8Array(100000)], 'big.iso');
+      expect(filesOverUploadLimit([big], limit)).toEqual([]);
+    },
+  );
 
   /**
    * Verifies: typed text goes to the noVNC client, and its connected/not-connected answer is passed back.
@@ -195,7 +204,9 @@ describe('ProxmoxService', () => {
           depth: 0,
         },
       ]);
-      expect(api.getProxmoxVirtualMachineSnapshots).toHaveBeenCalledWith('vm-1');
+      expect(api.getProxmoxVirtualMachineSnapshots).toHaveBeenCalledWith(
+        'vm-1',
+      );
     });
 
     /**
@@ -243,7 +254,10 @@ describe('ProxmoxService', () => {
      * Data: 'orphan' whose parent 'gone' is not listed; currentSnapshot 'orphan'.
      */
     it('falls back to the model for the current snapshot', () => {
-      const result = toVmSnapshots([{ name: 'orphan', parent: 'gone' }], 'orphan');
+      const result = toVmSnapshots(
+        [{ name: 'orphan', parent: 'gone' }],
+        'orphan',
+      );
       expect(result).toEqual([
         expect.objectContaining({ name: 'orphan', depth: 0, isCurrent: true }),
       ]);
@@ -272,7 +286,11 @@ describe('ProxmoxService', () => {
       const a = new File(['a'], 'a.txt');
       const b = new File(['b'], 'b.bin');
       service.uploadFiles('vm-1', '/tmp/', fileList(a, b));
-      expect(api.uploadFileToProxmoxVirtualMachine).toHaveBeenCalledWith('vm-1', '/tmp/', [a, b]);
+      expect(api.uploadFileToProxmoxVirtualMachine).toHaveBeenCalledWith(
+        'vm-1',
+        '/tmp/',
+        [a, b],
+      );
     });
 
     /**
@@ -282,9 +300,14 @@ describe('ProxmoxService', () => {
      */
     it('downloads a file as a blob', async () => {
       const { service, api } = setup();
-      const blob = await firstValueFrom(service.downloadFile('vm-1', '/etc/hosts'));
+      const blob = await firstValueFrom(
+        service.downloadFile('vm-1', '/etc/hosts'),
+      );
       expect(await blob.text()).toBe('data');
-      expect(api.downloadFileFromProxmoxVirtualMachine).toHaveBeenCalledWith('vm-1', '/etc/hosts');
+      expect(api.downloadFileFromProxmoxVirtualMachine).toHaveBeenCalledWith(
+        'vm-1',
+        '/etc/hosts',
+      );
     });
 
     /**
@@ -303,14 +326,25 @@ describe('ProxmoxService', () => {
             }),
         ),
       );
-      const parsed = await firstValueFrom(service.downloadFile('vm-1', '/x')).catch((e) => e);
+      const parsed = await firstValueFrom(
+        service.downloadFile('vm-1', '/x'),
+      ).catch((e) => e);
       expect(parsed).toBeInstanceOf(HttpErrorResponse);
       expect(parsed.status).toBe(400);
       expect(parsed.error).toEqual({ title: 'No such file' });
 
-      const raw = new HttpErrorResponse({ status: 500, error: new Blob(['oops']) });
-      api.downloadFileFromProxmoxVirtualMachine.mockReturnValueOnce(throwError(() => raw));
-      expect(await firstValueFrom(service.downloadFile('vm-1', '/x')).catch((e) => e)).toBe(raw);
+      const raw = new HttpErrorResponse({
+        status: 500,
+        error: new Blob(['oops']),
+      });
+      api.downloadFileFromProxmoxVirtualMachine.mockReturnValueOnce(
+        throwError(() => raw),
+      );
+      expect(
+        await firstValueFrom(service.downloadFile('vm-1', '/x')).catch(
+          (e) => e,
+        ),
+      ).toBe(raw);
     });
   });
 

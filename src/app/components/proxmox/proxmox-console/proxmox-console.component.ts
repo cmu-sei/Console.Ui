@@ -81,16 +81,14 @@ export class ProxmoxConsoleComponent implements OnDestroy {
         // Skip a tick rather than piling up requests if one is still in flight.
         exhaustMap(() =>
           this.proxmoxService.getProxmoxConsole(this._vm.id).pipe(
-            map(
-              (proxmoxConsole): ProxmoxConsoleState => ({
-                url: proxmoxConsole.url,
-                ticket: proxmoxConsole.ticket,
-                showPower:
-                  proxmoxConsole.powerState === PowerState.Off ||
-                  proxmoxConsole.powerState === PowerState.Suspended,
-                showError: false,
-              }),
-            ),
+            map((proxmoxConsole): ProxmoxConsoleState => ({
+              url: proxmoxConsole.url,
+              ticket: proxmoxConsole.ticket,
+              showPower:
+                proxmoxConsole.powerState === PowerState.Off ||
+                proxmoxConsole.powerState === PowerState.Suspended,
+              showError: false,
+            })),
             catchError(() =>
               of<ProxmoxConsoleState>({ showPower: false, showError: true }),
             ),

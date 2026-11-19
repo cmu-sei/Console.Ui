@@ -8,7 +8,8 @@
 @use '@angular/material' as mat;
 
 $_palettes: (
-  primary: (0: #000000,
+  primary: (
+    0: #000000,
     10: #1b1b1b,
     20: #303030,
     25: #3b3b3b,
@@ -25,7 +26,8 @@ $_palettes: (
     99: #fcfcfc,
     100: #ffffff,
   ),
-  secondary: (0: #000000,
+  secondary: (
+    0: #000000,
     10: #1b1b1b,
     20: #303030,
     25: #3b3b3b,
@@ -42,7 +44,8 @@ $_palettes: (
     99: #fcfcfc,
     100: #ffffff,
   ),
-  tertiary: (0: #000000,
+  tertiary: (
+    0: #000000,
     10: #1b1b1b,
     20: #303030,
     25: #3b3b3b,
@@ -59,7 +62,8 @@ $_palettes: (
     99: #fcfcfc,
     100: #ffffff,
   ),
-  neutral: (0: #000000,
+  neutral: (
+    0: #000000,
     10: #1b1b1b,
     20: #303030,
     25: #3b3b3b,
@@ -86,7 +90,8 @@ $_palettes: (
     94: #eeeeee,
     96: #f4f4f4,
   ),
-  neutral-variant: (0: #000000,
+  neutral-variant: (
+    0: #000000,
     10: #1b1b1b,
     20: #303030,
     25: #3b3b3b,
@@ -103,7 +108,8 @@ $_palettes: (
     99: #fcfcfc,
     100: #ffffff,
   ),
-  error: (0: #000000,
+  error: (
+    0: #000000,
     10: #410002,
     20: #690005,
     25: #7e0007,
