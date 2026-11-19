@@ -307,7 +307,7 @@ describe('NoVNCService', () => {
        */
       it('stops when the client is replaced partway through', async () => {
         useFakeTimers();
-        const { service, rfb } = connectedClient();
+        const { service } = connectedClient();
         service.keyEventMs = 10;
         service.keyBatchEvents = 4;
         const typed = service.sendText('abcd');
@@ -499,10 +499,10 @@ describe('NoVNCService', () => {
   });
 
   describe('resolution', () => {
-    type Internals = {
+    interface Internals {
       rfb: RfbStub | null;
       configureClient(readOnly: boolean): void;
-    };
+    }
 
     // What startClient does after constructing RFB, against a stub client.
     function connectClient(service: NoVNCService, readOnly = false) {

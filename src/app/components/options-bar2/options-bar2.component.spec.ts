@@ -36,6 +36,7 @@ import {
 } from '../../generated/vm-api';
 import { DialogService } from '../../services/dialog/dialog.service';
 import { ProxmoxService } from '../../services/proxmox/proxmox.service';
+import { IsoResult } from '../../models/vm/iso-result';
 import { PowerAction, VmService } from '../../state/vm/vm.service';
 import { VsphereService } from '../../state/vsphere/vsphere.service';
 import {
@@ -140,11 +141,11 @@ async function renderOptionsBar2(
         }),
       ),
     ),
-    getIsos: vi.fn<ProxmoxService['getIsos']>(() => of([])),
+    getIsos: vi.fn<ProxmoxService['getIsos']>(() => of([] as IsoResult[])),
     mountIso: vi.fn<ProxmoxService['mountIso']>(() => of(networkVm())),
     sendCtrlAltDel: vi.fn<ProxmoxService['sendCtrlAltDel']>(),
     sendClipboardText: vi.fn<ProxmoxService['sendClipboardText']>(() => true),
-    sendText: vi.fn<ProxmoxService['sendText']>(async () => true),
+    sendText: vi.fn<ProxmoxService['sendText']>(() => Promise.resolve(true)),
     getSnapshots: vi.fn<ProxmoxService['getSnapshots']>(() =>
       of([
         { id: 'clean', name: 'clean', isCurrent: true, depth: 0 },
@@ -1414,7 +1415,9 @@ describe('OptionsBar2Component', () => {
       of(networkVm({ guestAgentRunning, canMountIso: true }));
 
     function fileInput(fixture: Fixture): HTMLInputElement {
-      return fixture.nativeElement.querySelector('input[type="file"]');
+      return (fixture.nativeElement as HTMLElement).querySelector(
+        'input[type="file"]',
+      );
     }
 
     function pickFiles(fixture: Fixture, ...files: File[]) {

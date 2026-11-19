@@ -248,7 +248,7 @@ async function parseBlobError(error: unknown): Promise<unknown> {
     error: body,
     headers: error.headers,
     status: error.status,
-    statusText: error.statusText,
+    // statusText is deprecated: HTTP/2 sends none, so Angular reports "OK" whatever it is given.
     url: error.url ?? undefined,
   });
 }

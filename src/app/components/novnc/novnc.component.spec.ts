@@ -137,10 +137,9 @@ describe('NovncComponent', () => {
 
     await rerender({ inputs: { ticket: 't-2' }, partialUpdate: true });
 
-    expect(vi.mocked(novnc.startClient).mock.calls.map((c) => c[1])).toEqual([
-      't-1',
-      't-2',
-    ]);
+    expect(
+      vi.mocked(novnc.startClient).mock.calls.map((c: unknown[]) => c[1]),
+    ).toEqual(['t-1', 't-2']);
   });
 
   /**

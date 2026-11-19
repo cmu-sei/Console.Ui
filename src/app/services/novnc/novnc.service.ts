@@ -5,7 +5,7 @@
 
 import { Injectable, computed, signal } from '@angular/core';
 import { Subject } from 'rxjs';
-import RFB from '@novnc/novnc/lib/rfb.js';
+import RFB, { RfbEventMap } from '@novnc/novnc/lib/rfb.js';
 
 // X11 keysyms for the keys sendText presses. Defined here rather than imported from noVNC's
 // lib/input modules, which are private and blocked by noVNC 1.7's package exports.
@@ -243,19 +243,23 @@ export class NoVNCService {
     }
   }
 
-  public setConnectListener(func: Function) {
+  public setConnectListener(func: (event: RfbEventMap['connect']) => void) {
     this.rfb.addEventListener('connect', func);
   }
 
-  public setDisconnectListener(func: Function) {
+  public setDisconnectListener(
+    func: (event: RfbEventMap['disconnect']) => void,
+  ) {
     this.rfb.addEventListener('disconnect', func);
   }
 
-  public setSecurityFailureListener(func: Function) {
+  public setSecurityFailureListener(
+    func: (event: RfbEventMap['securityfailure']) => void,
+  ) {
     this.rfb.addEventListener('securityfailure', func);
   }
 
-  public setClipboardListener(func: Function) {
+  public setClipboardListener(func: (event: RfbEventMap['clipboard']) => void) {
     this.rfb.addEventListener('clipboard', func);
   }
 

@@ -41,7 +41,7 @@ function setup() {
   const novnc = {
     sendCtrlAltDel: vi.fn(),
     sendClipboardText: vi.fn(),
-    sendText: vi.fn(async () => true),
+    sendText: vi.fn(() => Promise.resolve(true)),
     enterFullscreen: vi.fn(() => true),
     requestReconnect: vi.fn(),
     getGuestClipboard: vi.fn(() => 'copied'),
@@ -326,9 +326,9 @@ describe('ProxmoxService', () => {
             }),
         ),
       );
-      const parsed = await firstValueFrom(
+      const parsed = (await firstValueFrom(
         service.downloadFile('vm-1', '/x'),
-      ).catch((e) => e);
+      ).catch((e: unknown) => e)) as HttpErrorResponse;
       expect(parsed).toBeInstanceOf(HttpErrorResponse);
       expect(parsed.status).toBe(400);
       expect(parsed.error).toEqual({ title: 'No such file' });
@@ -342,7 +342,7 @@ describe('ProxmoxService', () => {
       );
       expect(
         await firstValueFrom(service.downloadFile('vm-1', '/x')).catch(
-          (e) => e,
+          (e: unknown) => e,
         ),
       ).toBe(raw);
     });

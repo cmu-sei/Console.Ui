@@ -31,9 +31,6 @@
     },
     "@typescript-eslint/no-unsafe-argument": {
       "count": 1
-    },
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
     }
   },
   "src/app/app.config.spec.ts": {
@@ -160,7 +157,7 @@
       "count": 26
     },
     "@typescript-eslint/no-unused-vars": {
-      "count": 4
+      "count": 3
     },
     "no-var": {
       "count": 1
@@ -180,20 +177,11 @@
     },
     "@typescript-eslint/no-unsafe-assignment": {
       "count": 1
-    },
-    "@typescript-eslint/no-unsafe-return": {
-      "count": 1
     }
   },
   "src/app/components/options-bar2/options-bar2.component.ts": {
     "@angular-eslint/prefer-signals": {
       "count": 1
-    },
-    "@typescript-eslint/no-floating-promises": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unsafe-member-access": {
-      "count": 3
     }
   },
   "src/app/components/page-not-found/page-not-found.component.ts": {
@@ -381,31 +369,8 @@
     }
   },
   "src/app/services/novnc/novnc.service.spec.ts": {
-    "@typescript-eslint/no-unsafe-call": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unsafe-member-access": {
-      "count": 1
-    },
     "@typescript-eslint/no-unsafe-return": {
       "count": 1
-    }
-  },
-  "src/app/services/novnc/novnc.service.ts": {
-    "@typescript-eslint/no-empty-function": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unsafe-assignment": {
-      "count": 1
-    },
-    "@typescript-eslint/no-unsafe-call": {
-      "count": 8
-    },
-    "@typescript-eslint/no-unsafe-function-type": {
-      "count": 4
-    },
-    "@typescript-eslint/no-unsafe-member-access": {
-      "count": 12
     }
   },
   "src/app/services/signalr/signalr.service.spec.ts": {

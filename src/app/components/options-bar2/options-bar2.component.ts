@@ -170,6 +170,10 @@ export class OptionsBar2Component implements OnInit {
     this.vmState.set(value ?? null);
   }
 
+  get vm(): Vm | null {
+    return this.vmState();
+  }
+
   // Task progress vm.api broadcasts on the progress hub for this Vm (power, revert, ...). As in the
   // vSphere bar, an empty broadcast leaves the last list in place. Only unfinished tasks are shown:
   // the Proxmox poller rebroadcasts PVE's recent tasks, finished ones included, with PVE's own
@@ -203,12 +207,8 @@ export class OptionsBar2Component implements OnInit {
     const id = this.vmState()?.id;
     if (id) {
       // A failed connection is logged by the service, which has already handled the rejection.
-      this.notificationService.connectToProgressHub(id);
+      void this.notificationService.connectToProgressHub(id);
     }
-  }
-
-  get vm(): Vm | null {
-    return this.vmState();
   }
 
   readonly readOnly = input(false);
@@ -754,7 +754,7 @@ export class OptionsBar2Component implements OnInit {
       .pipe(take(1))
       .subscribe((enteredText) => {
         if (enteredText?.textToSend) {
-          this.paste(enteredText.textToSend, enteredText.timeout);
+          void this.paste(enteredText.textToSend, enteredText.timeout);
         }
       });
   }
@@ -800,7 +800,7 @@ export class OptionsBar2Component implements OnInit {
   // Same pacing as the vSphere bar: each line is typed and followed by Enter, then a pause of
   // `timeoutStr` ms (the Send Text dialog's paste speed) before the next line. sendText itself
   // paces the keys within a line to what QEMU can take.
-  public async paste(text: string, timeoutStr: string = '50') {
+  public async paste(text: string, timeoutStr = '50') {
     const timeout = parseInt(timeoutStr);
     for (const line of text.split('\n')) {
       if (!(await this.proxmoxService.sendText(line + '\n'))) {
@@ -887,9 +887,16 @@ export class OptionsBar2Component implements OnInit {
 // client's own message when there is no body.
 export function apiErrorMessage(error: unknown): string {
   if (error instanceof HttpErrorResponse) {
-    return error.error?.title || error.message;
+    const title = (error.error as { title?: unknown } | null)?.title;
+    return typeof title === 'string' && title ? title : error.message;
   }
-  return (error as Error)?.message ?? String(error);
+  const message = (error as { message?: unknown } | null)?.message;
+  if (typeof message === 'string') {
+    return message;
+  }
+  return typeof error === 'string'
+    ? error
+    : (JSON.stringify(error) ?? 'Unknown error');
 }
 
 // The console's own context, then the reason. vm.api already names the operation in a Proxmox
