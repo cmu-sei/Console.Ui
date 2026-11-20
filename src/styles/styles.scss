@@ -91,6 +91,14 @@ mat-paginator {
   background-color: var(--mat-sys-outline-variant) !important;
 }
 
+// Short submenus that open from the bottom of the console's gear menu (Keyboard, Clipboard). Near the
+// bottom of a short window the overlay can shrink such a panel to the space below its item rather than
+// move it up, leaving its few items in a panel slightly too short, with a scrollbar. These panels keep
+// their full height. Long menus, such as Network Cards, still shrink and scroll.
+.mat-mdc-menu-panel.fit-content-menu {
+  min-height: fit-content;
+}
+
 // Ensure mat-option elements match the mat-select background color
 .mat-mdc-option {
   --mat-option-label-text-color: var(--mat-sys-on-background);

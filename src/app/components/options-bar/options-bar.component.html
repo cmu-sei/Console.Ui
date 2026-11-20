@@ -248,7 +248,7 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
           <button mat-menu-item [matMenuTriggerFor]="keyboardMenu">
             Keyboard
           </button>
-          <mat-menu #keyboardMenu="matMenu">
+          <mat-menu #keyboardMenu="matMenu" class="fit-content-menu">
             <button
               mat-menu-item
               [matTooltip]="ctrlAltDelTooltip"
@@ -273,7 +273,7 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
           <button mat-menu-item [matMenuTriggerFor]="clipboardMenu">
             Clipboard
           </button>
-          <mat-menu #clipboardMenu="matMenu">
+          <mat-menu #clipboardMenu="matMenu" class="fit-content-menu">
             <div [matTooltip]="menuCopyTooltip" matTooltipPosition="after">
               <button
                 mat-menu-item
