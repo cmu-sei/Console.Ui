@@ -48,6 +48,23 @@ export class NovncComponent implements OnChanges, AfterViewInit, OnDestroy {
   private unsubscribe$ = new Subject();
   private viewInitialized = false;
   private destroyed = false;
+  private reconnectRequested = false;
+
+  constructor() {
+    // A user's Reconnect: drop the session and ask for a new ticket straight away, without the
+    // backoff an unexpected disconnect gets.
+    this.novncService.reconnectRequests$
+      .pipe(takeUntil(this.unsubscribe$))
+      .subscribe(() => {
+        this.failedConnectionAttempts = 0;
+        if (this.novncService.isConnected()) {
+          this.reconnectRequested = true;
+          this.novncService.disconnect();
+        } else {
+          this.reconnect.emit(0);
+        }
+      });
+  }
 
   readonly screen = viewChild<ElementRef>('screen');
 
@@ -133,6 +150,12 @@ export class NovncComponent implements OnChanges, AfterViewInit, OnDestroy {
     if (this.destroyed) {
       // We closed the session ourselves on teardown. Asking the parent to reconnect a console
       // it has already replaced would restart its retry cycle for no reason.
+      return;
+    }
+
+    if (this.reconnectRequested) {
+      this.reconnectRequested = false;
+      this.reconnect.emit(0);
       return;
     }
 
