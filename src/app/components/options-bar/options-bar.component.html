@@ -248,11 +248,44 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
           <button mat-menu-item [matMenuTriggerFor]="keyboardMenu">
             Keyboard
           </button>
-          <mat-menu #keyboardMenu="matMenu">
-            <!-- send ctrl-alt-del -->
-            <button mat-menu-item (click)="cad()">Send Ctrl-Alt-Del</button>
-            <!-- paste text -->
-            <button mat-menu-item (click)="sendInputString()">Send Text</button>
+          <mat-menu #keyboardMenu="matMenu" class="fit-content-menu">
+            <button
+              mat-menu-item
+              [matTooltip]="ctrlAltDelTooltip"
+              matTooltipPosition="after"
+              (click)="cad()"
+            >
+              Ctrl-Alt-Del
+            </button>
+            <button
+              mat-menu-item
+              [matTooltip]="textTooltip"
+              matTooltipPosition="after"
+              (click)="sendInputString()"
+            >
+              Text
+            </button>
+          </mat-menu>
+
+          <!-- Clipboard to clipboard only, with no fallback. Copy needs VMware Tools; Paste can't
+               work on vSphere, since WMKS can't put text on the VM's clipboard. The tooltips sit
+               on wrappers, since a disabled button gets no hover events. -->
+          <button mat-menu-item [matMenuTriggerFor]="clipboardMenu">
+            Clipboard
+          </button>
+          <mat-menu #clipboardMenu="matMenu" class="fit-content-menu">
+            <div [matTooltip]="menuCopyTooltip" matTooltipPosition="after">
+              <button
+                mat-menu-item
+                [disabled]="!!copyDisabledReason"
+                (click)="copyVmClipboard(false)"
+              >
+                Copy
+              </button>
+            </div>
+            <div [matTooltip]="pasteDisabledTooltip" matTooltipPosition="after">
+              <button mat-menu-item disabled>Paste</button>
+            </div>
           </mat-menu>
           @if (vsphereService.model.networkCards) {
             <span>
@@ -318,14 +351,6 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
               </mat-menu>
             </span>
           }
-          <!-- Clipboard -->
-          <button mat-menu-item [matMenuTriggerFor]="clipboardMenu">
-            Clipboard
-          </button>
-          <mat-menu #clipboardMenu="matMenu">
-            <button mat-menu-item (click)="copyVmClipboard()">Copy</button>
-            <button mat-menu-item (click)="pasteFromClipboard()">Paste</button>
-          </mat-menu>
         }
       </mat-menu>
     </div>
@@ -343,7 +368,7 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
     <div class="w-50 d-flex justify-content-center gap-3">
       <button
         mat-stroked-button
-        title="Copy from Virtual Machine's clipboard"
+        [matTooltip]="toolbarCopyTooltip"
         (click)="copyVmClipboard()"
       >
         Copy
@@ -351,7 +376,7 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
       </button>
       <button
         mat-stroked-button
-        title="Paste into the Virtual Machine"
+        [matTooltip]="toolbarPasteTooltip"
         (click)="pasteFromClipboard()"
       >
         Paste
@@ -359,7 +384,7 @@ Released under a MIT (SEI)-style license. See LICENSE.md in the project root for
       </button>
       <button
         mat-stroked-button
-        title="Send Ctrl-Alt-Del to the Virtual Machine"
+        [matTooltip]="ctrlAltDelTooltip"
         (click)="cad()"
       >
         Ctrl-Alt-Del

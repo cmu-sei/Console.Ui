@@ -33,6 +33,7 @@ import {
   tap,
 } from 'rxjs/operators';
 import {
+  AppSystemPermission,
   AppViewPermission,
   VsphereVirtualMachine,
   VmSnapshot,
@@ -61,9 +62,40 @@ import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { VmService } from '../../state/vm/vm.service';
 import { UserPermissionsService } from '../../services/user-permissions/user-permissions.service';
 import { MatLabel } from '@angular/material/form-field';
+import { inIframe } from '../../utils/console-helpers';
+import {
+  COPY_WRITE_BLOCKED_MESSAGE,
+  CTRL_ALT_DEL_TOOLTIP,
+  TEXT_TOOLTIP,
+  VSPHERE_COPY_NO_TOOLS_TOOLTIP,
+  VSPHERE_COPY_TOOLS_STOPPED_TOOLTIP,
+  VSPHERE_COPY_TOOLTIP,
+  VSPHERE_PASTE_DISABLED_TOOLTIP,
+  VSPHERE_TOOLBAR_COPY_NO_TOOLS_NOTE,
+  VSPHERE_TOOLBAR_COPY_TOOLS_STOPPED_NOTE,
+  VSPHERE_TOOLBAR_COPY_TOOLTIP,
+  VSPHERE_TOOLBAR_PASTE_TOOLTIP,
+} from '../../utils/console-tooltips';
 
 declare var WMKS: any; // needed to check values
 const MAX_COPY_RETRIES = 1;
+
+// Why VMware Tools can't answer a copy, keyed by the status that rules it out.
+const COPY_DISABLED_BY_TOOLS: Partial<
+  Record<VirtualMachineToolsStatus, string>
+> = {
+  [VirtualMachineToolsStatus.toolsNotInstalled]: VSPHERE_COPY_NO_TOOLS_TOOLTIP,
+  [VirtualMachineToolsStatus.toolsNotRunning]:
+    VSPHERE_COPY_TOOLS_STOPPED_TOOLTIP,
+};
+const TOOLBAR_COPY_TOOLS_NOTE: Partial<
+  Record<VirtualMachineToolsStatus, string>
+> = {
+  [VirtualMachineToolsStatus.toolsNotInstalled]:
+    VSPHERE_TOOLBAR_COPY_NO_TOOLS_NOTE,
+  [VirtualMachineToolsStatus.toolsNotRunning]:
+    VSPHERE_TOOLBAR_COPY_TOOLS_STOPPED_NOTE,
+};
 
 @Pipe({
   name: 'keys',
@@ -133,19 +165,30 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
   currentVmUsers$: Observable<string[]>;
 
   private copyTryCount: number;
+  // Whether the copy in progress came from the toolbar, whose fallback shows the text for a manual
+  // copy when the browser won't take it. The Clipboard menu's Copy reports the failure instead.
+  private copyShowsTextIfBlocked = true;
+
+  readonly ctrlAltDelTooltip = CTRL_ALT_DEL_TOOLTIP;
+  readonly textTooltip = TEXT_TOOLTIP;
+  readonly pasteDisabledTooltip = VSPHERE_PASTE_DISABLED_TOOLTIP;
+  readonly toolbarPasteTooltip = VSPHERE_TOOLBAR_PASTE_TOOLTIP;
   private destroy$ = new Subject();
 
   canDownloadVmFiles$ = this.userPermissionsService.can(
     null,
     AppViewPermission.DownloadVmFiles,
+    AppSystemPermission.DownloadVmFiles,
   );
   canUploadVmFiles$ = this.userPermissionsService.can(
     null,
     AppViewPermission.UploadVmFiles,
+    AppSystemPermission.UploadVmFiles,
   );
   canRevertSnapshots$ = this.userPermissionsService.can(
     null,
     AppViewPermission.RevertVms,
+    AppSystemPermission.RevertVms,
   );
 
   private readonly refreshNetworks = signal(0); // remove after refactoring to signals everywhere
@@ -194,7 +237,7 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
     });
     this.notificationService.connectToProgressHub(this.vmId());
 
-    this.inFrame = this.inIframe();
+    this.inFrame = inIframe();
 
     this.vsphereService.vmClipBoard
       .pipe(takeUntil(this.destroy$))
@@ -214,14 +257,6 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
   ngOnDestroy() {
     this.destroy$.next(null);
     this.destroy$.complete();
-  }
-
-  inIframe() {
-    try {
-      return window.self !== window.top;
-    } catch (e) {
-      return true;
-    }
   }
 
   openInTab() {
@@ -529,6 +564,27 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
     });
   }
 
+  // The Clipboard menu's Copy needs VMware Tools to answer it; null when it can, or why it can't.
+  get copyDisabledReason(): string | null {
+    const status = this.vsphereService.model?.vmToolsStatus as
+      VirtualMachineToolsStatus | undefined;
+    return (status && COPY_DISABLED_BY_TOOLS[status]) ?? null;
+  }
+
+  get menuCopyTooltip(): string {
+    return this.copyDisabledReason ?? VSPHERE_COPY_TOOLTIP;
+  }
+
+  // The toolbar Copy stays enabled, as before; its tooltip says when VMware Tools can't answer it.
+  get toolbarCopyTooltip(): string {
+    const status = this.vsphereService.model?.vmToolsStatus as
+      VirtualMachineToolsStatus | undefined;
+    return (
+      VSPHERE_TOOLBAR_COPY_TOOLTIP +
+      ((status && TOOLBAR_COPY_TOOLS_NOTE[status]) ?? '')
+    );
+  }
+
   async writeToClipboard(clipText: string) {
     // If the copyTryCount is 0 then the user did not try to copy from the VM, therefore ignore the broadcast
     if (this.copyTryCount > 0) {
@@ -539,6 +595,13 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
           verticalPosition: 'top',
         });
       } catch (err) {
+        if (!this.copyShowsTextIfBlocked) {
+          this.snackBar.open(COPY_WRITE_BLOCKED_MESSAGE, 'Close', {
+            duration: 10000,
+            verticalPosition: 'top',
+          });
+          return;
+        }
         this.showMessage(
           'Select text and press Ctrl+C to copy to your local clipboard:',
           clipText,
@@ -567,7 +630,11 @@ export class OptionsBarComponent implements OnInit, OnDestroy {
     }
   }
 
-  copyVmClipboard() {
+  // `showTextIfBlocked` is the toolbar Copy's fallback; the Clipboard menu passes false.
+  copyVmClipboard(showTextIfBlocked = true) {
+    if (this.copyTryCount === 0) {
+      this.copyShowsTextIfBlocked = showTextIfBlocked;
+    }
     this.copyTryCount++;
     console.log('Trying to copy.  Count:  ', this.copyTryCount);
     this.vsphereService.wmks.grab();

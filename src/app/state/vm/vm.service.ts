@@ -66,18 +66,6 @@ export class VmService {
     }
   }
 
-  async sendClipboardText(id: string) {
-    const vm = this.vmQuery.getEntity(id);
-
-    const text = await navigator.clipboard.readText();
-
-    switch (vm.type) {
-      case VmType.Proxmox:
-        this.proxmoxService.sendClipboardText(text);
-        break;
-    }
-  }
-
   /**
    * Dispatches a power action to the API for whichever provider backs this vm. The per-vm endpoints
    * are used rather than the bulk ones since the console only ever acts on a single vm.

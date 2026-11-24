@@ -40,6 +40,7 @@ class WmksStubComponent {
 class OptionsBar2StubComponent {
   readonly vm = input<Vm>(undefined);
   readonly readOnly = input<boolean>(undefined);
+  readonly allowReadOnlyToggle = input<boolean>(undefined);
 }
 
 @Component({ selector: 'app-proxmox-console', template: '' })
@@ -139,22 +140,30 @@ describe('ConsoleComponent', () => {
   });
 
   /**
-   * Verifies: a Proxmox Vm gets the noVNC console and the generic options bar, both receiving the page's readOnly value as given.
+   * Verifies: a Proxmox Vm gets the noVNC console and the generic options bar, both receiving the page's readOnly value, and the bar its allowReadOnlyToggle value, as given.
    * Interacts with: real VmService; @defer blocks; the Proxmox child stubs' inputs.
-   * Data: Proxmox Vm; the readOnly value under test.
+   * Data: Proxmox Vm; the readOnly / allowReadOnlyToggle pair under test.
    */
-  it.each([true, false])(
-    'renders the noVNC console for a Proxmox Vm with readOnly %s',
-    async (readOnly) => {
+  it.each([
+    [true, true],
+    [true, false],
+    [false, true],
+  ])(
+    'renders the noVNC console for a Proxmox Vm with readOnly %s and allowReadOnlyToggle %s',
+    async (readOnly, allowReadOnlyToggle) => {
       const { child, vm } = await renderConsole({
         type: VmType.Proxmox,
         readOnly,
+        allowReadOnlyToggle,
       });
 
       expect(child(ProxmoxConsoleStubComponent)?.vm()).toEqual(vm);
       expect(child(ProxmoxConsoleStubComponent)?.readOnly()).toBe(readOnly);
       expect(child(OptionsBar2StubComponent)?.vm()).toEqual(vm);
       expect(child(OptionsBar2StubComponent)?.readOnly()).toBe(readOnly);
+      expect(child(OptionsBar2StubComponent)?.allowReadOnlyToggle()).toBe(
+        allowReadOnlyToggle,
+      );
       expect(child(WmksStubComponent)).toBeUndefined();
     },
   );

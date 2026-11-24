@@ -17,7 +17,6 @@ import { PowerAction, VmService } from './vm.service';
 import { VmQuery } from './vm.query';
 import { ApiStub } from '../../test-utils/api-stub';
 import { recordEmissions } from '../../test-utils/record-emissions';
-import { stubClipboard } from '../../test-utils/clipboard';
 
 type ProxmoxPowerMethod =
   | 'powerOnProxmoxVirtualMachine'
@@ -52,8 +51,7 @@ function setup() {
   } satisfies ApiStub<ApiVsphereService>;
   const proxmoxService = {
     sendCtrlAltDel: vi.fn(),
-    sendClipboardText: vi.fn(),
-  } satisfies Pick<ProxmoxService, 'sendCtrlAltDel' | 'sendClipboardText'>;
+  } satisfies Pick<ProxmoxService, 'sendCtrlAltDel'>;
   const router = {
     navigate: vi.fn(() => Promise.resolve(true)),
   } satisfies Pick<Router, 'navigate'>;
@@ -279,38 +277,6 @@ describe('VmService', () => {
       service.add(vm({ type: VmType.Vsphere }));
       service.sendCtrlAltDel('vm-1');
       expect(proxmoxService.sendCtrlAltDel).not.toHaveBeenCalled();
-    });
-
-    /**
-     * Verifies: the local clipboard text is read and pasted into a Proxmox Vm.
-     * Interacts with: a stubbed navigator.clipboard.readText; app ProxmoxService.sendClipboardText spy.
-     * Data: Proxmox Vm; clipboard holding 'hello'.
-     */
-    it('pastes the local clipboard into a Proxmox Vm', async () => {
-      const { service, proxmoxService } = setup();
-      const { readText } = stubClipboard('hello');
-      service.add(vm({ type: VmType.Proxmox }));
-
-      await service.sendClipboardText('vm-1');
-
-      expect(readText).toHaveBeenCalledOnce();
-      expect(proxmoxService.sendClipboardText).toHaveBeenCalledWith('hello');
-    });
-
-    /**
-     * Verifies: clipboard paste is a no-op for a vSphere Vm, though the clipboard is still read.
-     * Interacts with: a stubbed navigator.clipboard.readText; app ProxmoxService.sendClipboardText spy.
-     * Data: vSphere Vm; clipboard holding 'hello'.
-     */
-    it('does not paste into a vSphere Vm', async () => {
-      const { service, proxmoxService } = setup();
-      const { readText } = stubClipboard('hello');
-      service.add(vm({ type: VmType.Vsphere }));
-
-      await service.sendClipboardText('vm-1');
-
-      expect(readText).toHaveBeenCalledOnce();
-      expect(proxmoxService.sendClipboardText).not.toHaveBeenCalled();
     });
   });
 

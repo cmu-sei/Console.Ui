@@ -14,6 +14,7 @@ import { RouterQuery } from '@datorama/akita-ng-router-store';
 import { Observable, Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { RouterOutlet, Router } from '@angular/router';
+import { inIframe } from './utils/console-helpers';
 
 @Component({
   selector: 'app-root',
@@ -32,7 +33,7 @@ export class AppComponent implements OnDestroy {
 
   theme$: Observable<Theme> = this.authQuery.userTheme$;
   unsubscribe$ = new Subject();
-  hideTopbar = this.inIframe();
+  hideTopbar = inIframe();
   private paramTheme;
 
   constructor() {
@@ -117,13 +118,5 @@ export class AppComponent implements OnDestroy {
   ngOnDestroy() {
     this.unsubscribe$.next(null);
     this.unsubscribe$.complete();
-  }
-
-  private inIframe(): boolean {
-    try {
-      return window.self !== window.top;
-    } catch (e) {
-      return true;
-    }
   }
 }
